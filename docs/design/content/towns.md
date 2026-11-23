@@ -16,7 +16,7 @@ a copy line, not a number.
   (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: nine rows at
   Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
   change and is not in this wave (C6).
-- **Townspeople placed — landed 2026-11-21.** All thirteen rows below are seeded: one `LocationNpc` per
+- **Townspeople placed — landed 2026-11-21.** All thirteen D3 rows below are seeded: one `LocationNpc` per
   settlement location in `LocationNpcsSeeder`, and one archetype apiece in `ArchetypeSeeder` (`TypeKey =
   "townspeople"`, non-hostile, immortal, `HasDialogue` on every row, `Traits.Shopkeeper` on the eleven who take
   coin). This is what made the shop work again: the shop is a person (`ShopMerchantResolver`), so the three towns
@@ -27,6 +27,17 @@ a copy line, not a number.
   as `wayfarer-elder` always has (C4).
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
   APIs, so it carries no roster (§2).
+- **Two people added after the D3 pass — 2026-11-22 (card `t_c2a61d78`).** `dock-hand` joins
+  `tolvaren-harbour` as the second person standing there (§4.3; §2 records why the harbour takes the
+  exception), and `shrine-keeper` is placed at `ashfields`/`ash-shrine` (§4.5) — the one person in this
+  document who is not in a town. Both are D1 roster rows that already existed with their identity lines;
+  what did not exist was a stand, a placement id, the role flags and a voice. They are **new to the
+  seeders** — no `ArchetypeSeeder` row, no `LocationNpc` row and no `Dialogue` row carries either slug —
+  so the seeding card follows this one. The order is archetypes, then placements, then greetings: a
+  placement whose archetype is missing still lists the person, but by the bare slug with no type key and
+  every role flag false (`NpcPlacements.ToDto` takes a nullable archetype), and a greeting is matched on
+  the speaker slug alone (`NpcGreetings.PickAsync`), so it has no one to be picked for until a person with
+  that slug stands somewhere.
 
 **Sources read for this document:** `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`,
 `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs` (the Zone rows),
@@ -69,7 +80,7 @@ is the dev playground.
 |---|---|---|---|
 | `crestfall` | 0 | `crestfall-square` [S], `aurelian-market` [M], `hearthbound-inn`, `low-quarter` | 4 |
 | `aldenmere` | 5 | `ironhollow-keep` [SM], `aldenmere-marketplace` [M], `grey-cup` | 3 |
-| `tolvaren` | 10 | `tolvaren-harbour` [S], `cliff-road-market` [M], `saltcrow-inn` | 3 |
+| `tolvaren` | 10 | `tolvaren-harbour` [S], `cliff-road-market` [M], `saltcrow-inn` | 3 (+`dock-hand` at the harbour, §4.3) |
 | `skarhold` | 18 | `forge-quarter` [SM], `caldera-market` [M], `ashbrand-lodge` | 3 |
 | `playground` | 0 | 5 dev locations (`IsDevOnly = true`, `IsDiscoverable = false`) | 0 |
 
@@ -77,8 +88,22 @@ is the dev playground.
 (`ApplicationDataSeeder.cs:99`: `IsDevOnly = true`), and its "townspeople" would be fixture noise. Writing
 people into it would be inventing settlements. `playground-npc-hall` stays the harness for NPC mechanics.
 
-**One NPC per town location**, thirteen in total. A location with two people and one line each reads worse
-than one person who has something to say, and every additional archetype is another voice to maintain.
+**One NPC per town location — with one exception, taken 2026-11-22.** Thirteen in the settlements before
+this card and fourteen after it: `tolvaren-harbour` carries `harbour-master` and `dock-hand` both (§4.3).
+The rule exists because "a location with two people and one line each reads worse than one person who has
+something to say, and every additional archetype is another voice to maintain", and the harbour is the one
+place where the second voice is not doing the first one's job: the master counts hulls and refuses berths,
+the hand moves what comes off them and knows which cargo never pays for it. The engine takes it without a
+change — `GetLocationNpcsHubCommandHandler` lists every placement at the character's location ordered by
+`SortOrder`, and `TalkToNpcHubCommand` resolves the speaker by archetype slug
+(`NpcDialogueReader.FindPlacementAsync`), so two rows at one location are two people the player can
+address, not one shadowing the other.
+
+**The fifteenth person stands in no town.** `shrine-keeper` is placed at `ashfields`/`ash-shrine` (§4.5),
+a `SafeRespawn` rest node rather than a settlement, and is not counted among the settlement locations
+above. This document authors him because it is the only file in the design set where a stand and a voice
+are written together — `archetypes.md` owns the slug and the identity line and `pool-matrix.md` owns the
+empty pool, and neither can say who he is or what he says.
 
 ---
 
@@ -106,9 +131,15 @@ Every name was machine-checked against those rules and against all 213 seeded sl
 | **Daeldvaen** | *daeld* (ash) + *vaen* (iron); –ld + v– is two consonants, legal | "ash-iron" |
 | **Raekdaeld** | *raek* (light-in-material) + *daeld* (ash) | "glowing ash" — ash-glass |
 | **Kaendaeld** | *kaen* (duty) + *daeld* (ash) | "duty to the ash" |
+| **Geldern** | *geld* (tribute, what is given upward — §4.2) + *–ern* (agent, non-priestly) | "the tribute-hand" — the byname the quay gave the man who knows which cargo never paid its dues (§4.3) |
 
 Regression names are bynames the town gave them, not birth names — a smith called Vaenern is called that
 because he works iron, which is how Common names survive in a place with no scribes.
+
+**Geldern is the fourteenth name — added 2026-11-22** with the harbour's dock hand (§4.3). It follows
+*Rekern*'s morphology (*rek* + *–ern*, §2.2) with the final cluster `–ld` intact at the junction: *geld.ern*
+splits as a legal syllable, so no reduction applies. The name that was *not* coined is the shrine keeper's:
+§4.5 gives the reason, and it is a canon reason rather than a naming one.
 
 **Renamed 2026-11-20 — `Gaelraeth` → `Gaelrek`.** The harbour-master's byname stood as *gael* + *raeth*,
 which put it one letter from **Kael-Raeth** ("compact's threshold", `calethic-language.md` *kael* entry)
@@ -192,14 +223,43 @@ Seeder facts: level 10, three locations, `tolvaren-harbour` is `SafeRespawn`, `c
 `saltcrow-inn` is an inn. Zone prose: a salt-caked port clinging to the cliff face, harbour full of storm-worn
 ships and bold traders.
 
-**Placement: all three are `LocationNpcs` rows.** No `ActorPool` entry; `tolvaren-harbour` is `SafeRespawn` and
-its pool stays empty.
+**Placement: every Tolvaren person is a `LocationNpc` row** — one at each of the three locations, and a
+second at the harbour (§2's exception). No `ActorPool` entry at any of the three; `tolvaren-harbour` is
+`SafeRespawn` and its pool stays empty.
 
 | `slug` (archetype) | placement id | name | role | wants | sells / teaches / refuses | dialogue id |
 |---|---|---|---|---|---|---|
 | `harbour-master` **(new)** | `tolvaren-harbour-master` **(new)** | Gaelrek | harbour-master | every hull accounted for at the turn of the tide | teaches the tide line and the safe moorings; refuses berth to a ship with no name on its papers | `harbour-master-greeting` **(new)** |
+| `dock-hand` **(new)** | `tolvaren-harbour-dockhand` **(new)** | Geldern | dock hand, the harbour | a hold emptied before the tide turns and a day-rate agreed before the work, not after | no stock, no counter and nothing taught: he hauls for a day's wage; refuses to say which crates never reach the scale | `dock-hand-greeting` **(new)** |
 | `ship-chandler` **(new)** | `tolvaren-cliffroad-chandler` **(new)** | Laeldern | chandler, cliff road market | nothing on her shelves the sea has already ruined | sells rope, pitch and lamp oil; refuses line to a crew that will not say where it is bound | `ship-chandler-greeting` **(new)** |
 | `port-innkeeper` **(new)** | `tolvaren-saltcrow-keeper` **(new)** | Thaeldren | keeper, the Saltcrow | the cliff-road lamp burning from dusk to dawn | sells a bed and a hot meal; refuses to answer the harbour bell, or to say why | `port-innkeeper-greeting` **(new)** |
+
+**`dock-hand` — the harbour's second person (added 2026-11-22).** D1's roster row, identity and zone were
+already written ("Loads and unloads at Tolvaren Harbour and knows which crates never get weighed"); what
+this card adds is the stand, the flags, the byname and the voice. `SortOrder` 20 — the master is 10 — so
+he lists after the master rather than beside him. `Shopkeeper` is **false**: he takes a day-rate from
+whoever is paying, but he holds no stock of his own. The shelf is the town's, not the shopkeeper's —
+`ZoneStockItems` is keyed by `ZoneId`, so every merchant in Tolvaren draws from the one list (C6) — and a
+`Shopkeeper` placed at the harbour would open that whole catalog at the town's respawn point, because
+`ShopMerchantResolver` gates on the zone flag and then on the person at the character's location.
+`QuestGiver` is **false**: D1 calls him a rumour, and a trait is what the client reads to offer a quest,
+so it stays off until a quest names him.
+
+**Byname `Geldern`** — *geld* (tribute, the material of obligation flowing upward, `calethic-language.md`
+§4.2) + *–ern* (agent, non-priestly, §2.2), the morphology *Rekern* uses. "The tribute-hand": the byname
+the quay gave the man who knows which cargo never paid its dues. It is a byname, not a birth name, for the
+reason §3 gives.
+
+**Greeting** (`dock-hand-greeting`, `Speaker = dock-hand`, `TypeKey = greetings`; the picker shows one of
+the three at random — `NpcGreetings.PickAsync`):
+
+1. "Tide's on the turn. Whatever you're hauling goes out with this one or it sits till morning."
+2. "I know which crates never touch the scale. Not with the master in earshot."
+3. "Mind the third bollard. Loose since the last storm, and nobody's been paid to fix it."
+
+**Voice for the harbour hand.** He carries the town's register with the number taken out: loads, tides and
+what a day is worth, said flat and loudly enough to cross water. The rumour is not a secret he keeps from
+you — he says it in one line and then talks about the bollard, which is how Tolvaren leaves a thing alone.
 
 **Register.** Tolvaren is loud and bargaining and entirely about the sea: tide, cargo, weather, the price of
 rope. Sentences are shouted across water and get to the number fast. What it will not discuss is the water
@@ -247,6 +307,60 @@ Everyone knows. Everyone says "quiet since the founding" and then talks about th
 5. "Everything here is built from what the mountain threw up. Waste nothing."
 
 **Canon:** P4.
+
+---
+
+### 4.5 The Ash Shrine — the keeper who is not in a town
+
+`ashfields` / `ash-shrine` is not a settlement and is not becoming one. It is a `SafeRespawn` rest node,
+`IsHidden` and quest-unlocked, and its only possible population is one person: `pool-matrix.md` §4 counts
+it as the one keeper-only shrine, and amendment 3 took its pool away so that nothing else can stand there.
+He is placed from this document because it is the only one in the design set that writes a stand and a
+voice together — `archetypes.md` owns the slug and the identity line, `pool-matrix.md` owns the empty
+pool, and neither can say who he is or what he says. The section is numbered 4.5 rather than being a fifth
+town so that no reader comes away thinking the shrine is a settlement.
+
+| `slug` (archetype) | placement id | name | role | wants | sells / teaches / refuses | dialogue id |
+|---|---|---|---|---|---|---|
+| `shrine-keeper` **(new)** | `ashfields-ash-shrine-keeper` **(new)** | — (renders as **Shrine Keeper**) | keeper, the Ash Shrine | the shrine swept, the lamp fed, and nobody asking him what it is for | no stock, no counter and nothing taught: he keeps the place and takes nothing for it; refuses to say who the ash is owed to | `shrine-keeper-greeting` **(new)** |
+
+`SortOrder` 10 — he is the only placement at the location, and there is nobody for him to stand behind.
+`Shopkeeper` is **false**, and the zone refuses one anyway: `ashfields` seeds `HasMerchant = false`, so a
+shopkeeper placed at the shrine could not open a trade surface even with the trait. The trait stays off
+because it would describe a merchant who does not exist. `QuestGiver` is **true**: D1 calls him a quest
+hook, and the question he will not answer is the hook itself — the trait is what the client reads
+(`NpcHubCommands.NpcPlacements.ToDto`), so it is the one flag that has to be on before a conversation can
+be written against him.
+
+**No byname, and the reason is his own.** §3 names fourteen people and the waypost's elder renders by role
+name; the keeper renders by role name too, but not for the elder's reason. Every byname in §3 is a Calethic
+compound, and the honest compounds for this man are all *about the ash* — *kaen* + *daeld*, or *daeld* plus
+a keeper root — which would answer in his name the one question he refuses to answer aloud. The Ash Shrine
+dedication is not canon: `archetypes.md` records that the proposal to give it one was **declined**, and that
+`shrine-keeper` "refuses to name the object of veneration, and does not assert one". A man who will not say
+who is owed the ash does not carry a name that says it for him. If a later card settles the dedication,
+naming him belongs to that card.
+
+**Register.** He does not hurry, and he does not lower his voice. He talks about the work — the step, the
+lamp, what the wind moves overnight — and answers a question about the shrine with a fact about its upkeep.
+He never refuses loudly and never warns you off; the refusal is that he keeps sweeping.
+
+**Greeting** (`shrine-keeper-greeting`, `Speaker = shrine-keeper`, `TypeKey = greetings`; the picker shows
+one of the three at random — `NpcGreetings.PickAsync`):
+
+1. "Boots off the step. The ash is not for walking through."
+2. "I sweep it, I feed the lamp, and I put back what the wind takes. That is the whole of the office."
+3. "You want to know who it is owed to. Everyone who climbs this far does, and I tell them nothing."
+
+None of the three names a god, a people or a war, so the lines hold whatever the dedication turns out to
+be, and none of them asserts a fact the roster does not already carry.
+
+**No ambient set.** The ambient barks are per-town enter/idle flavour, five to a settlement, and the shrine
+is one person at a hidden node; a set here would be a fifth settlement's worth of lines for a place the
+zone query does not even offer. His three greeting lines are the content.
+
+**Canon:** none needed. The place, its traits, its empty pool and the keeper's silence are all approved;
+this section adds where he stands and what he says, which is this card's scope.
 
 ---
 
@@ -359,10 +473,13 @@ stock needs an engine change.
 
 ## 7. Validation
 
-Both scripts are in `~/.hermes/profiles/dev-content/cache/scratch/`; their inputs are the seeders themselves.
-The output below is the record of the design pass, and one figure in it has moved since: `seeded placements: 3`
-was true at approval time, and thirteen are seeded now (§8). Everything else — the location list, the empty
-pools, the names, the barks — is still the claim being checked.
+Both scripts are the design pass's own and are not checked in — they ran from the card's worker scratch
+directory, so the path is not portable. Their inputs are the seeders themselves.
+The output below is the record of the design pass, and two figures in it have moved since: `seeded
+placements: 3` was true at approval time and fourteen are seeded now, and the three seeded greeting rows
+are not the two it counts — both are re-parsed in the second block below (§8 carries the corrected
+totals). Everything else — the location list, the empty pools, the names, the barks — is still the claim
+being checked.
 
 ```
 == slug pattern + collision ==
@@ -455,31 +572,102 @@ sentence length; one destination file per proposal.
 The two content defects these checks caught are already fixed above: a three-sentence Tolvaren bark, and a
 miscounted dialogue total in §8.
 
+### Second block — the 2026-11-22 additions, re-checked against the seeders
+
+The two people this card adds are checked the same way the original pass checked its rows: the counts are
+parsed out of the C# seeders, not recalled, and the placement rows are parsed back out of this document.
+Both are re-runnable from the seeders and neither script is checked in; `check_placements.py` exits
+non-zero on a failure.
+
+```
+$ python3 count_claims.py
+LocationNpc rows: 14
+
+townspeople archetypes: 13
+   ['ash-glass-seller', 'cellar-keeper', 'forge-master', 'harbour-master', 'keep-castellan',
+    'lodge-keeper', 'mead-seller', 'port-innkeeper', 'road-carter', 'ship-chandler',
+    'tavern-keeper', 'village-blacksmith', 'wayfarer-elder']
+
+greeting rows: 3 ['blacksmith-greeting', 'tavernkeeper-greeting', 'wayfarer-elder-greeting']
+speakers: ['tavern-keeper', 'village-blacksmith', 'wayfarer-elder']
+dock-hand in any .cs: False
+shrine-keeper in any .cs: False
+```
+
+`count_claims.py` — the two figures §8 was carrying stale (`13` placements and `2` greeting rows) against
+the seeders themselves. The row dump is trimmed; the totals are not.
+
+```
+$ python3 check_placements.py
+seeder parse: 67 zone locations, 36 pooled locations, 37 archetypes, 5 dialogue rows
+               dock-hand in seeders: False; shrine-keeper in seeders: False
+
+placement rows parsed from towns.md: 15
+
+ok    tolvaren-harbour-dockhand -> tolvaren/tolvaren-harbour resolves in ZoneLocationsSeeder
+ok    tolvaren-harbour-dockhand: tolvaren-harbour carries no spawn pool (an NPC is never a pool entry)
+ok    dock-hand marked (new): absent from ArchetypeSeeder
+ok    dock-hand-greeting marked (new): absent from DialogueSeeder
+ok    ashfields-ash-shrine-keeper -> ashfields/ash-shrine resolves in ZoneLocationsSeeder
+ok    ashfields-ash-shrine-keeper: ash-shrine carries no spawn pool (an NPC is never a pool entry)
+ok    shrine-keeper marked (new): absent from ArchetypeSeeder
+ok    shrine-keeper-greeting marked (new): absent from DialogueSeeder
+
+ok    archetypes.md:121 dock-hand      band=— hostile=no zone=`tolvaren`
+ok    archetypes.md:120 shrine-keeper  band=— hostile=no zone=`ashfields`
+
+ok    archetypes.md and towns.md agree: dock-hand stands at tolvaren/tolvaren-harbour
+ok    archetypes.md and towns.md agree: shrine-keeper stands at ashfields/ash-shrine
+
+ok    dock-hand-greeting: 3 lines, longest 91 chars, max 2 sentence ends per line
+ok    shrine-keeper-greeting: 3 lines, longest 97 chars, max 2 sentence ends per line
+
+RESULT: PASS (0 failures)
+```
+
+`check_placements.py` — parses all 67 seeded `ZoneLocation` blocks and the `SpawnPools` dictionary, then
+every placement row in this file: the slug pattern and uniqueness of both ids, that each new placement's
+zone + location is a seeded pair, that neither location is in `SpawnPools`, that the two archetypes are
+absent from `ArchetypeSeeder` and the two dialogue ids from `DialogueSeeder` (so `(new)` is true), that the
+two roster rows in `archetypes.md` carry `—`, `§` and no `†`, that `archetypes.md` and this file agree on
+where each person stands, and that each greeting is three lines with at most two sentence ends. The row
+dump it prints mid-run is trimmed above; the checks are not.
+
+The repo's own name check covers the byname: `node scripts/check-content-names.mjs` reports **no
+collisions** with `Geldern` added — it compares against all 323 emphasised forms in
+`calethic-language.md` and all 400 seeded slugs and 426 seeded display names. `node
+scripts/check-markdown-links.mjs` checks 80 files with no broken relative links.
+
 ---
 
 ## 8. What must ship for this to be true
 
 | Thing | Count | Owner | State |
 |---|---|---|---|
-| `LocationNpc` placements | 13 (3 exist, 10 new) | `LocationNpcsSeeder` / importer | **13 live** — every settlement location has its person (`LocationNpcsSeeder`) |
-| Townspeople archetypes (`ActorArchetype`, `TypeKey = "townspeople"`, non-hostile, immortal, `HasDialogue = true`) | 13 (3 exist, 10 new) | **D1 roster card** — it owns the 1–20 archetype roster, so it must adopt these slugs or this card and D1 disagree | **13 live** in `ArchetypeSeeder`; the eleven who take coin carry `Traits.Shopkeeper` and a purse inside their town's band |
-| Dialogue greeting rows (`TypeKey = "greetings"`, `Speaker` = archetype slug) | 13 needed, one per NPC: 2 live (`blacksmith-greeting`, `tavernkeeper-greeting`), 11 new — of which `wayfarer-elder-greeting` closes C4 | wave B dialogue pass | 2 live, 11 proposed |
-| Display-name overrides | 3 (one per existing generic archetype) | placement rows | proposed — the three existing placements still answer by role name (`Village Blacksmith`, `Tavern Keeper`, `Wayfarer Elder`); the ten new archetypes carry their own names |
+| `LocationNpc` placements | 16 (3 exist, 13 new — of which 2 are this card's) | `LocationNpcsSeeder` / importer | **14 live** — every settlement location has its person, plus the droveway's second stand for `wayfarer-elder` (`LocationNpcsSeeder`). **2 proposed**: `tolvaren-harbour-dockhand` (§4.3) and `ashfields-ash-shrine-keeper` (§4.5). |
+| Townspeople archetypes (`ActorArchetype`, `TypeKey = "townspeople"`, non-hostile, immortal, `HasDialogue = true`) | 15 (3 exist, 12 new — of which 2 are this card's) | **D1 roster card** — it owns the 1–20 archetype roster, so it must adopt these slugs or this card and D1 disagree | **13 live** in `ArchetypeSeeder`; the eleven who take coin carry `Traits.Shopkeeper` and a purse inside their town's band; `harbour-master` and `wayfarer-elder` trade nothing. **2 proposed**: `dock-hand` and `shrine-keeper`, both roster rows already, both `Shopkeeper` false. |
+| Dialogue greeting rows (`TypeKey = "greetings"`, `Speaker` = archetype slug) | 15 needed, one per townsperson: 3 live (`blacksmith-greeting`, `tavernkeeper-greeting`, `wayfarer-elder-greeting` — the last closes C4), 12 new | wave B dialogue pass | 3 live, 12 proposed — the two new lines are authored in §4.3 (`dock-hand-greeting`) and §4.5 (`shrine-keeper-greeting`) |
+| Display-name overrides | 3 (one per existing generic archetype) | placement rows | proposed — the three existing placements still answer by role name (`Village Blacksmith`, `Tavern Keeper`, `Wayfarer Elder`); the twelve new archetypes carry their own names, and `shrine-keeper` deliberately carries none (§4.5) |
 
-The placements and archetypes are seeded (2026-11-21). What is still owed is voice, not people: eleven greeting
-rows, the three display-name overrides, and the conversations wave B/C was always going to write.
+The placements and archetypes are seeded (2026-11-21). What is still owed is voice, mostly: ten D3 greeting
+rows, the two authored on 2026-11-22, the three display-name overrides, and the conversations wave B/C was
+always going to write. Two rows of this table were already stale before this card and are corrected here
+against the seeders rather than recalled: `LocationNpc` rows stand at **14**, not 13, because the waypost
+elder is a second placement of an existing archetype (`LocationNpcsSeeder`, `droveway-waypost-elder`); and
+greeting rows are **3 live**, not 2, because `wayfarer-elder-greeting` landed with that placement
+(`DialogueSeeder.cs`). Both counts are parsed from the seeders in §7's second block.
 
-Every reference in this document closes: the 13 archetype slugs are either seeded today or named here as new;
-the 13 placement ids resolve to zone + location pairs proven in §7; the dialogue ids are either seeded today or
-carry `(new)` and a `-greeting` slug the dialogue pass creates. There are no arrows to files that do not exist
-and no numbers that do not trace to a band.
+Every reference in this document closes: the 15 archetype slugs are either seeded today or named here as
+new; the 16 placement ids resolve to zone + location pairs proven in §7; the dialogue ids are either seeded
+today or carry `(new)` and a `-greeting` slug the dialogue pass creates. There are no arrows to files that
+do not exist and no numbers that do not trace to a band.
 
 ## 9. Acceptance
 
 | Criterion | Answer |
 |---|---|
 | Every settlement in the seeder has a roster; none invented | Four settlements parsed from the seeder (18 `IsTown` locations, 13 in settlements). The fifth `IsTown` zone, `playground`, is dev-only and deliberately excluded with the reason given in §2. |
-| Every NPC explicitly placed in `LocationNpcs`, none in a pool | 13 placements, one per settlement location; §7 proves 0 of 18 town locations appear in `SpawnPools`, and all five `SafeRespawn` towns keep empty pools. |
-| 4–6 barks per town, none a quest hook | 5 per town, 20 total. None names an NPC, a reward, a destination or a task; each is enter/idle flavour. |
+| Every NPC explicitly placed in `LocationNpcs`, none in a pool | 14 live placements and 2 proposed, covering all 13 settlement locations (the harbour twice) plus the droveway waypost and the ash shrine; §7 proves 0 of 18 town locations appear in `SpawnPools`, and all five `SafeRespawn` towns keep empty pools. |
+| 4–6 barks per town, none a quest hook | 5 per town, 20 total. None names an NPC, a reward, a destination or a task; each is enter/idle flavour. The shrine has no ambient set and §4.5 says why. |
 | Every canon proposal numbered with a destination file | P1–P4, each with one destination in `world-lore-plan.md` and a wiki mirror. |
-| No name collides with an existing NPC, archetype or zone slug | 31 slugs and 13 names checked against all 213 seeded slugs, including edit-distance-1: PASS. |
+| No name collides with an existing NPC, archetype or zone slug | 31 slugs and 13 names checked against all 213 seeded slugs at approval, including edit-distance-1: PASS. The 2026-11-22 additions — two archetype slugs, two placement ids, two dialogue ids and one byname — are checked by `scripts/check-content-names.mjs` (authority, seeded and authored names, all three directions) and by the placement parse in §7's second block. |
