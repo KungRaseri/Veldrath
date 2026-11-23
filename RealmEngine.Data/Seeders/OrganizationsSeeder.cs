@@ -71,6 +71,35 @@ public static class OrganizationsSeeder
                     QuestGiver       = true,
                     PoliticalFaction = true,
                 },
+            },
+            // The goblin packs of the Ashlen Wood and the Droveway answer to a chief, not to a syndicate.
+            // Organization has no description column, so that sentence lives here; the slug is what the elder
+            // goblin chief's FactionOverride resolves against.
+            new Organization
+            {
+                Slug         = "goblin-warband",
+                TypeKey      = "warbands",
+                DisplayName  = "Goblin Warband",
+                OrgType      = "faction",
+                RarityWeight = 40,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new OrganizationStats
+                {
+                    MemberCount                 = 40,
+                    Wealth                      = 300,
+                    ReputationThresholdFriendly = 50,
+                    ReputationThresholdHostile  = -20,
+                },
+                Traits = new OrganizationTraits
+                {
+                    Hostile          = true,
+                    Joinable         = false,
+                    HasShop          = false,
+                    QuestGiver       = false,
+                    PoliticalFaction = false,
+                },
             }
     ];
 }

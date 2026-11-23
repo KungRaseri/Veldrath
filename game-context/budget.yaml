@@ -20,6 +20,10 @@
 # merchants.wiring.gold's merchant-purse contrast reworded 2026-11-20 by the same card (review
 #   round 2): it said the hostile `gold:` in the wiring block "is still not projected", which
 #   #173 made false; it is the per-kill reward and it is live. No band value moved.
+# wiring.damage_per_hit's named-instance examples corrected 2026-11-22 by card t_841a4822: the two
+#   seeded bosses' damage overrides were boss-banded to 16 (elder-goblin-chief, b4-6 x2 floor of 8)
+#   and 20 (captain-blackthorn, b7-10 x2 floor of 10) in ActorInstancesSeeder, so the detail's
+#   "12 … 18" examples were stale. No band value moved.
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
 
@@ -28,7 +32,8 @@ status: >-
   approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20;
   b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20;
   wiring.hp/xp/gold corrected to live 2026-11-20; wiring.damage_per_hit corrected to live and
-  omitted.mana reworded 2026-11-20; merchants.wiring.gold's hostile-gold contrast corrected 2026-11-20
+  omitted.mana reworded 2026-11-20; merchants.wiring.gold's hostile-gold contrast corrected 2026-11-20;
+  wiring.damage_per_hit's named-instance examples re-based to 16/20 2026-11-22
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
@@ -173,8 +178,8 @@ wiring:
     live: true
     detail: >-
       Stats.Damage lands on Enemy.BasePhysicalDamage (ActorTemplateProjection.cs:128-131 — the
-      archetype value, or a named instance's override composed over it: 12 for elder-goblin-chief
-      and 18 for captain-blackthorn, ActorInstancesSeeder.cs:114, :141). CombatHelpers.cs:88-95
+      archetype value, or a named instance's override composed over it: 16 for elder-goblin-chief
+      and 20 for captain-blackthorn, ActorInstancesSeeder.cs:114, :141). CombatHelpers.cs:88-95
       adds enemy level minus one and floors the level-scaled base at one. Constitution reduces
       that base by a nonnegative amount, defending blocks half the scaled base (rounded down),
       and the final damage cannot drop below one. Every hostile seeded

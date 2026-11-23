@@ -27,6 +27,7 @@ public class ContentOrganizationAndWorldCatalogEndpointTests(WebAppFactory facto
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<OrganizationDto>>();
         items.Should().Contain(o => o.Slug == "iron-anvil-guild" && o.OrgType == "guild");
+        items.Should().Contain(o => o.Slug == "goblin-warband");
     }
 
     [Fact]
