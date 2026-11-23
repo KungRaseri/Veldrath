@@ -462,8 +462,8 @@ two.
 | `ash-eater` | Ash Eater | Works the chamber for what the fire leaves and has grown too heavy to leave with it. | 26–30 (spans `b23-26` and `b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `fire-ancients-chamber` | yes | bruiser |
 | `maw-serpent` | Maw Serpent | Lies in the seam under the Maw's last floor, where the heat comes up, and does not need to move until something else does. | 28–30 (`b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `kaldreks-heart` (The Heart of the Maw) | yes | melee, reach |
 
-No row is a boss. No row carries a stat number. Roster totals including the tail: **32 hostile, 27
-non-hostile** — the totals table above is left as approved for 1–20 and is not rewritten.
+No row is a boss. No row carries a stat number. Roster totals including the tail: **32 hostile, 17
+non-hostile** (49 rows) — the totals table above is left as approved for 1–20 and is not rewritten.
 
 ### Band coverage — tail only
 
