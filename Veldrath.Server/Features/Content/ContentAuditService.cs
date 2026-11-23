@@ -101,13 +101,20 @@ public sealed class ContentAuditService : BackgroundService
             .Select(edge => new MapEdgeReference(edge.MapId, edge.FromNodeId, edge.ToNodeId))
             .ToListAsync(cancellationToken);
 
-        var mapEntities = await db.Maps.AsNoTracking()
+        // Nodes are projected as flat (map, node) pairs instead of being read through each map's `Nodes`
+        // navigation. A navigation is only populated by Include, and this context does not lazy-load, so reading
+        // `map.Nodes` off a plain Maps query yields an empty collection for every map — that made the edge rule
+        // report both ends of every edge as missing on a perfectly seeded database. A flat pair projection also
+        // needs no SQL APPLY, so it translates on SQLite (see the remark above).
+        var nodePairs = await db.MapNodes.AsNoTracking()
+            .Select(node => new { node.MapId, node.Id })
             .ToListAsync(cancellationToken);
 
-        var nodeIdsByMap = mapEntities
+        var nodeIdsByMap = nodePairs
+            .GroupBy(node => node.MapId, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
-                map => map.Id,
-                map => (IReadOnlySet<string>)map.Nodes
+                group => group.Key,
+                group => (IReadOnlySet<string>)group
                     .Select(node => node.Id)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase),
                 StringComparer.OrdinalIgnoreCase);
