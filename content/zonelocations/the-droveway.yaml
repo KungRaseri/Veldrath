@@ -98,5 +98,5 @@ entities:
       safeRespawn: true
       isIndoor: false
     # Empty by design: the zone's SafeRespawn point. The design places a wayfarer-elder here as a
-    # LocationNpc, not a pool entry; no placement is seeded at this location yet (card t_f0a0ea8c).
+    # LocationNpc, not a pool entry.
     actorPool: []
