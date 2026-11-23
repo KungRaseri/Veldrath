@@ -60,8 +60,9 @@ Static store: `ConcurrentDictionary<Guid, ActiveCombatSession>` keyed by `Charac
 - **`ServerCharacter` alias**: `CombatHelpers.cs` needs `using ServerCharacter = Veldrath.Server.Data.Entities.Character;` to avoid ambiguity with engine's `Character` model
 
 #### `ActorPoolResolver.cs`
-Injectable (Scoped). Depends on `EnemyGenerator`.
-- `SpawnRosterAsync(IReadOnlyList<ActorPoolEntry>?)` → 2–4 enemies via weighted random selection from the pool
+Injectable (Scoped). Depends on `EnemyGenerator` (required); `ILogger<ActorPoolResolver>`, `IRandomSource` (defaults to `SystemRandomSource.Shared`) and `IActorInstanceRepository` are optional.
+- `SpawnRosterAsync(IReadOnlyList<ActorPoolEntry>? pool, IReadOnlyList<PlacedActorInstance>? placements = null)` → every **hostile** placement once, then weighted pool draws filling out to a rolled **2–4** (a weight `<= 0` counts as 1). The roll is a fill target, not a cap: five hostile placements give five actors, placements alone are never topped up, and neither pool nor placements means an empty roster (a safe town) rather than a default archetype
+- Hostile filter: a placement or a pool entry whose archetype is explicitly non-hostile is logged and skipped, never turned into a target and never replaced (a missing `hostile` trait still counts as hostile)
 - Registered in `Program.cs`: `builder.Services.AddScoped<ActorPoolResolver>();`
 
 #### `CombatHelpers.cs`
