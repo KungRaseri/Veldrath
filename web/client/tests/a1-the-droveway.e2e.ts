@@ -125,6 +125,14 @@ interface RosterRow {
  * Road too (`encounters.e2e.ts`). A row with a participant is somebody's current fight, and killing it would end
  * their combat — so the spec treats those as off limits rather than racing them.
  *
+ * The read is deliberately not scoped to one group: the store spawns a location's roster per `ZoneGroup` and only
+ * when that group has no rows at all (`EfCoreEnemyInstanceStore.GetAliveOrSpawnAsync`), and a client only loads the
+ * group its connection joined. So a location can hold two copies — one written when the character walked in carrying
+ * the previous zone's group, one under `zone:<zone>_normal` — and a reused stack can keep a copy drawn from an older
+ * pool revision, because a stored roster is revived, never re-rolled. Every copy at this location is still a draw
+ * this zone's pool once allowed; the panel is what decides which of them the journey may actually fight (see
+ * {@link findShownTarget}).
+ *
  * @param sql The open reader.
  * @param locationSlug Location to read.
  * @returns The living enemies there, oldest spawn first.
@@ -281,29 +289,71 @@ async function findRowByName(page: Page, name: string): Promise<Locator | null> 
 }
 
 /**
- * Picks the enemy to fight: a design-only pool draw if one is free, otherwise the last free pool draw.
+ * Orders the free draws the journey is willing to fight, best first.
  *
  * "Free" means no character is already in a fight with that row — see {@link readRoster}. The Drove Road has no
  * authored placements, so every row it can offer is a pool draw by definition; this still filters on membership so a
  * placement added later cannot quietly become this spec's target.
  *
+ * The two archetypes only the pack names come first, because a row carrying one of them is a draw from the imported
+ * pool by construction ({@link DESIGN_ONLY_ARCHETYPES}). The whole list is returned rather than one row because the
+ * stored roster is the union of every `ZoneGroup` that has written this location, while the Local panel renders only
+ * the group this connection joined — a preferred draw can sit in the copy the panel cannot show, and the journey has
+ * to fall through to a draw it can really click instead of retrying the same invisible one.
+ *
+ * Rows are deduplicated by name because the panel renders one row per name and {@link findRowByName} resolves to the
+ * last of them; two rows of one archetype are interchangeable, and offering both would only make the spec try the
+ * same panel row twice.
+ *
  * @param roster The living roster.
- * @returns The row to engage, or `null` when every draw is taken or there is none.
+ * @returns The candidates in the order to try them; empty when every draw is taken or there is none.
  */
-function pickTarget(roster: RosterRow[]): RosterRow | null {
+function orderTargets(roster: RosterRow[]): RosterRow[] {
 	const free = roster.filter(
 		(row) => row.participants === 0 && POOL_ARCHETYPES.includes(row.archetype)
 	);
-	if (free.length === 0) return null;
 
-	const designOnly = free.filter((row) => DESIGN_ONLY_ARCHETYPES.includes(row.archetype));
-	const pool = designOnly.length > 0 ? designOnly : free;
+	const ordered: RosterRow[] = [];
+	const take = (row: RosterRow) => {
+		if (!ordered.includes(row)) ordered.push(row);
+	};
 
-	return pool[pool.length - 1];
+	for (const row of free) if (DESIGN_ONLY_ARCHETYPES.includes(row.archetype)) take(row);
+	for (const row of free) take(row);
+
+	const seen = new Set<string>();
+	return ordered.filter((row) => {
+		if (seen.has(row.name)) return false;
+		seen.add(row.name);
+		return true;
+	});
 }
 
 /**
- * Waits for a free pool draw to be standing at the Drove Road, stepping out and back as needed.
+ * Finds the first ordered candidate the client's Local panel actually shows.
+ *
+ * The stored roster and the panel are two views of the same location: the panel lists the group this connection
+ * joined, while the rows above are every group's copy (see {@link readRoster}). Resolving through the panel is what
+ * keeps the spec on a row a player can really click, without pretending the extra copies are not there.
+ *
+ * @param page The game page.
+ * @param sql The open reader.
+ * @returns The panel row to engage and the stored row behind it, or `null` when nothing ordered is on screen.
+ */
+async function findShownTarget(
+	page: Page,
+	sql: Sql
+): Promise<{ row: Locator; target: RosterRow } | null> {
+	for (const target of orderTargets(await readRoster(sql, ENCOUNTER_LOCATION))) {
+		const row = await findRowByName(page, target.name);
+		if (row) return { row, target };
+	}
+
+	return null;
+}
+
+/**
+ * Waits for a free pool draw the panel can engage, stepping out and back as needed.
  *
  * The respawn sweeper is on its own clock (2s in the isolated stack), and a revived row reaches the Local panel only
  * when the client re-reads the location — so this refreshes, then polls, rather than assuming one round-trip is enough.
@@ -319,23 +369,15 @@ async function waitForTarget(
 	attempts = 8
 ): Promise<{ row: Locator; target: RosterRow } | null> {
 	for (let attempt = 0; attempt < attempts; attempt += 1) {
-		const target = pickTarget(await readRoster(sql, ENCOUNTER_LOCATION));
-
-		if (target) {
-			const row = await findRowByName(page, target.name);
-			if (row) return { row, target };
-		}
+		const found = await findShownTarget(page, sql);
+		if (found) return found;
 
 		await walkTo(page, MAP_NODES.arrival);
 		await walkTo(page, MAP_NODES.encounter);
 		await page.waitForTimeout(1_500);
 	}
 
-	const target = pickTarget(await readRoster(sql, ENCOUNTER_LOCATION));
-	if (!target) return null;
-
-	const row = await findRowByName(page, target.name);
-	return row ? { row, target } : null;
+	return findShownTarget(page, sql);
 }
 
 test.describe('A1 — The Droveway pools', () => {
