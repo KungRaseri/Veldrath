@@ -435,7 +435,7 @@
 						<button
 							class="btn preset-filled-primary-500"
 							type="button"
-							disabled={session.combat.active}
+							disabled={session.combat.active || session.dead}
 							onclick={() => session.useItem(ownedItem!.itemRef)}
 						>
 							<FlaskConical size={14} aria-hidden="true" />

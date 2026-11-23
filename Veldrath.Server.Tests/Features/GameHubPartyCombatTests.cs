@@ -672,6 +672,51 @@ public class GameHubPartyCombatTests : IDisposable
             .Contain(m => m.Method == "QuestLogReceived", "the ally's journal is pushed to their own connection");
     }
 
+    [Fact]
+    public async Task AttackEnemy_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new AttackEnemyHubResult
+        {
+            Success = true,
+            EnemyRemainingHealth = 12,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.AttackEnemy();
+
+        // The turn carries the death; the end event is what closes the shell's combat panel. Order matters to the
+        // client, which applies the death penalty from the turn and only then drops the panel.
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
+    }
+
+    [Fact]
+    public async Task AttackEnemy_On_A_Survived_Turn_Does_Not_End_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(Guid.NewGuid());
+        mediator.Returns(new AttackEnemyHubResult
+        {
+            Success = true,
+            EnemyRemainingHealth = 12,
+            PlayerRemainingHealth = 18,
+        });
+
+        await hub.AttackEnemy();
+
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "CombatEnded");
+    }
+
     // ── Combat: DefendAction ─────────────────────────────────────────────────
 
     [Fact]
@@ -740,6 +785,30 @@ public class GameHubPartyCombatTests : IDisposable
                 PlayerRemainingHealth = 29,
                 PlayerDefeated = false,
             });
+    }
+
+    [Fact]
+    public async Task DefendAction_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new DefendActionHubResult
+        {
+            Success = true,
+            EnemyDamage = 9,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.DefendAction();
+
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
     }
 
     // ── Combat: FleeFromCombat ───────────────────────────────────────────────
@@ -827,6 +896,32 @@ public class GameHubPartyCombatTests : IDisposable
             EnemyAbilityUsed = "Bite",
             PlayerRemainingHealth = 26,
         });
+    }
+
+    [Fact]
+    public async Task FleeFromCombat_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new FleeFromCombatHubResult
+        {
+            Success = true,
+            Fled = false,
+            EnemyDamage = 9,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.FleeFromCombat();
+
+        // The failed escape did not open a door, but the counter-attack ended the fight: the panel must close.
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
     }
 
     // ── Combat: UseAbilityInCombat ───────────────────────────────────────────
@@ -929,6 +1024,31 @@ public class GameHubPartyCombatTests : IDisposable
             .OfType<AdvanceQuestObjectivesHubCommand>().Single();
         advance.Kind.Should().Be("kill");
         advance.Key.Should().Be("Goblin");
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyRemainingHealth = 4,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
     }
 
     // ── Combat: Respawn ──────────────────────────────────────────────────────

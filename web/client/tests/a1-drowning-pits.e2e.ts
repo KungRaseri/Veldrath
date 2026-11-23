@@ -499,11 +499,10 @@ async function waitForTarget(
 /**
  * Takes one turn-based fight to its conclusion, attacking or defending.
  *
- * The shared `fightToVictory` helper reads "the combat panel went away" as the only ending, which is true when the
- * *enemy* dies — but a player death leaves the panel on screen with the Respawn banner above it, so a lost fight would
- * fail that helper's final assertion instead of being reported as the loss it is. Here the death banner (or the
- * Respawn action) is the defeat signal and the panel hiding is the victory signal, both taken from the turn the server
- * broadcasts.
+ * The shared `fightToVictory` helper reads "the combat panel went away" as the only ending — but both endings close
+ * the panel: a victory hides it, and a death hides it too because the server ends the fight with `CombatEnded`. So
+ * hiding alone cannot tell a win from a loss. Here the death banner (or the Respawn action) is the defeat signal and
+ * the panel hiding is the victory signal, both taken from the turn the server broadcasts.
  *
  * @param page The game page.
  * @param mode `attack` to try to win, `defend` to lose on purpose.
@@ -538,13 +537,12 @@ async function fight(page: Page, mode: 'attack' | 'defend'): Promise<'victory' |
  * Leaves a defeated character back in the fight.
  *
  * `Respawn` is the zone's own path: it restores a quarter of the bar, puts the character at the zone's `SafeRespawn`
- * location (The Pit Descent) and clears the combat session server-side. The browser does not follow on its own:
- * `CombatEnded` is only broadcast when fleeing, so a defeat leaves `session.combat.active` true — the combat panel
- * stays on screen, the map is not rendered and the sheet keeps the pre-respawn 0 HP. A reload is what a player does to
- * get their map back. (Follow-up: the shell should close the panel when the server ends the fight.)
+ * location (The Pit Descent) and clears the combat session server-side. The browser follows on its own now: the death
+ * ends the fight with `CombatEnded`, so the panel closes and the map comes back, and `CharacterRespawned` re-reads the
+ * restored bar. Nothing here reloads.
  *
- * After the reload the character stands on the node it fell on, because the respawn writes the zone *location* and not
- * the map node (follow-up t_990e7186); stepping out to Arrival and back is what re-reads the room it is really in.
+ * The map node is still the one the character fell on, because the respawn writes the zone *location* and not the map
+ * node (follow-up t_990e7186); stepping down to the lobby and back is what re-reads the room it is really in.
  *
  * @param page The game page.
  * @param sql The open reader.
@@ -567,10 +565,15 @@ async function respawnAndReturn(page: Page, sql: Sql, characterId: string): Prom
 		'the respawn must move the character to the zone’s safe location'
 	).toBe(LOBBY_LOCATION);
 
-	await page.reload();
+	// The shell closed the panel from the server's `CombatEnded` and re-read the restored bar from the respawn
+	// payload, so the map exists again without a page load and the sheet names the health the server wrote.
+	await expect(page.getByRole('heading', { name: /Combat/ })).toBeHidden({ timeout: 20_000 });
+	expect(
+		(await readHealth(page)).current,
+		'the sheet must show the health the respawn restored'
+	).toBe(restored.current);
 	await expect(page.locator('.map-node-cell button').first()).toBeVisible({ timeout: 30_000 });
 
-	expect(await walkTo(page, MAP_NODES.arrival)).toBe(true);
 	expect(await walkTo(page, MAP_NODES.pitDescent)).toBe(true);
 	expect(await walkTo(page, MAP_NODES.workings)).toBe(true);
 }

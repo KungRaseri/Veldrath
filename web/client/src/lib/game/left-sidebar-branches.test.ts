@@ -351,6 +351,20 @@ describe('inventory', () => {
 		expect(drop).toHaveBeenCalled();
 	});
 
+	it('hides the use button while the character is dead, even out of combat', () => {
+		const session = sheet();
+		session.dead = true;
+		session.combat = { active: false, enemy: null, log: [] };
+		session.inventory = [
+			inventoryItem({ itemRef: 'potion', name: 'Healing potion', slot: null, effect: 'heal' })
+		];
+		render(LeftSidebar, { session });
+
+		// A death closes combat now, so this state is the normal one after a defeat; a live Use button
+		// there would let a dead character heal, leaving RespawnHubCommand refusing them.
+		expect(screen.queryByRole('button', { name: 'Use Healing potion' })).toBeNull();
+	});
+
 	it('only offers Equip while a character is selected', () => {
 		const session = sheet();
 		session.character = null;

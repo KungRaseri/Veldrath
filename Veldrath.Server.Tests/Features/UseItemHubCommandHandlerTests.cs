@@ -162,6 +162,23 @@ public class UseItemHubCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_RefusesToUseAnItem_WhenTheCharacterIsDead()
+    {
+        // Death is a stored state (CurrentHealth 0); a heal here would leave the client's death banner
+        // stuck while RespawnHubCommand refuses anyone above 0 HP.
+        var character = Character(attributes: """{"CurrentHealth":0,"MaxHealth":100,"CurrentMana":10,"MaxMana":60}""");
+        var (handler, characters, _) = Arrange(character, Consumable("heal", 25));
+
+        var result = await handler.Handle(Command(character), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("You cannot use items while dead.");
+        characters.Verify(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()), Times.Never);
+        JsonSerializer.Deserialize<List<InventoryItemDto>>(character.InventoryBlob)!
+            .Should().ContainSingle().Which.Quantity.Should().Be(2);
+    }
+
+    [Fact]
     public async Task Handle_ClampsHealingAtTheMaximumHealth_AndRemovesTheLastUnit()
     {
         var character = Character(quantity: 1, attributes: """{"CurrentHealth":95,"MaxHealth":100}""");

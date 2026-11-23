@@ -137,6 +137,14 @@ public class UseItemHubCommandHandler : IRequestHandler<UseItemHubCommand, UseIt
         var mana = attributes.GetValueOrDefault(KeyCurrentMana, 0);
         var maxMana = attributes.GetValueOrDefault(KeyMaxMana, 0);
 
+        // Death is a stored state (`CombatHelpers` writes CurrentHealth 0), not a health floor. A dead
+        // character must not drink their way back: only `CharacterRespawned` clears the client's death
+        // banner, and `RespawnHubCommand` refuses a character above 0 HP, so a heal here would strand
+        // the player behind a disabled map until a reload. A missing key is not a death — blobs written
+        // before the vitals were tracked have no CurrentHealth entry.
+        if (attributes.ContainsKey(KeyCurrentHealth) && health <= 0)
+            return Fail("You cannot use items while dead.");
+
         var applied = ApplyEffect(catalogItem, ref health, maxHealth, ref mana, maxMana, out var message);
         if (!applied)
             return Fail(message);
