@@ -251,6 +251,46 @@ than a birth name.
 | Raekdaeld | *raek* (light-in-material) + *daeld* (ash) — "glowing ash", the byname for ash-glass |
 | Kaendaeld | *kaen* (duty) + *daeld* (ash) — "duty to the ash" |
 
+## The two townspeople outside the town rosters
+
+`towns.md` §4 places the thirteen people who stand at a settlement location. Two `§` rows in the table
+above were never in that roster, because neither stands in a town: `dock-hand` and `shrine-keeper`. Both
+rows, their identity lines and their naming derivations are unchanged and approved as written; what did
+not exist was a stand, the role flags a seeder needs, and a voice. Those are `towns.md` §4.3 (Tolvaren's
+harbour) and §4.5 (the Ash Shrine), and the table below is the roster-side statement of the same decision
+so that this document remains the place a seeder author checks a `§` row against.
+
+| slug | type key | traits | stands at | that location's band | `SortOrder` | renders as |
+|---|---|---|---|---|---|---|
+| `dock-hand` | `townspeople` | non-hostile, immortal, `HasDialogue`; `Shopkeeper` **false**, `QuestGiver` **false** | `tolvaren` / `tolvaren-harbour` | b7-10 (`MinLevel` 10, no `MaxLevel`) | 20 | **Geldern** — the archetype's `DisplayName` carries the byname, as every D3 row does |
+| `shrine-keeper` | `townspeople` | non-hostile, immortal, `HasDialogue`; `Shopkeeper` **false**, `QuestGiver` **true** | `ashfields` / `ash-shrine` | b19-22 (`MinLevel` 20, `MaxLevel` 25) | 10 | **Shrine Keeper** — no byname, deliberately; `towns.md` §4.5 gives the reason |
+
+Three things in that table are decisions, and each has a reason worth stating rather than inferring:
+
+- **No band is added to either row, and the location's band is context only.** A `§` row's level-band cell
+  is `—` by *How to read this table*, and the seeded shape for a townsperson is `MinLevel`/`MaxLevel` 1 —
+  all thirteen seeded ones carry it, including the six who stand in the level-10 and level-18 towns. A
+  non-hostile archetype never enters a pool, so the overlap guard that reads a range never reads this
+  one. The band above is the band the location's own `MinLevel` falls in, quoted so a seeder author can
+  see the stand is legal — not so a range can be invented out of it. The seeding card copies
+  `Townsperson(...)`, which sets 1/1 for exactly this reason.
+- **`QuestGiver` splits the two.** The roster calls `shrine-keeper` a quest hook and `dock-hand` a labourer
+  with a rumour, and `QuestGiver` is a trait the client reads to offer a quest
+  (`NpcHubCommands.NpcPlacements.ToDto`). A rumour with no quest behind it stays `false` until a quest
+  names him; turning it on now would offer a quest that does not exist.
+- **`Shopkeeper` is false for both, and at Tolvaren that is load-bearing.** The zone flag is on
+  (`tolvaren` seeds `HasMerchant = true`) and `ShopMerchantResolver` then resolves a shop from a placement
+  at the character's own location whose archetype carries `Shopkeeper`. Tolvaren's shelf belongs to
+  `cliff-road-market`; a shopkeeper standing at `tolvaren-harbour` would open a second trade surface at
+  the town's respawn point. Neither of these two takes coin, and `harbour-master` is the roster's existing
+  precedent for a Tolvaren townsperson who trades nothing.
+
+**Neither slug is in `ArchetypeSeeder.cs`**, which is why `towns.md` marks both `(new)` while this roster
+already lists them: the roster row is authored, the seeded row belongs to a later card. The order is
+archetypes, then placements, then greetings — a placement naming an archetype that does not exist imports
+as a dangling reference and logs an Error at runtime, and a greeting whose `Speaker` has no archetype is
+never picked. `pool-matrix.md` §6 states the same order for the hostile rows.
+
 ## Numbered canon proposals
 
 Separate from the table above. **Nothing in the table depends on proposals 3, 4, 5, 7 or 8** — those

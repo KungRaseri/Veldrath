@@ -267,7 +267,7 @@ of §3: 28 pooled + 26 quiet = the seeder's 54 world locations.
 | `grevenmire` | `sunken-estate` | 3–6 | b1-3 | SafeRespawn. Respawn point inside Grevenmire; note the seed lists it as a candidate hostile location in plans/content-seeding-pass.md:71 — that line is stale. |
 | `aldenmere` | `ironhollow-keep` | 5–12 | b4-6 | SafeRespawn + IsTown. Aldenmere's keep and respawn point. |
 | `pale-moor` | `moorstone-cairns` | 7–12 | b7-10 | SafeRespawn. Respawn point on the Pale Moor — the one safe ground in the zone the wights walk. |
-| `tolvaren` | `tolvaren-harbour` | 10+ | b7-10 | SafeRespawn + IsTown. Saltcliff's respawn point; dock-hand is placed here as an NPC. |
+| `tolvaren` | `tolvaren-harbour` | 10+ | b7-10 | SafeRespawn + IsTown. Saltcliff's respawn point; two people are placed here as NPCs — `harbour-master` (seeded) and `dock-hand` (`towns.md` §4.3, 2026-11-22). Neither is a pool entry. |
 | `saltcliff-heights` | `clifftop-ruins` | 14–20 | b11-14 | SafeRespawn. Respawn point on the Saltcliff Heights. |
 | `skarhold` | `forge-quarter` | 18+ | b15-18 | SafeRespawn + IsTown. Skarhold's respawn point and forge/shop location. |
 | `ashfields` | `obsidian-grove` | 20–25 | b19-22 | SafeRespawn since 2026-11-20 (amendment 4): the ashfields respawn point, moved here from `scorched-battlefield`. It is the node nearest the zone's arrival point, so it is what a dead character walks out of. |
@@ -277,7 +277,7 @@ of §3: 28 pooled + 26 quiet = the seeder's 54 world locations.
 
 | zone | location | level range | band | why it must stay empty |
 |---|---|---|---|---|
-| `ashfields` | `ash-shrine` | 20–25 | b19-22 | SafeRespawn since 2026-11-20 (amendment 3): a keeper-only shrine is a rest point, not a spawn. `shrine-keeper` is a `LocationNpc` row (D1), never a pool entry. It is also `IsHidden` + quest-unlocked, so the hidden-filtered zone query never offers it as the ashfields respawn anchor — that stays `obsidian-grove`. |
+| `ashfields` | `ash-shrine` | 20–25 | b19-22 | SafeRespawn since 2026-11-20 (amendment 3): a keeper-only shrine is a rest point, not a spawn. Its only population is `shrine-keeper` — a `§` row in D1, and a `LocationNpc` row since 2026-11-22 (`ashfields-ash-shrine-keeper`, `towns.md` §4.5), never a pool entry. The exclusion rests on two traits rather than one: `SafeRespawn` and the NPC-only class below. It is also `IsHidden` + quest-unlocked, so the hidden-filtered zone query never offers it as the ashfields respawn anchor — that stays `obsidian-grove`. |
 
 ### Settlements (9) — `IsTown`
 
@@ -302,12 +302,15 @@ under its strongest reason. The four classes add up to the 26: **5 lobbies + 11 
 
 That test adds **one location, and it is counted above rather than here** — `ash-shrine`, which is
 keeper-only and is counted under the shrine class so it is not counted twice. Before 2026-11-20 the class
-had no live member: every NPC-only location in the seed is also a town (inn, market, square, lodge,
+had no live member: every NPC-only location in the seed was also a town (inn, market, square, lodge,
 quarter), and NPCs are placed by `LocationNpc` rows keyed by zone + location, never by pool entries
 (`plans/content-seeding-pass.md` §People). D1 marks every non-hostile roster row `§` and says it never
 enters a pool — 17 rows once D3's ten townspeople landed. **None of them may enter a pool either way**,
 so the class changes no pool. It exists in this file so a future NPC-only location is excluded by rule
-rather than by memory — which is exactly how `ash-shrine` got its pool removed.
+rather than by memory — which is exactly how `ash-shrine` got its pool removed. **Since 2026-11-22 the
+class has a live member in fact and not only in intent:** the shrine's only population is `shrine-keeper`,
+placed there by `towns.md` §4.5, so the keeper-only heading above describes a location that now keeps
+somebody.
 
 ## 5. Coverage
 
@@ -347,6 +350,12 @@ e2e fixtures, not world content, and this matrix neither covers nor changes them
 world zones is fully accounted for: no hostile location is unpooled, no safe location is pooled.
 
 ## 6. Archetype coverage — every roster archetype gets a place
+
+This table is the **hostile** roster. A `§` row never enters a pool, so it has no column here: it is placed
+as a `LocationNpc` row instead, and §4 names the two the exclusions above are built on — `dock-hand` at
+`tolvaren-harbour` and `shrine-keeper` at `ash-shrine` (`towns.md` §4.3 and §4.5). The other fifteen `§`
+rows are `towns.md` §4.1–4.4 (thirteen placements) plus `market-factor` and `gate-watch`, which stand
+nowhere yet.
 
 | archetype | band | pools containing it | count |
 |---|---|---|---|
