@@ -1025,21 +1025,21 @@ carried forward from the session-44 snapshot (that one said 23 / 130 / 196 and i
   `MapGraphImportModels.cs` (catalog/report records), and the only remaining reference to those types is
   `RealmEngine.Data.Tests/DataLayerStubAndReportTests.cs` — nothing produces a `MapGraphImportCatalog` any more.
   `RealmEngine.Data/Authoring/ContentPacks/ContentPackImporter.cs` is the content-pack importer and unrelated.
-- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` authors the graph directly: **23 maps (4 region + 19 zone), 135
-  nodes, 210 edges**, plus a seed-time walk chain (`ConnectZoneEntriesToLocations`) and the hidden-node bypass
-  (`ConnectVisibleLocationsAcrossHiddenNodes`) that add **94 more `Walk` edges — 304 edges once seeded**.
-  `MapGraphSeederTests` asserts 23 / 135 / 304 and idempotency. Measured on a fresh `--fresh` e2e stack
+- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` authors the graph directly: **23 maps (4 region + 19 zone), 136
+  nodes, 212 edges**, plus a seed-time walk chain (`ConnectZoneEntriesToLocations`) and the hidden-node bypass
+  (`ConnectVisibleLocationsAcrossHiddenNodes`) that add **94 more `Walk` edges — 306 edges once seeded**.
+  `MapGraphSeederTests` asserts 23 / 136 / 306 and idempotency. Measured on a fresh `--fresh` e2e stack
   2026-11-23, not carried forward: the same sentence read 134 / 208 / 298 while the test already asserted 302.
-- Nodes by type: `EntryPoint` 24, `Zone` 18, `RegionExit` 17, `Location` 67, `ZoneExit` 10. Eighteen `Zone` nodes
+- Nodes by type: `EntryPoint` 23, `Zone` 18, `RegionExit` 17, `Location` 67, `ZoneExit` 11. Eighteen `Zone` nodes
   for nineteen zone maps because `playground` (`IsDevOnly`) sits on no region map.
-- Edges by type once seeded: `Walk` 246, `ExitToRegion` 35, `ExitToZone` 23.
+- Edges by type once seeded: `Walk` 246, `ExitToRegion` 35, `ExitToZone` 25.
 - **A live zone being targeted is not the same as being walkable into.** `LinkRegionZonesToZoneMaps` gives every
   region `Zone` node a `TargetMapId`, so `MapGraphValidator`'s `map_unreachable` never fires for a zone whose only
   inbound target is its region node — and the region board is not a through-route: `region:varenmark`'s entry node
   is adjacent to `zone:crestfall` alone, and every `Zone` node on the board enters its zone. The Drowning Pits was
   unreachable on foot until `zone:grevenmire:exit:zone:drowning-pits` (a `ZoneExit` on the Sunken Estate, the same
-  shape as `ashlen-wood → grevenmire`) landed in t_a39b46eb. `the-halrow` still has only its region node, so the
-  same repair is needed before a Halrow journey can walk in.
+  shape as `ashlen-wood → grevenmire`) landed in t_a39b46eb, and the Halrow got the same repair in t_835e7914
+  (`zone:the-droveway:exit:zone:the-halrow` on the Weathered Waypost).
 - The chain is per zone map: entry → each `Location` node in `SortOrder`, one hop each way. 39 of those hop
   directions already existed as authored edges, and 5 were dropped because the source node already used all four
   cardinal directions (`zone:crestfall` 2, `zone:playground` 3). All 67 `Location` nodes still have a path from
