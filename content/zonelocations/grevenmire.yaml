@@ -31,12 +31,11 @@
 # bone-hollow is hidden behind a passive DC 8 check. That is a map trait and does not change its pool:
 # the design pools it, so this pack pools it.
 #
-# Reachability is NOT a property of this pack. The zone's entry chain currently runs
-# entry → bone-hollow → mire-crossing (MapGraphSeeder.ConnectZoneEntriesToLocations chains location
-# nodes in SortOrder, and bone-hollow sorts first at 20), and bone-hollow is hidden — so a character
-# arriving at Grevenmire can see mire-crossing's node but not travel to it. That is a map-graph defect
-# filed as its own card; the pools below are correct and importable independently of it, and no value
-# here was widened to work around it.
+# Reachability is NOT a property of this pack. The zone's entry chain runs entry → bone-hollow →
+# mire-crossing by SortOrder (bone-hollow sorts first at 20) and bone-hollow is hidden, so
+# MapGraphSeeder.ConnectVisibleLocationsAcrossHiddenNodes bypasses it with an entry ↔ mire-crossing
+# walk edge — which is what makes the zone walkable with the pools below exactly as the design
+# authored them. No value here was widened to make the journey pass.
 #
 # Coverage for this zone (design check, not a field the importer reads):
 #   locations 3 | pooled 2 (mire-crossing, bone-hollow) | excluded 1 (sunken-estate)

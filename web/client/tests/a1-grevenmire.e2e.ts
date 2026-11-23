@@ -168,6 +168,11 @@ interface RosterRow {
  * `EnemyInstances` is shared by every character in the zone scope, so a row with a participant is somebody's current
  * fight; killing it would end their combat. The spec treats those as off limits rather than racing them.
  *
+ * The read is deliberately not scoped to one group: the store has written rows for this location under more than one
+ * `ZoneGroup` (a character walking in still carried the previous group name when the spawn ran), and a client only
+ * loads the group it joined. Every copy at this location is the same pool's draw, so the read is the union — the
+ * panel is what decides which of them the journey may actually fight (see {@link findShownTarget}).
+ *
  * @param sql The open reader.
  * @param locationSlug Location to read.
  * @returns The living enemies there, oldest spawn first.
@@ -182,7 +187,8 @@ async function readRoster(sql: Sql, locationSlug: string): Promise<RosterRow[]> 
 		       e."Name" AS name,
 		       (SELECT count(*)::int FROM "EnemyParticipants" p WHERE p."EnemyInstanceId" = e."Id") AS participants
 		FROM "EnemyInstances" e
-		WHERE e."LocationSlug" = ${locationSlug} AND e."IsAlive" = true
+		WHERE e."LocationSlug" = ${locationSlug}
+		  AND e."IsAlive" = true
 		ORDER BY e."SpawnedAt", e."Id"
 	`;
 
@@ -374,7 +380,7 @@ async function findRowByName(page: Page, name: string): Promise<Locator | null> 
 }
 
 /**
- * Picks the enemy to fight.
+ * Orders the draws the journey is willing to fight, best first.
  *
  * With a full bar the character takes the card's representative encounter, a mire-boar, when the roll produced one.
  * Once the bar is no longer full it takes the cheapest draw standing ({@link FIGHT_ORDER}), because the pool's four
@@ -382,33 +388,69 @@ async function findRowByName(page: Page, name: string): Promise<Locator | null> 
  * fight — see {@link readRoster}; the Mire Crossing has no authored placements, so every row is a pool draw, and the
  * membership filter is what keeps a later placement from quietly becoming this spec's target.
  *
+ * Rows are deduplicated by name because the panel renders one row per name and {@link findRowByName} resolves to the
+ * last of them; two rows of one archetype are interchangeable, and offering both would only make the spec try the
+ * same panel row twice.
+ *
  * @param roster The living roster.
  * @param health The character's current and maximum health.
- * @returns The row to engage, or `null` when every draw is taken or there is none.
+ * @returns The candidates in the order to try them, or an empty list when every draw is taken or there is none.
  */
-function pickTarget(
-	roster: RosterRow[],
-	health: { current: number; max: number }
-): RosterRow | null {
+function orderTargets(roster: RosterRow[], health: { current: number; max: number }): RosterRow[] {
 	const free = roster.filter(
 		(row) => row.participants === 0 && POOL_ARCHETYPES.includes(row.archetype)
 	);
-	if (free.length === 0) return null;
 
 	const atFullStrength = health.current >= health.max * 0.9;
-	const boar = free.filter((row) => row.archetype === PREFERRED_ARCHETYPE);
-	if (atFullStrength && boar.length > 0) return boar[boar.length - 1];
+	const ordered: RosterRow[] = [];
+	const take = (row: RosterRow) => {
+		if (!ordered.includes(row)) ordered.push(row);
+	};
 
-	for (const archetype of FIGHT_ORDER) {
-		const row = free.find((candidate) => candidate.archetype === archetype);
-		if (row) return row;
+	if (atFullStrength) {
+		for (const row of free) if (row.archetype === PREFERRED_ARCHETYPE) take(row);
 	}
+	for (const archetype of FIGHT_ORDER) {
+		for (const row of free) if (row.archetype === archetype) take(row);
+	}
+	for (const row of free) take(row);
 
-	return free[free.length - 1];
+	const seen = new Set<string>();
+	return ordered.filter((row) => {
+		if (seen.has(row.name)) return false;
+		seen.add(row.name);
+		return true;
+	});
 }
 
 /**
- * Waits for a free pool draw to be standing at the Mire Crossing, stepping out and back as needed.
+ * Finds the first ordered candidate the client's Local panel actually shows.
+ *
+ * The stored roster and the panel are two views of the same zone: the panel lists the group this client joined, while
+ * the rows above are every group's copy at this location (a character can arrive still carrying the previous group
+ * name, so the store writes a second copy). Resolving through the panel is what keeps the spec on a row a player can
+ * really click, without pretending the extra copies are not there.
+ *
+ * @param page The game page.
+ * @param sql The open reader.
+ * @param health The character's current and maximum health.
+ * @returns The panel row to engage and the stored row behind it, or `null` when nothing ordered is on screen.
+ */
+async function findShownTarget(
+	page: Page,
+	sql: Sql,
+	health: { current: number; max: number }
+): Promise<{ row: Locator; target: RosterRow } | null> {
+	for (const target of orderTargets(await readRoster(sql, ENCOUNTER_LOCATION), health)) {
+		const row = await findRowByName(page, target.name);
+		if (row) return { row, target };
+	}
+
+	return null;
+}
+
+/**
+ * Waits for a free pool draw the panel can engage, stepping out and back as needed.
  *
  * The respawn sweeper is on its own clock (2s in the isolated stack), and a revived row reaches the Local panel only
  * when the client re-reads the location — so this refreshes, then polls, rather than assuming one round-trip is enough.
@@ -426,23 +468,15 @@ async function waitForTarget(
 	attempts = 8
 ): Promise<{ row: Locator; target: RosterRow } | null> {
 	for (let attempt = 0; attempt < attempts; attempt += 1) {
-		const target = pickTarget(await readRoster(sql, ENCOUNTER_LOCATION), health);
-
-		if (target) {
-			const row = await findRowByName(page, target.name);
-			if (row) return { row, target };
-		}
+		const found = await findShownTarget(page, sql, health);
+		if (found) return found;
 
 		await walkTo(page, MAP_NODES.safe);
 		await walkTo(page, MAP_NODES.encounter);
 		await page.waitForTimeout(1_500);
 	}
 
-	const target = pickTarget(await readRoster(sql, ENCOUNTER_LOCATION), health);
-	if (!target) return null;
-
-	const row = await findRowByName(page, target.name);
-	return row ? { row, target } : null;
+	return findShownTarget(page, sql, health);
 }
 
 /**
@@ -486,21 +520,88 @@ async function fight(page: Page, mode: 'attack' | 'defend'): Promise<'victory' |
 /**
  * Leaves a defeated character back in the fight.
  *
- * `Respawn` is the zone's own path: it restores a quarter of the bar and puts the character at the SafeRespawn
- * location, which is the Sunken Estate, and the walk back re-reads the Mire Crossing's roster.
+ * `Respawn` is the zone's own path: it restores a quarter of the bar, puts the character at the SafeRespawn
+ * location (the Sunken Estate) and clears the combat session server-side. The browser does not follow on its own:
+ * `CombatEnded` is only broadcast when fleeing, so a defeat leaves `session.combat.active` true — the combat panel
+ * stays on screen, the map is not rendered at all, and the sheet keeps the pre-respawn 0 HP. A reload is what a
+ * player does to get their map back, and it re-reads the row the server wrote. (Follow-up: the shell should close
+ * the panel when the server ends the fight, instead of waiting for a page load.)
  *
  * @param page The game page.
+ * @param sql The open reader.
+ * @param characterId Character that died.
  */
-async function respawnAndReturn(page: Page): Promise<void> {
+async function respawnAndReturn(page: Page, sql: Sql, characterId: string): Promise<void> {
 	await page.getByRole('button', { name: 'Respawn' }).click();
 	await expect(page.getByRole('button', { name: 'Respawn' })).toBeHidden({ timeout: 20_000 });
 
-	// The death path landing here is the SafeRespawn trait proving itself, not a stored field read back.
-	await expect(page.locator('button[aria-current="location"]')).toContainText('The Sunken Estate', {
-		timeout: 20_000
-	});
+	// What the server promised, read before the browser re-enters the zone: health restored and inside the bar, and
+	// the character moved to the location the pack marks `safeRespawn`. This is the trait proving itself in the store
+	// that owns it, not a projection of it.
+	const restored = await readStoredHealth(sql, characterId);
+	expect(restored.current, 'the respawn must restore health').toBeGreaterThan(0);
+	expect(restored.current, 'the respawn must stay inside the bar').toBeLessThanOrEqual(
+		restored.max
+	);
+	expect(
+		await readStoredLocation(sql, characterId),
+		'the respawn must move the character to the zone’s safe location'
+	).toBe(SAFE_LOCATION);
+
+	// Then the browser has to be brought back by hand: `CombatEnded` is only broadcast when fleeing, so a defeat
+	// leaves `session.combat.active` true — the combat panel stays on screen, no map renders at all, and the sheet
+	// keeps the 0 HP it had when the character fell. A reload is what a player does to get their map back, and it
+	// re-enters the zone at the arrival node, because the respawn moved the zone location but not the map node.
+	// The walk from there is exactly the bypass the graph now offers around the hidden Bone Hollow. (Follow-ups:
+	// the shell should close the panel when the server ends the fight, and the respawn should move the node too.)
+	await page.reload();
+	await expect(page.locator('.map-node-cell button').first()).toBeVisible({ timeout: 30_000 });
 
 	expect(await walkTo(page, MAP_NODES.encounter)).toBe(true);
+}
+
+/**
+ * Reads the location slug the server stored for a character.
+ *
+ * The respawn handler writes `CurrentZoneLocationSlug` directly (`UpdateCurrentZoneLocationAsync`), so this is the
+ * row the SafeRespawn trait is measured on — before any re-entry through the client overwrites it.
+ *
+ * @param sql The open reader.
+ * @param characterId Character to read.
+ * @returns The stored location slug, or `null` when the column is empty.
+ */
+async function readStoredLocation(sql: Sql, characterId: string): Promise<string | null> {
+	const rows = await sql<{ location: string | null }[]>`
+		SELECT "CurrentZoneLocationSlug" AS location FROM "Characters" WHERE "Id" = ${characterId}
+	`;
+
+	return rows[0]?.location ?? null;
+}
+
+/**
+ * Reads the health the server persisted for a character.
+ *
+ * `CombatHelpers.SerializeAttrs` keeps it in the `Attributes` text blob, which is the column the respawn handler
+ * wrote, so this is the server's answer rather than the sheet's projection of it.
+ *
+ * @param sql The open reader.
+ * @param characterId Character to read.
+ * @returns Current and maximum health as stored.
+ */
+async function readStoredHealth(
+	sql: Sql,
+	characterId: string
+): Promise<{ current: number; max: number }> {
+	const rows = await sql<{ attributes: string }[]>`
+		SELECT "Attributes" AS attributes FROM "Characters" WHERE "Id" = ${characterId}
+	`;
+
+	const attributes = JSON.parse(rows[0]?.attributes ?? '{}') as Record<string, number>;
+
+	return {
+		current: Number(attributes.CurrentHealth ?? 0),
+		max: Number(attributes.MaxHealth ?? 0)
+	};
 }
 
 test.describe('A1 — Grevenmire pools', () => {
@@ -691,7 +792,7 @@ test.describe('A1 — Grevenmire pools', () => {
 					// Not the assertion this spec is about; the encounter was simply lost. The respawn both
 					// exercises the zone's SafeRespawn point and restores a quarter of the bar, and the walk
 					// back re-reads the roster.
-					await respawnAndReturn(page);
+					await respawnAndReturn(page, sql, characterId);
 					respawnedAtSafeLocation = true;
 					// A death also takes gold or experience (`DeathPenalties`), so the next reward is measured
 					// from the row as the respawn left it, not from the pre-death snapshot.
