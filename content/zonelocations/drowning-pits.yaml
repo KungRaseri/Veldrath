@@ -1,0 +1,109 @@
+# content/zonelocations/drowning-pits.yaml
+#
+# The import shape of docs/design/content/pools/drowning-pits.yaml (D4, pool-matrix.md §8), translated
+# by card t_a39b46eb (A1). The design file stays the design set; this is the pack the importer reads.
+#
+# Every spawn entry below resolves: both pooled archetypes are in content/archetypes/b4-6.yaml already
+# (sump-crawler and bandit-ruffian, both band 4-6), and each names a loot table the landed
+# content/loottables pack carries (sump-crawler-drops, bandit-ruffian-drops). That is what the design
+# file's header was waiting for — it named sump-crawler as "to be seeded 4-6".
+#
+# A pack entity owns the whole row (docs/content-packs.md, "Limits worth knowing"), so every authored
+# value below is the one RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs writes for that slug —
+# displayName, typeKey, zoneId, rarityWeight, stats and traits. The one authored value that is NOT the
+# seeder's is `actorPool`: the seeder's interim pools for flooded-workings and deepest-chamber are
+# pre-roster pairs written as percentage-looking weights (flooded-workings: bandit 50 / wight 50,
+# deepest-chamber: wight 60 / bandit 40), and the design replaced them with relative-integer pools.
+# Note that the *order* differs as well as the numbers: the design puts sump-crawler first at the
+# workings and bandit-ruffian first in the chamber, and neither pair names the wight at all. Importing
+# this pack is what replaces them; a second run reports zero changes because the importer compares the
+# stored row with this file value for value, owned collections included and in their authored order.
+#
+# Weights are relative integers (ActorPoolResolver.cs:193-204), never percentages, and must be >= 1.
+# The importer does not normalise them; only the ratio is meaningful. Slugs and weights are the
+# design's, preserved entry for entry.
+#
+# pit-descent is authored here with an empty pool on purpose: it is the zone's dungeon lobby — the
+# `IsDungeon = false` + `SafeRespawn` pair the design reads as "the instance boundary" — and the design
+# excludes it (exclusion_class: dungeon_lobby, pool-matrix.md §4). An empty pool is authored content,
+# not an omission: it spawns nothing, and the trait that makes the exclusion true (safeRespawn) is
+# below. The design's `excluded` / `exclusion_class` / `exclusion_reason` are reviewer annotations; the
+# importer writes nothing for them.
+#
+# deepest-chamber is hidden behind a quest unlock (`UnlockKey = deepest-chamber`, its own slug — the
+# fix `plans/dungeons.md` §5 F1.2 prescribes for the hidden deep rooms). That is a map trait and does
+# not change its pool: the design pools it, so this pack pools it. Both rooms are walkable from
+# Arrival; the map graph, not this pack, is what routes a character in.
+#
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 (flooded-workings, deepest-chamber) | excluded 1 (pit-descent)
+family: zonelocation
+entities:
+  - slug: flooded-workings
+    displayName: The Flooded Workings
+    typeKey: dungeons
+    zoneId: drowning-pits
+    rarityWeight: 80
+    isActive: true
+    stats:
+      size: 5
+      dangerLevel: 5
+      population: 30
+      minLevel: 4
+      maxLevel: 6
+    traits:
+      isIndoor: true
+      isDungeon: true
+    # band: b4-6 (D0 budget) | location L4-6 | design: sump-crawler 6, bandit-ruffian 4
+    actorPool:
+      - archetypeSlug: sump-crawler
+        weight: 6
+      - archetypeSlug: bandit-ruffian
+        weight: 4
+
+  - slug: deepest-chamber
+    displayName: The Deepest Chamber
+    typeKey: dungeons
+    zoneId: drowning-pits
+    rarityWeight: 30
+    isActive: true
+    stats:
+      size: 3
+      dangerLevel: 6
+      population: 10
+      minLevel: 5
+      maxLevel: 6
+    traits:
+      isIndoor: true
+      isDungeon: true
+      isHidden: true
+      unlockType: quest
+      unlockKey: deepest-chamber
+    # band: b4-6 (D0 budget) | location L5-6 | design: bandit-ruffian 5, sump-crawler 5
+    # An even split on purpose: the design's note is that what is sealed below is atmosphere and a
+    # scripted encounter, never a pool enemy, so the roster here is the bandit-and-crawler content
+    # that reached the door.
+    actorPool:
+      - archetypeSlug: bandit-ruffian
+        weight: 5
+      - archetypeSlug: sump-crawler
+        weight: 5
+
+  - slug: pit-descent
+    displayName: The Pit Descent
+    typeKey: locations
+    zoneId: drowning-pits
+    rarityWeight: 100
+    isActive: true
+    stats:
+      size: 2
+      dangerLevel: 4
+      population: 5
+      minLevel: 4
+      maxLevel: 6
+    traits:
+      safeRespawn: true
+      isDungeon: false
+    # Empty by design: the zone's dungeon lobby and SafeRespawn point, excluded by the design
+    # (exclusion_class: dungeon_lobby).
+    actorPool: []
