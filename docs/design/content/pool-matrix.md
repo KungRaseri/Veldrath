@@ -553,7 +553,7 @@ to one in that zone); `locations[].pool[].archetype` → `ActorPoolEntry.Archety
 **Everything else is annotation for reviewers and validators** and nothing must guess at it: `region`,
 `level_range`, `exclusion_class`, `exclusion_reason`, the `# band:` comments, `schema_version`.
 
-### The translation, written out
+### The translation, abridged
 
 ```yaml
 # content/zonelocations/the-droveway.yaml — the import shape, once the archetypes exist
@@ -561,7 +561,7 @@ family: zonelocation
 entities:
   - slug: drove-road
     displayName: The Drove Road      # required: display_name_missing
-    typeKey: locations               # required: type_key_missing
+    typeKey: environments            # required: type_key_missing — the seeder's value, not `locations`
     zoneId: the-droveway
     actorPool:
       - archetypeSlug: giant-rat
@@ -575,7 +575,8 @@ entities:
     actorPool: []
 ```
 
-Two things the translation has to respect, both from the importer's own documentation:
+Three things the translation has to respect — the first two from the importer's own documentation, the
+third from the seeder:
 
 - **One family per file, family named by the directory** — `content/zonelocations/<zone>.yaml`, and the
   directory wins over a `family:` header that disagrees with it.
@@ -583,6 +584,10 @@ Two things the translation has to respect, both from the importer's own document
   carrying only `actorPool` would blank the seeder's `displayName`, `stats` and `traits`. Generate the
   pack from `ZoneLocationsSeeder` rather than hand-writing the pool alone — which the seeder's insert-only
   behaviour makes necessary anyway.
+- **`typeKey` is the seeder's value.** The abridged block above is illustrative: an earlier draft of it
+  wrote `locations` for `drove-road`, while the seeder (`ZoneLocationsSeeder.cs`, `drove-road`) and the
+  landed pack both write `environments`. At `the-droveway`, `environments` is the wilderness room and
+  `locations` is `weathered-waypost`. Generating the pack from the seeder is what keeps this right.
 
 **What the pack must satisfy, and the rule that enforces it** (existing rules, cited — not a wish list):
 

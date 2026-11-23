@@ -21,10 +21,10 @@
 # The importer does not normalise them; only the ratio is meaningful. Slugs and weights are the
 # design's, preserved entry for entry.
 #
-# weathered-waypost is authored here with an empty pool on purpose: it is the zone's SafeRespawn point
-# (the wayfarer-elder is placed there as an NPC by LocationNpcsSeeder, not by a pool entry). An empty
-# pool is authored content, not an omission — it spawns nothing and the design keeps it that way
-# (pool-matrix.md §4).
+# weathered-waypost is authored here with an empty pool on purpose: it is the zone's SafeRespawn point.
+# An empty pool is authored content, not an omission — it spawns nothing and the design keeps it that
+# way (pool-matrix.md §4). A person the design puts at a location is a `LocationNpc`, not a pool entry,
+# and no pack family authors one: an empty pool says nothing about whether anyone stands there.
 #
 # sunken-fields is hidden behind a passive DC 5 check. That is a map trait and does not change its
 # pool: the design pools it, so this pack pools it.
@@ -97,5 +97,6 @@ entities:
     traits:
       safeRespawn: true
       isIndoor: false
-    # Empty by design: the zone's SafeRespawn point. The wayfarer-elder here is an NPC placement, not a pool entry.
+    # Empty by design: the zone's SafeRespawn point. The design places a wayfarer-elder here as a
+    # LocationNpc, not a pool entry; no placement is seeded at this location yet (card t_f0a0ea8c).
     actorPool: []
