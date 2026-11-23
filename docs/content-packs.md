@@ -16,21 +16,30 @@ From the repository root, with the .NET 10 SDK installed:
 # Check the pack directory. Exits 1 on any Error, 0 when only warnings were found.
 dotnet run --project Veldrath.ContentPack -- validate content/
 
-# Import it. Needs the content database; the argument can also come from $CONTENT_DATABASE.
-# Two runs, in dependency order: an archetype names the loot table it drops, and a pack cannot resolve
-# a GUID for a row it creates in the same run (see "Two runs, in dependency order" below).
+# Import every family: one line per directory under content/, in the order a reference can point. An
+# archetype names the loot table it drops and a zone location names the archetypes it spawns, and a
+# pack cannot resolve a GUID for a row it creates in the same run (see "Two runs, in dependency order").
+# Needs the content database; the argument can also come from $CONTENT_DATABASE.
 DATABASE="Host=localhost;Database=veldrath;Username=veldrath;Password=***"
+dotnet run --project Veldrath.ContentPack -- import content/items --database "$DATABASE"
 dotnet run --project Veldrath.ContentPack -- import content/loottables --database "$DATABASE"
 dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "$DATABASE"
+dotnet run --project Veldrath.ContentPack -- import content/zonelocations --database "$DATABASE"
+dotnet run --project Veldrath.ContentPack -- import content/languages --database "$DATABASE"
 
-# See what an import would do without writing anything. Same split, same order.
-dotnet run --project Veldrath.ContentPack -- import content/loottables --database "$DATABASE" --dry-run
-dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "$DATABASE" --dry-run
+# See what an import would do without writing anything: add --dry-run to any line above. A dry run only
+# reads the stored catalog, so run it after the import has landed — it cannot stand in for a family whose
+# prerequisite rows are not stored yet.
 ```
 
 `validate` never needs a database: it seeds the tracked seeders into an in-process provider, so references to seeded
 content resolve exactly as they would after an import. If a pack must be checked against a live catalogue instead,
 pass `--database` to `validate` as well.
+
+`content/` holds five families at the moment — `items`, `loottables`, `archetypes`, `zonelocations` and `languages` —
+and a family missing from that list is never read: the run that omits it prints `Import complete: the catalog already
+matched the pack.` whether or not its file changed. `content/items/` is the worked example rather than world
+content, so its line is what lands the two `example-` rows; no world content references them.
 
 ## The file convention
 
@@ -93,12 +102,18 @@ that already exists — a pack cannot resolve a GUID for a row it is creating in
 
 A directory can declare both sides of a reference: `content/archetypes/` names the loot table it drops, and
 `content/loottables/` authors that table. One import cannot bind them — the GUID does not exist until the table is
-written — so a directory that spans both is imported family by family, named families first:
+written — so a directory that spans both is imported family by family, named families first. That is why the
+quick-start above is five commands and not one: `import content/` validates the whole directory before it writes
+anything, so on a fresh catalogue it reports each archetype's `lootTableId` unresolved and writes nothing.
 
 ```bash
+# The pair that shares a GUID reference, in order. The full list is under "Commands a content author runs".
 dotnet run --project Veldrath.ContentPack -- import content/loottables --database "..."
 dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "..."
 ```
+
+`content/zonelocations/` names an archetype per pool entry by slug rather than by GUID, but the constraint has the
+same shape: those archetype rows have to be stored, so that family follows `content/archetypes/`.
 
 `validate` does not need that split, and it does not need a database. Against its in-process seed it stages the
 directory **family by family, in the order a reference can point**: a family whose GUID foreign key names another

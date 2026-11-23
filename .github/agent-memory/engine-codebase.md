@@ -609,11 +609,13 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 
 - **The seeders are insert-only; packs are the writable half.** `RealmEngine.Data/Seeders/*` stays the initial
   catalogue and never updates a row it already sees. `content/<family>/<batch>.yaml` is upserted by
-  `Veldrath.ContentPack` (`dotnet run --project Veldrath.ContentPack -- validate content/`, then `import` family by
-  family in dependency order — `content/loottables` before `content/archetypes`, because a pack cannot resolve a GUID
-  for a row it creates in the same run), keyed by slug:
+  `Veldrath.ContentPack` (`dotnet run --project Veldrath.ContentPack -- validate content/`, then `import` every
+  family directory under `content/` in dependency order — `items`, `loottables`, `archetypes`, `zonelocations`,
+  `languages`, because a pack cannot resolve a GUID for a row it creates in the same run), keyed by slug:
   create missing, update changed, leave unchanged untouched. Do not "fix" a seeder's insert-only behaviour to make an
-  edit land — author a pack or change the seeded value deliberately.
+  edit land — author a pack or change the seeded value deliberately. **Name every family directory in the document
+  that shows the commands**: an omitted directory is never read, so the run still prints `Import complete: the catalog
+  already matched the pack.` and the author concludes their edit landed when the file was never opened.
 - **One rule set, three callers.** `RealmEngine.Data/Content/ContentEntityTypes.cs` (moved out of
   `Veldrath.Server/Features/Content/`, now public) is the only type-key → entity-type/validator map, shared by the
   HTTP write path, the pack validator and the startup audit. Adding a content family means adding it there, in
