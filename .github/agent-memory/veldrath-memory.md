@@ -2287,8 +2287,11 @@ Each returns `ContentIssue(Rule, Message)` naming both sides; none can throw.
 
 **Startup audit.** `ContentAuditService : BackgroundService` runs once (`Task.Yield` first so seeding can finish),
 reads **`ContentDbContext` via `IDbContextFactory`** — note `ApplicationDbContext` does *not* map content entities
-despite what `ef-core-patterns.md` says — and logs one summary plus one `Error` per finding. It swallows every
-exception: a broken audit must never be a broken server. `RunAsync` is public for tests/tooling.
+despite what `ef-core-patterns.md` says — and logs one consolidated summary plus one entry per finding at that
+finding's own severity (`ContentAuditService.Report`). The summary is `Error` only when an error-level finding
+exists; a warning-only run logs it at `Warning` ("found N warning(s) worth a review") and the catalog still
+serves. (This paragraph said "one `Error` per finding" until 2026-11-22 — that was the pre-PR-#178 behaviour.)
+It swallows every exception: a broken audit must never be a broken server. `RunAsync` is public for tests/tooling.
 
 **Play-path failsafes.**
 - `ActorPoolResolver` lost its `"common"` fallback: a null/empty pool spawns nothing (a safe town is authored
