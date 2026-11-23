@@ -316,6 +316,38 @@ public sealed class ContentPackTests
     }
 
     [Fact]
+    public void The_help_example_imports_the_shipped_families_in_dependency_order()
+    {
+        var output = new StringWriter();
+
+        ContentPackConsole.Run(["--help"], output, output).Should().Be(ContentPackConsole.Success);
+
+        var help = output.ToString();
+
+        // `import content/` validates the whole directory before it writes anything, and a GUID foreign key
+        // written as a slug resolves against stored content — so the example has to be the family-by-family
+        // sequence, not a single run that fails on a fresh catalogue.
+        help.Should().NotContain(
+            "import content/ --database",
+            "the whole-directory import cannot bootstrap a fresh catalogue, so the help must not offer it");
+
+        string[] families =
+        [
+            "import content/items",
+            "import content/loottables",
+            "import content/archetypes",
+            "import content/zonelocations",
+            "import content/languages",
+        ];
+
+        var positions = families.Select(family => help.IndexOf(family, StringComparison.Ordinal)).ToArray();
+
+        positions.Should().OnlyContain(position => position >= 0, "the example should name every shipped family: {0}", help);
+        positions.Should().BeInAscendingOrder("a family has to be imported before the family that names it");
+        help.Should().Contain("must already", "the help should say why the single run is not a shortcut");
+    }
+
+    [Fact]
     public async Task Import_refuses_to_run_without_a_database_and_dry_run_writes_nothing()
     {
         await using var database = await PackDatabase.CreateAsync();

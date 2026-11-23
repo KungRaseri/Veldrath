@@ -39,6 +39,9 @@ public static class ContentPackConsole
                            without --database it stages the directory into its in-process seed, family by family,
                            so a reference to a row the same directory authors still resolves.
           import   <dir>   Validate, then create/update every entity by slug. Writes ContentDbContext only.
+                           A directory is validated as a whole before anything is written, and a GUID foreign
+                           key written as a slug has to be stored already, so import one family at a time,
+                           each family after the families it references.
 
         options:
           --database <connection-string>  Postgres content catalog. Defaults to $CONTENT_DATABASE.
@@ -50,7 +53,17 @@ public static class ContentPackConsole
 
         examples:
           dotnet run --project Veldrath.ContentPack -- validate content/
-          dotnet run --project Veldrath.ContentPack -- import content/ --database "Host=localhost;Database=veldrath;Username=veldrath"
+
+          # Import families in the order a reference can point. A GUID foreign key written as a slug must already
+          # be stored, and an import validates the whole directory before it writes, so `import content/` on a
+          # fresh catalogue reports every such reference unresolved and writes nothing; it only becomes a no-op
+          # once each family has been imported. content/ holds five families, in this order. $CONTENT_DATABASE
+          # (or --database) names the catalog.
+          dotnet run --project Veldrath.ContentPack -- import content/items
+          dotnet run --project Veldrath.ContentPack -- import content/loottables
+          dotnet run --project Veldrath.ContentPack -- import content/archetypes
+          dotnet run --project Veldrath.ContentPack -- import content/zonelocations
+          dotnet run --project Veldrath.ContentPack -- import content/languages
         """;
 
     /// <summary>
