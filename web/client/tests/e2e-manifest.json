@@ -38,6 +38,7 @@
 			},
 			"specs": [
 				"tests/a1-ashlen-wood.e2e.ts",
+				"tests/a1-grevenmire.e2e.ts",
 				"tests/a1-the-droveway.e2e.ts",
 				"tests/admin-console.e2e.ts",
 				"tests/dialogue.e2e.ts",
