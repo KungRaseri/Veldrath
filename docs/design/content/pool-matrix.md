@@ -354,10 +354,12 @@ world zones is fully accounted for: no hostile location is unpooled, no safe loc
 ## 6. Archetype coverage — every roster archetype gets a place
 
 This table is the **hostile** roster. A `§` row never enters a pool, so it has no column here: it is placed
-as a `LocationNpc` row instead, and §4 names the two the exclusions above are built on — `dock-hand` at
-`tolvaren-harbour` and `shrine-keeper` at `ash-shrine` (`towns.md` §4.3 and §4.5). The other fifteen `§`
-rows are `towns.md` §4.1–4.4 (thirteen placements) plus `market-factor` and `gate-watch`, which stand
-nowhere yet.
+as a `LocationNpc` row instead, and `towns.md` §4 places the two people this card adds — `dock-hand` at
+`tolvaren-harbour` and `shrine-keeper` at `ash-shrine` (§4.3 and §4.5). Neither placement is what excludes
+its location: `tolvaren-harbour` is excluded by `SafeRespawn` + `IsTown` and `ash-shrine` by `SafeRespawn` +
+the keeper-only class, and no person is a pool entry either way. The other fifteen `§` rows are `towns.md`
+§4.1–4.4 (thirteen people; fourteen placement rows, because the harbour carries `dock-hand` too) plus
+`market-factor` and `gate-watch`, which stand nowhere yet.
 
 | archetype | band | pools containing it | count |
 |---|---|---|---|
