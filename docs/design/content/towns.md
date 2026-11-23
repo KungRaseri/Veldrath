@@ -23,8 +23,9 @@ a copy line, not a number.
   that had a `HasMerchant` flag and stock but no placements refused every trade while the client offered the
   button. Every merchant location a reachable town advertises now resolves a shopkeeper, and
   `ShopMerchantResolverTests` fails if one stops. `playground` still has no one, deliberately (§2). Greetings are
-  still the wave B dialogue pass (§8): until it lands these people answer with the neutral fallback line, exactly
-  as `wayfarer-elder` always has (C4).
+  still the wave B dialogue pass (§8): three of the thirteen answer with authored lines — `village-blacksmith`,
+  `tavern-keeper`, and `wayfarer-elder`, whose `wayfarer-elder-greeting` closed C4 — and the other ten answer with
+  the neutral fallback line, "*{name} looks up as you approach.*"
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
   APIs, so it carries no roster (§2).
 - **Two people added after the D3 pass — 2026-11-22 (card `t_c2a61d78`).** `dock-hand` joins
@@ -63,7 +64,7 @@ Read from code, with the line that says so. Every rule below shaped the roster.
 | A spawn pool entry becomes an attackable enemy, and a non-hostile one is dropped with a warning | `ActorPoolResolver.cs:133-139` | No townsperson appears in any pool. Section 7 proves the four settlements have zero pool entries. |
 | An empty pool spawns nothing and substitutes nothing **only where nothing is placed**; a location with hostile placements and no pool spawns exactly those, never topped up, and a non-hostile placement is dropped with a warning | `ActorPoolResolver.cs:86-92`, `:100-106`, `:111-115` | `SafeRespawn` towns keep an empty pool **and no hostile placements**. That is authored content, not a gap. |
 | Dialogue is keyed by **archetype slug**, not by placement | `DialogueHubCommands.cs` `PickEntryAsync` (`Speaker == slug`), `NpcGreetings.PickAsync` | Two people sharing one archetype share one voice. Distinct registers per town therefore require distinct archetype slugs — the main cost in this card. |
-| `TalkToNpc` greets from entries with `TypeKey == "greetings"`; with none it falls back to "*{name} looks up as you approach*" | `NpcHubCommands.cs` `NpcGreetings` | A placed person with no greeting row is a person with nothing to say. One already exists today (C4). |
+| `TalkToNpc` greets from entries with `TypeKey == "greetings"`; with none it falls back to "*{name} looks up as you approach*" | `NpcHubCommands.cs` `NpcGreetings` | A placed person with no greeting row is a person with nothing to say. Ten of the thirteen seeded townspeople are still in that state; `wayfarer-elder` was the one that had already shipped that way (C4, resolved 2026-11-22). |
 | The dialogue panel only opens on an entry that has `Stats.Options` | `DialogueHubCommands.cs` `PickEntryAsync` | Greetings-only NPCs are barked at, not conversed with. Conversations are wave B/C content; this card does not pretend to ship them. |
 | Shops are **per zone and per placed person**: `VisitShopHubCommand(CharacterId, ZoneId)` and `GetShopCatalogHubCommand(Guid CharacterId, string ZoneId)` resolve the merchant from the character's own zone *and* location — the zone must carry `HasMerchant`, a `LocationNpc` whose archetype has `Traits.Shopkeeper` must stand at the character's location, and a `ZoneId` that is not the character's own is refused as `ZoneMismatch` | `ShopMerchantResolver.cs:36-122` (zone flag `:56-67`, placements `:69-84`, the `Shopkeeper` test `:96-113`, refusal `:122`); `VisitShopHubCommand.cs:13`; `GetShopCatalogHubCommand.cs:18` | A zone flag alone is not a shop, so the §4.2–4.4 rosters are load-bearing: a town whose shopkeeper is not placed refuses trade. The shelf is the zone's (`ZoneStockItems`), never the person's, so two merchants in one town share one stock (C6). |
 | Role flags (`Shopkeeper`, `QuestGiver`, `HasDialogue`) come from the archetype's `Traits`; `Occupation` is the archetype's `TypeKey` | `NpcHubCommands.cs` `NpcPlacements.ToDto` | New townspeople need `TypeKey = "townspeople"` to read like the existing three. |
@@ -166,7 +167,7 @@ location. Zone prose: a crossroads market town where three old drove roads meet.
 |---|---|---|---|---|---|---|
 | `village-blacksmith` *(exists)* | `crestfall-aurelian-blacksmith` *(exists)* | Vaenern | smith, market stall | work that is not horseshoes; ore he can trust | sells forged iron and tool repair; refuses to arm anyone he has not seen fight | `blacksmith-greeting` *(exists)* |
 | `tavern-keeper` *(exists)* | `crestfall-hearthbound-keeper` *(exists)* | Velrek | keeper, the Hearthbound Inn | a full house and no trouble under his roof | sells bed, board, small ale; refuses credit, and refuses to talk about the north road after dark | `tavernkeeper-greeting` *(exists)* |
-| `wayfarer-elder` *(exists)* | `crestfall-square-elder` *(exists)* | Tharrek | tally-keeper of the square | every name on the road written down before the light goes | teaches where the roads lead; refuses to say who laid the slab under the square | `wayfarer-elder-greeting` **(new)** |
+| `wayfarer-elder` *(exists)* | `crestfall-square-elder` *(exists)* | Tharrek | tally-keeper of the square | every name on the road written down before the light goes | teaches where the roads lead; refuses to say who laid the slab under the square | `wayfarer-elder-greeting` *(exists)* |
 | `road-carter` **(new)** | `crestfall-lowquarter-carter` **(new)** | Korrern | carter, low quarter | one more haul before the light goes | sells a place on the cart; refuses to carry anything sealed | `road-carter-greeting` **(new)** |
 
 **Register.** Crestfall talks in numbers: how many carts, which road, what it cost. Sentences are short and
@@ -447,10 +448,13 @@ and replaced by "The Korreld Exchange" (*Korreldh* → *Korreld* + Common *Excha
 `aurelian-market` / "The Aurelian Market", and `LocationNpcsSeeder` places the blacksmith there. Renaming the
 slug is not a text fix: it breaks that placement row and any stored `CurrentZoneLocationSlug`.
 
-**C4 — A placed person with nothing to say.** `wayfarer-elder` is placed at `crestfall-square` with
-`HasDialogue = true`, but no `Dialogue` row has `Speaker = "wayfarer-elder"`. `TalkToNpc` falls back to
-"*Tharrek looks up as you approach.*" every time. Also note the existing speaker slugs are inconsistent:
-`blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
+**C4 — A placed person with nothing to say. (Resolved 2026-11-22, PR #228.)** `wayfarer-elder` is placed at
+`crestfall-square` with `HasDialogue = true`, and no `Dialogue` row had `Speaker = "wayfarer-elder"`, so
+`TalkToNpc` fell back to "*Wayfarer Elder looks up as you approach.*" every time — the archetype's `DisplayName`
+read through `NpcPlacements.ToDto`, not the byname §3 gives him, because no placement carries a `DisplayName`
+override (§8 keeps those overrides proposed). `wayfarer-elder-greeting` now answers both of his stands from one
+row: `Speaker` is the archetype slug and there is no per-placement override to key a second row to. Also note the
+existing speaker slugs are inconsistent: `blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
 
 **C5 — No merchant band exists. (Resolved 2026-11-20, `e691eba2`.)** `budget.yaml` published a `merchants:` section, and the
 shop applies its two price endpoints. `MerchantBands` carries the purse tiers, the stock size and those
