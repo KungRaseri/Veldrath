@@ -1034,12 +1034,14 @@ carried forward from the session-44 snapshot (that one said 23 / 130 / 196 and i
   for nineteen zone maps because `playground` (`IsDevOnly`) sits on no region map.
 - Edges by type once seeded: `Walk` 246, `ExitToRegion` 35, `ExitToZone` 23.
 - **A live zone being targeted is not the same as being walkable into.** `LinkRegionZonesToZoneMaps` gives every
-  region `Zone` node a `TargetMapId`, so `MapGraphValidator`'s `map_unreachable` never fires for a zone whose only
-  inbound target is its region node — and the region board is not a through-route: `region:varenmark`'s entry node
-  is adjacent to `zone:crestfall` alone, and every `Zone` node on the board enters its zone. The Drowning Pits was
-  unreachable on foot until `zone:grevenmire:exit:zone:drowning-pits` (a `ZoneExit` on the Sunken Estate, the same
-  shape as `ashlen-wood → grevenmire`) landed in t_a39b46eb. `the-halrow` still has only its region node, so the
-  same repair is needed before a Halrow journey can walk in.
+  region `Zone` node a `TargetMapId`, so `map_unreachable` used to stay silent for a zone whose only inbound target
+  is its region node — the region board is not a through-route: `region:varenmark`'s entry node is adjacent to
+  `zone:crestfall` alone, and every `Zone` node on the board enters its zone. The Drowning Pits was unreachable on
+  foot until `zone:grevenmire:exit:zone:drowning-pits` (a `ZoneExit` on the Sunken Estate, the same shape as
+  `ashlen-wood → grevenmire`) landed in t_a39b46eb. Since t_53311432 the rule does not count a region board's
+  `Zone` node as an inbound exit, so it now warns on the 14 seeded zones that still have no door — `the-halrow`
+  among them — and `MapGraphSeederTests.SeedAsync_EveryLiveZoneCanBeEnteredThroughADoorRatherThanItsRegionNode`
+  pins that list and may only shrink.
 - The chain is per zone map: entry → each `Location` node in `SortOrder`, one hop each way. 39 of those hop
   directions already existed as authored edges, and 5 were dropped because the source node already used all four
   cardinal directions (`zone:crestfall` 2, `zone:playground` 3). All 67 `Location` nodes still have a path from

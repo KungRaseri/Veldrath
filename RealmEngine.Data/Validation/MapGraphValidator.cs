@@ -325,10 +325,19 @@ public static class MapGraphValidator
         // hold them, and drafts are exempt because they are still being written.
         if (liveMapIds is not null)
         {
+            // A Zone node on a region map is a board marker, not a door. The seeder links it to the zone map so
+            // that travelling to the node enters the zone, but the board is not a through-route: travel into a
+            // zone only happens from a node the character is standing next to, and stepping onto any Zone node
+            // enters that zone rather than passing over it. Counting the marker as an exit therefore hid every
+            // zone that has no actual door on another map — measured on a fresh stack at 571823af, 18 of 20
+            // zone maps were "reachable" on the strength of their region node alone and the Drowning Pits could
+            // not be entered on foot at all. Every other node that carries a target is a door a character can
+            // use from where it stands: a zone exit, portal, stair, or a location that opens into an interior.
             var targetedMapIds = maps
-                .SelectMany(map => map.Nodes)
-                .Where(node => !string.IsNullOrWhiteSpace(node.TargetMapId))
-                .Select(node => node.TargetMapId!)
+                .SelectMany(map => map.Nodes
+                    .Where(node => !IsRegionBoardMarker(map, node))
+                    .Where(node => !string.IsNullOrWhiteSpace(node.TargetMapId))
+                    .Select(node => node.TargetMapId!))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var map in maps)
@@ -554,6 +563,21 @@ public static class MapGraphValidator
                 node.Id);
         }
     }
+
+    /// <summary>
+    /// Reports whether a node is a zone marker on a region board rather than a door.
+    /// </summary>
+    /// <remarks>
+    /// <c>MapGraphSeeder.LinkRegionZonesToZoneMaps</c> points every region <c>Zone</c> node at that zone's own
+    /// map so travelling to the node enters the zone. That target says where the node leads, not that the zone
+    /// can be entered from elsewhere: the character still has to stand next to the node on the region board,
+    /// and the only node a character arriving in a region can stand next to is a neighbour of the entry.
+    /// </remarks>
+    /// <param name="map">Map that owns the node.</param>
+    /// <param name="node">Node to classify.</param>
+    /// <returns><see langword="true"/> when the node is a region board's zone marker.</returns>
+    private static bool IsRegionBoardMarker(MapGraph map, MapNodeEntry node) =>
+        map.MapType == MapType.Region && node.NodeType == MapNodeType.Zone;
 
     private static void AddError(
         ICollection<MapGraphValidationIssue> issues,
