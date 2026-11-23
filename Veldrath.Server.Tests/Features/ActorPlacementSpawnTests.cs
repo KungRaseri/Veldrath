@@ -69,7 +69,7 @@ public class ActorPlacementSpawnTests : IAsyncDisposable
         chief.GoldReward.Should().BeInRange(10, 30);
         chief.Template.Strength.Should().Be(14);
         chief.Template.BasePhysicalDamage.Should().Be(
-            12,
+            16,
             "the composed template is what combat reads, so the override has to survive onto the spawn");
         chief.ArchetypeSlug.Should().Be("goblin-scout", "the archetype stays the identity the store reconciles on");
     }
@@ -103,7 +103,7 @@ public class ActorPlacementSpawnTests : IAsyncDisposable
         second.Should().HaveCount(first.Count);
         var chief = second.Single(enemy => enemy.Name == "Elder Goblin Chief");
         chief.InstanceSlug.Should().Be("elder-goblin-chief");
-        chief.Template.BasePhysicalDamage.Should().Be(12);
+        chief.Template.BasePhysicalDamage.Should().Be(16);
         chief.Template.Strength.Should().Be(14);
         chief.MaxHealth.Should().Be(120);
 
@@ -132,7 +132,7 @@ public class ActorPlacementSpawnTests : IAsyncDisposable
         var captain = roster.Single(enemy => enemy.Name == "Captain Blackthorn");
         captain.MaxHealth.Should().Be(200);
         captain.Level.Should().Be(8);
-        captain.Template.BasePhysicalDamage.Should().Be(18);
+        captain.Template.BasePhysicalDamage.Should().Be(20);
         captain.InstanceSlug.Should().Be("captain-blackthorn");
     }
 
