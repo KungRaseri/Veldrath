@@ -277,7 +277,7 @@ of §3: 28 pooled + 26 quiet = the seeder's 54 world locations.
 
 | zone | location | level range | band | why it must stay empty |
 |---|---|---|---|---|
-| `ashfields` | `ash-shrine` | 20–25 | b19-22 | SafeRespawn since 2026-11-20 (amendment 3): a keeper-only shrine is a rest point, not a spawn. Its only population is `shrine-keeper` — a `§` row in D1, and a `LocationNpc` row since 2026-11-22 (`ashfields-ash-shrine-keeper`, `towns.md` §4.5), never a pool entry. The exclusion rests on two traits rather than one: `SafeRespawn` and the NPC-only class below. It is also `IsHidden` + quest-unlocked, so the hidden-filtered zone query never offers it as the ashfields respawn anchor — that stays `obsidian-grove`. |
+| `ashfields` | `ash-shrine` | 20–25 | b19-22 | SafeRespawn since 2026-11-20 (amendment 3): a keeper-only shrine is a rest point, not a spawn. Its only population is `shrine-keeper` — a `§` row in D1, and a **proposed** `LocationNpc` row (`ashfields-ash-shrine-keeper`, `towns.md` §4.5; not yet in `LocationNpcsSeeder`), never a pool entry. The exclusion rests on two traits rather than one: `SafeRespawn` and the NPC-only class below. It is also `IsHidden` + quest-unlocked, so the hidden-filtered zone query never offers it as the ashfields respawn anchor — that stays `obsidian-grove`. |
 
 ### Settlements (9) — `IsTown`
 
@@ -308,9 +308,11 @@ quarter), and NPCs are placed by `LocationNpc` rows keyed by zone + location, ne
 enters a pool — 17 rows once D3's ten townspeople landed. **None of them may enter a pool either way**,
 so the class changes no pool. It exists in this file so a future NPC-only location is excluded by rule
 rather than by memory — which is exactly how `ash-shrine` got its pool removed. **Since 2026-11-22 the
-class has a live member in fact and not only in intent:** the shrine's only population is `shrine-keeper`,
-placed there by `towns.md` §4.5, so the keeper-only heading above describes a location that now keeps
-somebody.
+class has an authored member, though not yet a seeded one:** the shrine's only population is
+`shrine-keeper`, proposed at `ashfields/ash-shrine` by `towns.md` §4.5, so the keeper-only heading above
+describes a location designed to keep somebody. Until `LocationNpcsSeeder` carries the row the shrine is
+still empty, and the exclusion does not turn on the row either way: `SafeRespawn` already keeps the pool
+gone, and the class says what its population is instead.
 
 ## 5. Coverage
 

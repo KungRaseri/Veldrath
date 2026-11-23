@@ -16,7 +16,7 @@ a copy line, not a number.
   (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: nine rows at
   Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
   change and is not in this wave (C6).
-- **Townspeople placed — landed 2026-11-21.** All thirteen rows below are seeded: one `LocationNpc` per
+- **Townspeople placed — landed 2026-11-21.** All thirteen D3 rows below are seeded: one `LocationNpc` per
   settlement location in `LocationNpcsSeeder`, and one archetype apiece in `ArchetypeSeeder` (`TypeKey =
   "townspeople"`, non-hostile, immortal, `HasDialogue` on every row, `Traits.Shopkeeper` on the eleven who take
   coin). This is what made the shop work again: the shop is a person (`ShopMerchantResolver`), so the three towns
@@ -27,14 +27,17 @@ a copy line, not a number.
   as `wayfarer-elder` always has (C4).
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
   APIs, so it carries no roster (§2).
-- **Two people placed outside the town rosters — 2026-11-22 (card `t_c2a61d78`).** `dock-hand` joins
+- **Two people added after the D3 pass — 2026-11-22 (card `t_c2a61d78`).** `dock-hand` joins
   `tolvaren-harbour` as the second person standing there (§4.3; §2 records why the harbour takes the
   exception), and `shrine-keeper` is placed at `ashfields`/`ash-shrine` (§4.5) — the one person in this
   document who is not in a town. Both are D1 roster rows that already existed with their identity lines;
   what did not exist was a stand, a placement id, the role flags and a voice. They are **new to the
   seeders** — no `ArchetypeSeeder` row, no `LocationNpc` row and no `Dialogue` row carries either slug —
-  so the seeding card follows this one: a placement naming an archetype that does not exist imports as a
-  dangling reference, and a greeting keyed to a speaker that does not exist is never picked.
+  so the seeding card follows this one. The order is archetypes, then placements, then greetings: a
+  placement whose archetype is missing still lists the person, but by the bare slug with no type key and
+  every role flag false (`NpcPlacements.ToDto` takes a nullable archetype), and a greeting is matched on
+  the speaker slug alone (`NpcGreetings.PickAsync`), so it has no one to be picked for until a person with
+  that slug stands somewhere.
 
 **Sources read for this document:** `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`,
 `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs` (the Zone rows),
@@ -235,8 +238,9 @@ second at the harbour (§2's exception). No `ActorPool` entry at any of the thre
 already written ("Loads and unloads at Tolvaren Harbour and knows which crates never get weighed"); what
 this card adds is the stand, the flags, the byname and the voice. `SortOrder` 20 — the master is 10 — so
 he lists after the master rather than beside him. `Shopkeeper` is **false**: he takes a day-rate from
-whoever is paying, but he holds no stock, and Tolvaren's shelf belongs to `cliff-road-market` (C6); a
-`Shopkeeper` placed at the harbour would resolve a shop at the town's respawn point, because
+whoever is paying, but he holds no stock of his own. The shelf is the town's, not the shopkeeper's —
+`ZoneStockItems` is keyed by `ZoneId`, so every merchant in Tolvaren draws from the one list (C6) — and a
+`Shopkeeper` placed at the harbour would open that whole catalog at the town's respawn point, because
 `ShopMerchantResolver` gates on the zone flag and then on the person at the character's location.
 `QuestGiver` is **false**: D1 calls him a rumour, and a trait is what the client reads to offer a quest,
 so it stays off until a quest names him.
@@ -328,7 +332,7 @@ hook, and the question he will not answer is the hook itself — the trait is wh
 (`NpcHubCommands.NpcPlacements.ToDto`), so it is the one flag that has to be on before a conversation can
 be written against him.
 
-**No byname, and the reason is his own.** §3 names thirteen people and the waypost's elder renders by role
+**No byname, and the reason is his own.** §3 names fourteen people and the waypost's elder renders by role
 name; the keeper renders by role name too, but not for the elder's reason. Every byname in §3 is a Calethic
 compound, and the honest compounds for this man are all *about the ash* — *kaen* + *daeld*, or *daeld* plus
 a keeper root — which would answer in his name the one question he refuses to answer aloud. The Ash Shrine
@@ -469,7 +473,8 @@ stock needs an engine change.
 
 ## 7. Validation
 
-Both scripts are in `~/.hermes/profiles/dev-content/cache/scratch/`; their inputs are the seeders themselves.
+Both scripts are the design pass's own and are not checked in — they ran from the card's worker scratch
+directory, so the path is not portable. Their inputs are the seeders themselves.
 The output below is the record of the design pass, and two figures in it have moved since: `seeded
 placements: 3` was true at approval time and fourteen are seeded now, and the three seeded greeting rows
 are not the two it counts — both are re-parsed in the second block below (§8 carries the corrected
@@ -571,7 +576,8 @@ miscounted dialogue total in §8.
 
 The two people this card adds are checked the same way the original pass checked its rows: the counts are
 parsed out of the C# seeders, not recalled, and the placement rows are parsed back out of this document.
-Both are re-runnable; `check_placements.py` exits non-zero on a failure.
+Both are re-runnable from the seeders and neither script is checked in; `check_placements.py` exits
+non-zero on a failure.
 
 ```
 $ python3 count_claims.py
@@ -639,7 +645,7 @@ scripts/check-markdown-links.mjs` checks 80 files with no broken relative links.
 | Thing | Count | Owner | State |
 |---|---|---|---|
 | `LocationNpc` placements | 16 (3 exist, 13 new — of which 2 are this card's) | `LocationNpcsSeeder` / importer | **14 live** — every settlement location has its person, plus the droveway's second stand for `wayfarer-elder` (`LocationNpcsSeeder`). **2 proposed**: `tolvaren-harbour-dockhand` (§4.3) and `ashfields-ash-shrine-keeper` (§4.5). |
-| Townspeople archetypes (`ActorArchetype`, `TypeKey = "townspeople"`, non-hostile, immortal, `HasDialogue = true`) | 15 (3 exist, 12 new — of which 2 are this card's) | **D1 roster card** — it owns the 1–20 archetype roster, so it must adopt these slugs or this card and D1 disagree | **13 live** in `ArchetypeSeeder`; the eleven who take coin carry `Traits.Shopkeeper` and a purse inside their town's band, and `harbour-master` trades nothing. **2 proposed**: `dock-hand` and `shrine-keeper`, both roster rows already, both `Shopkeeper` false. |
+| Townspeople archetypes (`ActorArchetype`, `TypeKey = "townspeople"`, non-hostile, immortal, `HasDialogue = true`) | 15 (3 exist, 12 new — of which 2 are this card's) | **D1 roster card** — it owns the 1–20 archetype roster, so it must adopt these slugs or this card and D1 disagree | **13 live** in `ArchetypeSeeder`; the eleven who take coin carry `Traits.Shopkeeper` and a purse inside their town's band; `harbour-master` and `wayfarer-elder` trade nothing. **2 proposed**: `dock-hand` and `shrine-keeper`, both roster rows already, both `Shopkeeper` false. |
 | Dialogue greeting rows (`TypeKey = "greetings"`, `Speaker` = archetype slug) | 15 needed, one per townsperson: 3 live (`blacksmith-greeting`, `tavernkeeper-greeting`, `wayfarer-elder-greeting` — the last closes C4), 12 new | wave B dialogue pass | 3 live, 12 proposed — the two new lines are authored in §4.3 (`dock-hand-greeting`) and §4.5 (`shrine-keeper-greeting`) |
 | Display-name overrides | 3 (one per existing generic archetype) | placement rows | proposed — the three existing placements still answer by role name (`Village Blacksmith`, `Tavern Keeper`, `Wayfarer Elder`); the twelve new archetypes carry their own names, and `shrine-keeper` deliberately carries none (§4.5) |
 
