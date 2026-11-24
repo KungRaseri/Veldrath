@@ -150,10 +150,10 @@ bands:
       - "gold: both ends take the +5/+15 step b19-22's [25, 60] -> b23-26's [30, 75] took; fire-ancient's 150-300 is inside band x bosses.gold_multiplier [2, 4] = [70, 360]."
       - "drop_chance continues the -0.02/-0.05 step (b23-26's 0.08-0.30 from b19-22's 0.10-0.35); the floor is a range, not a trend to zero."
     note: >-
-      One seeded archetype and it is a boss: fire-ancient (26-30, 900 HP, ArchetypeSeeder.cs:1622),
-      which D0 holds out of every pool (bosses.placement). The band's non-boss rows are authored,
-      not seeded — ash-eater (26-30) and maw-serpent (28-30), D6/L6, archetypes.md. No boss is
-      authored for this band: boss placement stays held for a uniqueness mechanism.
+      fire-ancient is the only boss seeded for this band (26-30, 900 HP, ArchetypeSeeder.cs:1622),
+      and D0 holds it out of every pool (bosses.placement). The band's non-boss rows, ash-eater (26-30)
+      and maw-serpent (28-30), are seeded too (D6/L6, archetypes.md). No boss is authored for this
+      band: boss placement stays held for a uniqueness mechanism.
 
 wiring:
   level:
