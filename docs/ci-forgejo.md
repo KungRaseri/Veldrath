@@ -242,9 +242,12 @@ get the matrix back only by adding `main` to `pull_request.branches` again — t
 lane, and `scripts/ci-merge-gate.sh`'s L5 fails the lint if the merge gate loses `main`.
 
 Each workflow keeps its `push` and `pull_request` path lists **identical**, and lists
-`.github/agent-memory/**` by name even though `**/*.md` already matches it — the memory file is the
-one Markdown file every session touches, and a silent skip there is invisible until a stale entry
-ships.
+`.github/agent-memory/**` by name even though `**/*.md` already matches it — that is the path every
+session writes, and a note whose front matter is invalid has to fail its own pull request rather than
+the next one to touch the hub. The hub itself no longer changes when a note is added: it is
+[`scripts/memory/veldrath-memory.template.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/memory/veldrath-memory.template.md)
+verbatim, so the memory workflow validates the notes *and* that equality, and nothing is regenerated
+after a merge.
 
 So the filters are not decorative: before this was fixed every workflow listed only `main`,
 which meant the release PR (`development` → `main`) was the only PR ever tested and the

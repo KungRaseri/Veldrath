@@ -335,12 +335,12 @@ The directory [`.github/agent-memory/`](.github/agent-memory/) is the **canonica
 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Codebase notes: model facts, constructor patterns, handler quirks, testing gotchas, open items |
 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration log, completed work, deleted files |
 | [`.github/agent-memory/foundry-content-schema.md`](.github/agent-memory/foundry-content-schema.md) | Foundry content schema, write endpoints, integration test gotchas |
-| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, generated index of work-item notes |
+| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, and where the notes live; the page itself is generated from a template |
 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start (prompt templates) |
 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, decisions made, next steps |
 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop architecture plan (actual turn-based implementation supersedes original design) |
 | [`.github/agent-memory/world-lore-plan.md`](.github/agent-memory/world-lore-plan.md) | World lore plan, Calethic language reference, open items |
-| [`.github/agent-memory/work-items/`](.github/agent-memory/work-items/) | One file per work item — the note a card or session leaves behind; the index above is generated from its front matter |
+| [`.github/agent-memory/work-items/`](.github/agent-memory/work-items/) | One file per work item — the note a card or session leaves behind; these folders are the index, and `node scripts/memory/memory-index.mjs --list` prints them |
 | [`.github/agent-memory/areas/`](.github/agent-memory/areas/) | A topic that outgrew a session log: long-lived reference, edited in place like the files above |
 
 ### Writing to Memory Files
@@ -357,15 +357,16 @@ When you discover something new about the codebase that future sessions should k
 `map`, `auth` or `infra`; `card` (`t_xxxxxxxx`) and `pr` are optional; the date in the file name and in
 `date:` agree, or both say `undated`. Never edit another work item's file, and never
 edit [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) — it is generated
-from that front matter by `node scripts/memory/memory-index.mjs`, and CI fails a change the generator did
-not produce.
+from `scripts/memory/veldrath-memory.template.md` and CI fails a hand edit to it. Adding a note touches
+**one new path and nothing else**: nothing is regenerated, so CI checks the note's front matter instead
+(`node scripts/memory/memory-index.mjs --check`, which names the file and the field when it fails).
 
 **Stable reference keeps its file.** The other seven are edited in place; a topic that outgrows a session
 log becomes `.github/agent-memory/areas/<topic>.md`. Create a new reference file only when none of them
 fits.
 
-One file per work item is what keeps two cards from colliding: a new path cannot conflict, and the index
-that no branch ever hand-edits cannot either.
+One file per work item is what keeps two cards from colliding: a new path cannot conflict, and adding a
+note regenerates nothing, so two branches that each add one merge without a conflict at all.
 
 ---
 

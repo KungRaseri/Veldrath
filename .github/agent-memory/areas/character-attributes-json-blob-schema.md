@@ -9,12 +9,31 @@ title: "Character Attributes JSON Blob Schema"
 
 - `UnspentAttributePoints`: int — granted by a level-up (`CharacterProgression.AwardExperience`) and spent via `AllocateAttributePoints`
 - `Strength`, `Dexterity`, etc.: int — core stats
-- `Gold`: int — currency; deducted by `RestAtLocation` (default cost: 10); modified directly by `AddGold`
+- `Gold`: int — currency; several paths write it (see below); no client-callable `GameHub.AddGold` exists (retired 2026-11-24, #269)
 - `CurrentHealth`, `MaxHealth`: int — rewritten by a level-up (`CharacterProgression`); restored to max by `RestAtLocation`
 - `CurrentMana`, `MaxMana`: int — rewritten by a level-up (`CharacterProgression`); restored to max by `RestAtLocation`
 - Defaults when absent: `MaxHealth = Level * 10`, `MaxMana = Level * 5`
 - Handler key constants are `internal const string KeyXxx` on the handler class
 - **DO NOT store string-valued data in Attributes blob** — it's deserialized as `Dictionary<string, int>`; mixing types causes `JsonException` and data loss
+
+## `Gold` has several writers, and no hub method of its own
+
+Quest, chest and dialogue awards go through `AddGoldHubCommandHandler` (`internal const string KeyGold = "Gold"`,
+which refuses a debit larger than the purse). It has three server-side dispatchers and no client-callable one: `GameHub.TurnInQuest`,
+`ChestHubCommands` (reached through `GameHub.OpenChest`) and `DialogueHubCommands` (reached through
+`GameHub.ChooseNpcOption`). `GameHubTests.GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods`
+pins the absence of the `AddGold` hub method (retired 2026-11-24, #269).
+
+The handler is **not** the only writer of the key, and the "exactly one writer" / "single writer" comments in
+`ChestHubCommands` and `DialogueHubCommands` are wrong. As of `development@8b22ef11` the others are:
+
+- `RestAtLocationHubCommand` — deducts the rest cost (`attrs[KeyGold] = gold - request.CostInGold`; `CostInGold`
+  defaults to 10) and refuses when the purse is short.
+- `BuyItemHubCommand` — purchase debit; `SellItemHubCommand` — sale credit.
+- `CombatHelpers` — the loot split (`attrs["Gold"] = attrs.GetValueOrDefault("Gold") + share.Gold`) and the death
+  penalty (`Math.Max(0, gold - applied.GoldLost)`).
+- `GameHub`'s GM `/setgold` — writes the requested total straight into the blob and sends `GoldChanged` with the
+  diff to that character's own connection; it does not go through `AddGoldHubCommand`.
 
 ## Derived pools are the class curve, not an attribute formula
 
