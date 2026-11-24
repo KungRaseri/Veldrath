@@ -51,6 +51,25 @@ public record AllocateAttributePointsHubResult
 /// Handles <see cref="AllocateAttributePointsHubCommand"/> by loading the server-side character,
 /// deserialising the attributes JSON blob, applying the point allocations, and persisting the result.
 /// </summary>
+/// <remarks>
+/// <para>
+/// An allocation writes the attribute and the <c>UnspentAttributePoints</c> balance and nothing else. It deliberately
+/// does not recompute <c>MaxHealth</c>/<c>MaxMana</c>/<c>CurrentHealth</c>/<c>CurrentMana</c>: the stored pools are the
+/// class curve <see cref="Veldrath.Server.Features.LevelUp.CharacterProgression"/> projects on a level-up — the
+/// class's level-1 pool plus its per-level growth, with the stored pool as the floor — and that curve does not read an
+/// attribute. Calling the same recompute from here would be a no-op while a class row resolves and would pay the
+/// engine's <c>Constitution × 10</c> / <c>Wisdom × 5</c> formulas only for a character whose class row does not, so one
+/// point would be worth 10 health to some characters and nothing to the rest.
+/// </para>
+/// <para>
+/// The attributes take effect where combat reads them: <c>Strength</c> raises player damage, <c>Constitution</c>
+/// reduces incoming damage (<c>CombatHelpers.CalculateEnemyDamage</c>) and <c>Intelligence</c> raises magic damage.
+/// <c>Wisdom</c>, <c>Dexterity</c> and <c>Charisma</c> have no server-side reader yet, so a point there is inert until
+/// a rule consumes it. The client's health bar is the stored <c>MaxHealth</c>, so allocating <c>Constitution</c> does
+/// not move the bar — that is the recorded decision, not a regression. The facts in
+/// <c>AllocateAttributePointsHubCommandTests</c> pin it.
+/// </para>
+/// </remarks>
 public class AllocateAttributePointsHubCommandHandler
     : IRequestHandler<AllocateAttributePointsHubCommand, AllocateAttributePointsHubResult>
 {
