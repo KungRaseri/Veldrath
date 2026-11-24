@@ -603,7 +603,7 @@ the seeders themselves. The row dump is trimmed; the totals are not.
 
 ```
 $ python3 check_placements.py
-seeder parse: 67 zone locations, 36 pooled locations, 37 archetypes, 5 dialogue rows
+seeder parse: 67 zone locations, 36 pooled locations, 47 archetype rows (34 hostile + 13 non-hostile), 5 dialogue rows
                dock-hand in seeders: False; shrine-keeper in seeders: False
 
 placement rows parsed from towns.md: 15
