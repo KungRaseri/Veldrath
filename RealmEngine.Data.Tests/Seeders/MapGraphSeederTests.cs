@@ -29,7 +29,7 @@ public class MapGraphSeederTests
 
         maps.Should().HaveCount(23);
         maps.SelectMany(m => m.Nodes).Should().HaveCount(148);
-        maps.SelectMany(m => m.Edges).Should().HaveCount(330);
+        maps.SelectMany(m => m.Edges).Should().HaveCount(332);
 
         foreach (var map in maps)
         {
@@ -55,7 +55,7 @@ public class MapGraphSeederTests
 
         (await db.Maps.CountAsync()).Should().Be(23);
         (await db.MapNodes.CountAsync()).Should().Be(148);
-        (await db.MapEdges.CountAsync()).Should().Be(330);
+        (await db.MapEdges.CountAsync()).Should().Be(332);
     }
 
     [Fact]
@@ -90,6 +90,43 @@ public class MapGraphSeederTests
         unreachable.Should().BeEmpty(
             "a visible location that Arrival cannot walk to is content no player can enter, and hiding a " +
             $"location must never cut the map in two; unreachable: {string.Join(", ", unreachable)}");
+    }
+
+    [Fact]
+    public async Task SeedAsync_EveryRegionEntryWalksToAZoneMarker()
+    {
+        // A character only ever stands on a region board at its Arrival node, and travel refuses a node that is not
+        // adjacent to the one they are standing on. Saltcliff's and Cinderplain's Arrival each carried one authored
+        // edge, to the Greymoor portal, and a node with a TargetMapId loads that map instead of letting the character
+        // pass over it — so every zone marker on both boards sat two hops away behind a map change and no zone on
+        // either board could be entered on foot. Greymoor and Varenmark have always had the hop; this pins the shape
+        // for all four boards rather than trusting that the next one is authored like the last.
+        await using var db = CreateDbContext();
+
+        await MapGraphSeeder.SeedAsync(db);
+
+        var regions = await db.Maps
+            .Include(m => m.Nodes)
+            .Include(m => m.Edges)
+            .AsNoTracking()
+            .Where(m => m.MapType == MapType.Region)
+            .ToListAsync();
+
+        regions.Should().HaveCount(4, "the seeder authors four region boards");
+
+        var withoutAZone = new List<string>();
+
+        foreach (var region in regions)
+        {
+            var reachable = WalkVisibleGraphFromArrival(region);
+
+            if (!region.Nodes.Any(n => n.NodeType == MapNodeType.Zone && reachable.Contains(n.Id)))
+                withoutAZone.Add(region.Id);
+        }
+
+        withoutAZone.Should().BeEmpty(
+            "Arrival can only travel to a node beside it, so a board whose Arrival reaches no zone marker has no " +
+            $"zone a character on it can enter; boards with no marker in reach: {string.Join(", ", withoutAZone)}");
     }
 
     [Fact]
@@ -293,16 +330,17 @@ public class MapGraphSeederTests
     }
 
     /// <summary>
-    /// Walks one zone the way a character does: from Arrival, along traversable and visible edges, never
+    /// Walks one map the way a character does: from Arrival, along traversable and visible edges, never
     /// entering a hidden node and never stepping onto a node that changes maps.
     /// </summary>
     /// <remarks>
     /// <c>TravelToNodeHubCommand</c> only loads another map when the selected node carries a
     /// <c>TargetMapId</c>, so an exit, portal or zone node is a fresh walk on the destination map rather
     /// than a corridor inside this one; expanding it here would report a location as reachable when the
-    /// only path to it leaves the zone.
+    /// only path to it leaves the map. The walk answers the same question on a zone map (which locations
+    /// Arrival reaches) and on a region board (which zone markers Arrival is adjacent to).
     /// </remarks>
-    /// <param name="map">Persisted zone map with its nodes and edges.</param>
+    /// <param name="map">Persisted map with its nodes and edges.</param>
     /// <returns>Every visible node id Arrival can walk to, including Arrival itself.</returns>
     private static HashSet<string> WalkVisibleGraphFromArrival(RealmEngine.Data.Entities.Map map)
     {
