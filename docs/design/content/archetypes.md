@@ -14,14 +14,20 @@ bands and its slugs are unchanged from what was approved.
 
 - **Proposals 3–5 — accepted.** The Pits has no combat form; Vraen is off the level ladder; there is
   no Aethori archetype at levels 1–20.
-- **Proposals 6–8 — declined.** No gull-rider lore entry, no geography for the Iron Anvil Guild or the
-  Shadowhand Syndicate, no Ash Shrine dedication.
+- **Proposals 6–8 — declined.** No gull-rider lore entry, no geography granted to the Iron Anvil
+  Guild or the Shadowhand Syndicate, no Ash Shrine dedication.
 - **The `gull-rider clans` faction tie is descriptive only.** It rests on the map seeder's assertion
   of rival clans, not on canon — do not treat it as an established organisation.
 - **`goblin-warband` — recorded 2026-11-23, no numbered proposal.** PR #229 (`ce262000`) seeded the
   third organisation, promoting a slug the catalogue already referenced (`elder-goblin-chief`'s
   `FactionOverride`, seeded in `bf715a9b`); it asserts no new world claim, and no roster row's faction
   tie changes. The record is under *Organisation promotion recorded — the Goblin Warband* below.
+- **The syndicate is placed on one instance — corrected 2026-11-24.** This document twice said the
+  Shadowhand Syndicate had no geography and that placing its members anywhere was a new claim. The
+  catalogue says otherwise: `captain-blackthorn` is a story instance at `collapsed-vault`, in
+  `the-halrow`, carrying `FactionOverride = "shadowhand-syndicate"`. Both sites now read precisely —
+  the organisation is assigned no region, zone or city, and one placed person is not a ground.
+  Proposal 7 stays declined and no roster row's faction column changes.
 - **Proposal 9 — decided 2026-11-20.** The content standard is published in `game-context/GAME.md`
   §3 (Teen-equivalent and self-imposed, with the permitted, testimony-only and not-permitted lists)
   and the four design pillars with their fails-when clauses in §4. A borderline description is
@@ -79,16 +85,21 @@ bands and its slugs are unchanged from what was approved.
 **Only two rows tie to a real faction, and that is a finding, not an oversight.** The repository
 seeds three organisations — the Iron Anvil Guild, the Shadowhand Syndicate and the Goblin Warband —
 and only the warband has a ground: its row comment names the Ashlen Wood and the Droveway, the two
-zones `goblin-scout` already spawns in. The guild and the syndicate have no geography in any lore
-file: no region, no zone, no city. No archetype can be tied to either while proposal 7 stands
-declined, so the guild- and syndicate-tied archetypes stay held out and named under *What this
-roster does not cover*. The warband's tie is available and is the intended next step, but it is held
-here on purpose: the roster's faction column describes the archetype, the catalogue asserts the
-warband on one instance (`elder-goblin-chief`, `FactionOverride = "goblin-warband"`), and a third tie
-would need a third faction mark in the approved portrait vocabulary (`archetype-visuals.md` R4). The
-gull-rider clans are the faction the two tied rows belong to, because the map seeder already asserts
-them. The faction picture fills in with the regional design and the portrait decision, not with more
-archetypes.
+zones `goblin-scout` already spawns in. Neither the guild nor the syndicate is assigned a region, a
+zone or a city in any lore file, and neither organisation row comments a ground. What the catalogue
+does carry is one placed syndicate member: `captain-blackthorn`, a story instance at
+`collapsed-vault` in `the-halrow`, behind that dungeon's quest unlock, with
+`FactionOverride = "shadowhand-syndicate"`. One named person at one hidden location is a placement,
+not a ground — it assigns the organisation no region and no zone, and promoting it into one would be
+the same decision PR #229 took for the warband, not something this roster records on its own
+authority. No archetype is tied to either here, so the guild- and syndicate-tied archetypes stay
+held out and named under *What this roster does not cover*, and proposal 7 stays declined. The
+warband's tie is available and is the intended next step, but it is held here on purpose: the
+roster's faction column describes the archetype, the catalogue asserts the warband on one instance
+(`elder-goblin-chief`, `FactionOverride = "goblin-warband"`), and a third tie would need a third
+faction mark in the approved portrait vocabulary (`archetype-visuals.md` R4). The gull-rider clans
+are the faction the two tied rows belong to, because the map seeder already asserts them. The faction
+picture fills in with the regional design and the portrait decision, not with more archetypes.
 
 ## The roster
 
@@ -205,7 +216,7 @@ Two consequences worth stating rather than discovering later:
 | Levels 21–30 | Answered by the tail section below (five hostile rows, approved 2026-11-20). The band table reaches 30 with `b27-30` (C4); what remains outside this document is statting the two rows above 26, their loot tables and their seeding. |
 | The Wound (Region 5) | No zones, no locations, no map graph exist. Nothing can be placed. See `game-context/GAME.md` §8. |
 | `deepest-chamber`, `collapsed-vault` | Both are quest-gated Varenmark dungeons whose pools are existing bandit/wight content. What lives at the bottom is open lore item 4 — see proposal 3. |
-| A Shadowhand Syndicate archetype | Reserved. The organisation is seeded (`OrganizationsSeeder.cs`) but has no geography in any lore file, so placing its members anywhere is a new claim. Held for proposal 7. |
+| A Shadowhand Syndicate archetype | Reserved. The organisation is seeded (`OrganizationsSeeder.cs`) but is assigned no geography in any lore file — no region, no zone, no city. The catalogue places one member, `captain-blackthorn`, a story instance at `collapsed-vault` (`the-halrow`, quest-gated) with `FactionOverride = "shadowhand-syndicate"`; one named person is a placement, not a ground, and promoting it would need the decision PR #229 took for the warband. Held for proposal 7. |
 | An Iron Anvil Guild archetype | Reserved, same reason as the syndicate: the guild has shops and members in the seeder but no city. A guild-tied hostile (an enforcer, a bailiff, a deserter) needs the guild placed first. Held for proposal 7. |
 | A named god's priest | Canon contains no pantheon. `shrine-keeper` exists, refuses to name the object of veneration, and does not assert one. See proposal 8. |
 
@@ -480,10 +491,12 @@ two.
 - **Nothing in the tail is Calethic-built.** The Caleth surveyed the ash-plain (*Daeld-Ald*) and did
   not settle it (P4, locked), so no row is a construct, a guardian or a marker left by them. Proposal
   11 asks for that to be recorded as a rule rather than left to inference.
-- **No faction in the ash plain.** The Iron Anvil Guild and the Shadowhand Syndicate still have no
-  geography (proposal 7 was declined), and the Goblin Warband's ground is the Ashlen Wood and the
-  Droveway, in Varenmark, which gives it no claim here. This card forbids inventing a faction in the
-  endgame region. Every row is `none recorded`, and each says explicitly what the tie is *not*.
+- **No faction in the ash plain.** The Iron Anvil Guild and the Shadowhand Syndicate have no ground
+  in the ash plain (proposal 7 was declined), and the syndicate's one placed member,
+  `captain-blackthorn`, stands at `collapsed-vault` in Varenmark, which gives it no claim here. The
+  Goblin Warband's ground is the Ashlen Wood and the Droveway, also in Varenmark. This card forbids
+  inventing a faction in the endgame region. Every row is `none recorded`, and each says explicitly
+  what the tie is *not*.
 - **Bands.** `budget.yaml` published seven bands to 26, so `b23-26` was the top of the ladder when this
   section was first written. **The band table now extends to 1–30 with `b27-30` in the same wave as this
   approval (C4)**, which is why two rows sit above 26. No tail row is banded `19–22`: the ash plain's
