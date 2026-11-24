@@ -55,7 +55,7 @@ import {
  *    respawn window (`Enemies__*` in `scripts/e2e-stack.sh`), never the drop chance.
  *  - **Pit Descent is quiet.** It is the zone's dungeon lobby — `IsDungeon = false` plus `SafeRespawn` — and the
  *    design excludes it (pool-matrix.md §4). Its stored pool is empty and nothing hostile stands there, whatever the
- *    character does. A death anywhere in the zone also lands the character here, which is the trait proving itself
+ *    character does. The forced defeat below lands the character here on every run, which is the trait proving itself
  *    rather than a field read back.
  *
  * ## The way in, and why the spec walks it
@@ -83,6 +83,25 @@ import {
  * Nothing writes the database directly and no response is mocked: every fight and every reward after the preparation
  * is the production path. The endpoint is the same command the quest path dispatches and is unreachable outside
  * Development/Test, which is the environment this isolated stack runs.
+ *
+ * ## The death is forced, and why
+ *
+ * The pool fights here are winnable: a prepared level-6 character kills every draw in the zone before the draw kills
+ * it, so a run only used to reach 0 HP when the bar happened to fall below a quarter and the loop chose to defend. A
+ * review of this journey found two green runs where that never happened — and the path it skipped is the one that
+ * matters (`CombatEnded` on death, `CharacterRespawned` re-reading the bar, the panel closing over the map, and the
+ * walk back out of the lobby). So the journey takes that path on purpose, once, after the reward is banked:
+ *
+ *  1. it writes the stored `CurrentHealth` down to {@link FORCED_DEFEAT_HEALTH} — the setup step, and the only direct
+ *     write in this spec (`writeStoredHealth`), read straight back so the fight starts from a bar this spec knows;
+ *  2. it engages a free pool draw and fights with **Defend**, so it can never win and never loot: every enemy in the
+ *     pool deals at least one damage a turn, so a bar that small ends the fight in the character's death in a handful
+ *     of turns;
+ *  3. {@link respawnAndReturn} then asserts the whole return trip — combat panel hidden, the sheet's health equal to
+ *     the health the server stored, the map drawn again, and a walk out of the safe location to the encounter.
+ *
+ * Nothing else is shortcut: the death, the penalty, the respawn and the re-read are the production paths, and a victory
+ * in the forced fight fails the run loudly instead of passing quietly.
  *
  * Two things are deliberately *not* asserted, because pinning them would pin the dice rather than the content:
  *
@@ -135,6 +154,12 @@ const PREPARED_EXPERIENCE = 1500;
 
 /** How many fights the journey may take to find a paying kill, deaths included. */
 const FIGHT_BUDGET = 10;
+
+/**
+ * The health the forced defeat starts from: low enough that a fight the character never strikes in is over in a
+ * handful of turns, and far enough below the bar that the death cannot be mistaken for a lucky blow.
+ */
+const FORCED_DEFEAT_HEALTH = 5;
 
 /** The zone's two pooled locations, its excluded lobby, and the map walk between them. */
 const ZONE_ID = 'drowning-pits';
@@ -519,8 +544,9 @@ async function fight(page: Page, mode: 'attack' | 'defend'): Promise<'victory' |
  * ends the fight with `CombatEnded`, so the panel closes and the map comes back, and `CharacterRespawned` re-reads the
  * restored bar. Nothing here reloads.
  *
- * The map node is still the one the character fell on, because the respawn writes the zone *location* and not the map
- * node (follow-up t_990e7186); stepping down to the lobby and back is what re-reads the room it is really in.
+ * The respawn writes the map node as well as the location now (t_990e7186), so the map already draws the character in
+ * the lobby when the payload lands: the walk to the lobby is the "already here" no-op, and the walk to the workings is
+ * what re-reads the room the roster is drawn for.
  *
  * @param page The game page.
  * @param sql The open reader.
@@ -554,6 +580,60 @@ async function respawnAndReturn(page: Page, sql: Sql, characterId: string): Prom
 
 	expect(await walkTo(page, MAP_NODES.pitDescent)).toBe(true);
 	expect(await walkTo(page, MAP_NODES.workings)).toBe(true);
+}
+
+/**
+ * Takes the death the journey must always take, then walks back out of it.
+ *
+ * The pool fights in this zone are winnable — a prepared level-6 character kills every draw before the draw can kill
+ * it — so a run that simply waited for a death only took the death path when the dice fell that way, and a green run
+ * said nothing about `CombatEnded`-on-death, the respawn payload's health or the map re-read that follows it. So the
+ * defeat is forced, as a stated setup step:
+ *
+ *  1. the stored `CurrentHealth` is written down to {@link FORCED_DEFEAT_HEALTH} — the one direct write in this spec,
+ *     the reason {@link writeStoredHealth} exists — and read straight back, so the fight starts from a bar this spec
+ *     knows rather than from whatever the last kill cost;
+ *  2. a free pool draw is engaged and fought with **Defend**, so the character never strikes and can neither win nor
+ *     loot: every enemy in the pool deals at least one damage a turn, so a bar that small ends the fight in the
+ *     character's death within a handful of turns;
+ *  3. the fight must end in `defeat` — a victory means the setup did not do its job, and the run fails here instead
+ *     of passing without ever having died.
+ *
+ * {@link respawnAndReturn} then asserts the whole return trip: the panel hidden, the sheet showing the health the
+ * server stored, the map drawn again and the walk out of the lobby to the encounter.
+ *
+ * @param page The game page.
+ * @param sql The open reader.
+ * @param characterId Character that is about to die.
+ */
+async function forceDefeatAndReturn(page: Page, sql: Sql, characterId: string): Promise<void> {
+	const maxHealth = (await readStoredHealth(sql, characterId)).max;
+	expect(maxHealth, 'the character must have a health bar to die from').toBeGreaterThan(0);
+	expect(
+		FORCED_DEFEAT_HEALTH,
+		'the forced defeat must start below the bar it is measured against'
+	).toBeLessThan(maxHealth);
+
+	// A free draw, resolved through the panel. The ordering argument is the stored bar rather than the sheet: the page
+	// still shows the health it loaded with, and the write below has not happened yet.
+	const target = await waitForTarget(page, sql, {
+		current: FORCED_DEFEAT_HEALTH,
+		max: maxHealth
+	});
+	expect(target, 'the forced defeat needs a free pool enemy to lose to').not.toBeNull();
+
+	expect(
+		await writeStoredHealth(sql, characterId, FORCED_DEFEAT_HEALTH),
+		'the forced defeat must start from the health this spec wrote'
+	).toBe(FORCED_DEFEAT_HEALTH);
+
+	await target!.row.getByRole('button', { name: 'Engage' }).click();
+	expect(
+		await fight(page, 'defend'),
+		'a fight the character never strikes in must end in its death, not its victory'
+	).toBe('defeat');
+
+	await respawnAndReturn(page, sql, characterId);
 }
 
 /**
@@ -598,6 +678,37 @@ async function readStoredHealth(
 		current: Number(attributes.CurrentHealth ?? 0),
 		max: Number(attributes.MaxHealth ?? 0)
 	};
+}
+
+/**
+ * Writes a character's current health into the stored attribute blob and returns what the row now carries.
+ *
+ * This is the forced defeat's setup and the only write this spec makes outside the client. It exists because the
+ * alternative — waiting for a fight the character loses — is a coin flip in a zone whose draws a prepared character
+ * kills, and the death path has to be exercised on every run. The value goes into the `Attributes` JSON that the
+ * server parses on every action (`CombatHelpers.ParseAttrs`), not into a cached copy, so the next turn the hub takes
+ * starts from the bar written here; the caller reads it back to prove that happened.
+ *
+ * @param sql The open reader.
+ * @param characterId Character to write.
+ * @param current Health to store, in the bar's own units.
+ * @returns The current health the stored row carries, or 0 when there is no such row.
+ */
+async function writeStoredHealth(sql: Sql, characterId: string, current: number): Promise<number> {
+	const rows = await sql<{ attributes: string }[]>`
+		UPDATE "Characters"
+		SET "Attributes" = jsonb_set(
+			coalesce("Attributes", '{}')::jsonb,
+			'{CurrentHealth}',
+			to_jsonb(${current}::int)
+		)::text
+		WHERE "Id" = ${characterId}
+		RETURNING "Attributes" AS attributes
+	`;
+
+	const attributes = JSON.parse(rows[0]?.attributes ?? '{}') as Record<string, number>;
+
+	return Number(attributes.CurrentHealth ?? 0);
 }
 
 /**
@@ -802,7 +913,6 @@ test.describe('A1 — The Drowning Pits pools', () => {
 			type Kill = { archetype: string; added: { itemSlug: string; quantity: number }[] };
 			const kills: Kill[] = [];
 			let payment: { archetype: string; table: string } | null = null;
-			let respawnedAtLobby = false;
 
 			for (let attempt = 0; attempt < FIGHT_BUDGET && payment === null; attempt += 1) {
 				const health = await readHealth(page);
@@ -831,7 +941,6 @@ test.describe('A1 — The Drowning Pits pools', () => {
 					// exercises the zone's SafeRespawn point and restores a quarter of the bar, and the walk
 					// back re-reads the roster.
 					await respawnAndReturn(page, sql, characterId);
-					respawnedAtLobby = true;
 					// A death also takes gold or experience (`DeathPenalties`), so the next reward is measured
 					// from the row as the respawn left it, not from the pre-death snapshot.
 					state = (await readCharacterState(sql, characterId)) ?? state;
@@ -899,6 +1008,11 @@ test.describe('A1 — The Drowning Pits pools', () => {
 				});
 			}
 
+			// ── The death, taken on purpose so every run exercises it ──────────────────────────────────
+			// Banked first: the loot above is already in the bag, so the walk out at the end proves it survives the
+			// death penalty, and the return trip is the one a player really walks. See the header.
+			await forceDefeatAndReturn(page, sql, characterId);
+
 			// ── The Pit Descent: the zone's lobby, and no random pool ─────────────────────────────────
 			expect(await walkTo(page, MAP_NODES.pitDescent)).toBe(true);
 			await expect(page.locator('button[aria-current="location"]')).toContainText(
@@ -910,11 +1024,9 @@ test.describe('A1 — The Drowning Pits pools', () => {
 				'an excluded location must spawn nothing: no pool, no placements'
 			).toEqual([]);
 
-			// A death anywhere in the zone is the same claim from the other direction: this character has already
-			// been sent here by the server once if the fight loop needed it.
-			if (respawnedAtLobby) {
-				expect(pools[LOBBY_LOCATION], 'the respawn point is still the poolless lobby').toEqual([]);
-			}
+			// The forced defeat sent this character here moments ago, so the claim is made about a place the run
+			// really woke up in rather than a row read before the walk.
+			expect(pools[LOBBY_LOCATION], 'the respawn point is still the poolless lobby').toEqual([]);
 
 			// ── And back, the way the journey came: out to Varenmark, then into Crestfall ─────────────
 			expect(await walkTo(page, MAP_NODES.arrival)).toBe(true);
