@@ -17,7 +17,10 @@ namespace Veldrath.Server.Features.Map;
 /// <param name="CharacterId">Character performing the travel.</param>
 /// <param name="MapId">Map containing the selected node.</param>
 /// <param name="NodeId">Selected destination node.</param>
-/// <param name="ZoneGroup">SignalR group used to key the enemy roster; derived from the zone when empty.</param>
+/// <param name="ZoneGroup">
+/// SignalR group the caller's connection is currently scoped to. The arrival's scope is derived from the
+/// destination zone, so this is relied on only when the destination zone row cannot be read.
+/// </param>
 public record TravelToNodeHubCommand(
     Guid CharacterId,
     string MapId,
@@ -235,9 +238,11 @@ public class TravelToNodeHubCommandHandler
             var (hereRecommended, hereWarning) = EvaluateGate(character.Level, hereLocation, hereZone);
             var (hereInstanceId, hereGroup) = await ResolveScopeAsync(
                 hereZoneId,
+                hereZone,
                 hereLocation,
                 request.ZoneGroup,
                 request.CharacterId,
+                character.DifficultyMode,
                 cancellationToken);
 
             return new TravelToNodeHubResult
@@ -329,9 +334,11 @@ public class TravelToNodeHubCommandHandler
         var (recommendedLevel, levelWarning) = EvaluateGate(character.Level, location, zone);
         var (instanceId, effectiveGroup) = await ResolveScopeAsync(
             zoneId,
+            zone,
             location,
             request.ZoneGroup,
             request.CharacterId,
+            character.DifficultyMode,
             cancellationToken);
 
         await _characterRepo.UpdateMapPositionAsync(
@@ -546,15 +553,26 @@ public class TravelToNodeHubCommandHandler
     }
 
     /// <summary>
-    /// Resolves which SignalR scope the arrival belongs to. A public location keeps the caller's shared
-    /// zone scope; an instanced one finds or opens the character's run and returns that run's scope, which
-    /// is how two parties end up in the same dungeon without sharing enemies or chat.
+    /// Resolves which SignalR scope the arrival belongs to. A public location belongs to the shared scope of the
+    /// zone that owns it, which is a function of the destination zone and the character's difficulty mode — never of
+    /// the group the caller arrived with. An instanced location finds or opens the character's run and returns that
+    /// run's scope, which is how two parties end up in the same dungeon without sharing enemies or chat.
     /// </summary>
+    /// <param name="zoneId">Zone that owns the destination, or <see langword="null"/> on a region map.</param>
+    /// <param name="zone">The zone row, used only to know whether its scope carries the difficulty mode.</param>
+    /// <param name="location">Destination location, or <see langword="null"/> when the node is not a location.</param>
+    /// <param name="requestedGroup">Group the caller's connection is currently scoped to, unused for a public arrival.</param>
+    /// <param name="characterId">Character arriving, used to find or open an instance run.</param>
+    /// <param name="difficultyMode">Character's difficulty mode, which a wilderness scope carries.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The instance run (if any) and the scope the arrival belongs to.</returns>
     private async Task<(Guid? InstanceId, string? Group)> ResolveScopeAsync(
         string? zoneId,
+        ZoneEntity? zone,
         ZoneLocationEntry? location,
         string requestedGroup,
         Guid characterId,
+        string difficultyMode,
         CancellationToken cancellationToken)
     {
         if (location?.IsInstanced == true && !string.IsNullOrWhiteSpace(zoneId))
@@ -563,12 +581,38 @@ public class TravelToNodeHubCommandHandler
             return (run.Id, run.ZoneGroup);
         }
 
-        return (
-            null,
-            string.IsNullOrWhiteSpace(requestedGroup)
-                ? string.IsNullOrWhiteSpace(zoneId) ? null : ZoneGroupName.ForZone(zoneId).Value
-                : requestedGroup);
+        if (string.IsNullOrWhiteSpace(zoneId))
+            return (null, null);
+
+        // Without the zone row the composed scope is not knowable, so a caller group that names this zone is the best
+        // answer available — and the only case where the caller's group is trusted at all.
+        if (zone is null &&
+            ZoneGroupName.TryParse(requestedGroup, out var fallback) &&
+            fallback.BelongsToZone(zoneId))
+        {
+            return (null, requestedGroup);
+        }
+
+        // The destination owns the scope, never the caller. A walk that crosses a zone border used to keep the group
+        // of the zone it left — the hub forwards the connection's group and only EnterZone ever sets it — so the
+        // destination location's roster was spawned under the previous zone's group, and the same roster ended up
+        // split across two groups, of which a client renders only the one it joined. Reusing the caller's group when
+        // it merely *names* this zone would keep a bare wilderness scope or a run scope left behind, which splits
+        // the roster just as surely; the composed scope is the only form EnterZone produces.
+        return (null, SharedZoneGroup(zone, zoneId, difficultyMode));
     }
+
+    /// <summary>
+    /// Builds the shared (non-instance) scope for a zone: wilderness scopes carry the character's difficulty mode,
+    /// every other zone type does not. A zone row that cannot be read falls back to the scope without a mode rather
+    /// than failing the arrival, because the roster still has to exist for the location.
+    /// </summary>
+    /// <param name="zone">The zone row, or <see langword="null"/> when it is missing from the catalog.</param>
+    /// <param name="zoneId">Zone slug.</param>
+    /// <param name="difficultyMode">Character's difficulty mode.</param>
+    /// <returns>The shared scope name as SignalR sees it.</returns>
+    private static string SharedZoneGroup(ZoneEntity? zone, string zoneId, string difficultyMode) =>
+        ZoneGroupName.ForZone(zoneId, zone?.Type == ZoneType.Wilderness ? difficultyMode : null).Value;
 
     /// <summary>
     /// D8: the level gates are advisory. The location's own minimum wins over the zone's, and nothing

@@ -1001,8 +1001,16 @@ public class GameHub : Hub
             return;
         }
 
-        var zoneGroup = Context.Items.TryGetValue("CurrentZoneGroupName", out var group) && group is string value
-            ? value
+        var currentMapId = Context.Items.TryGetValue("CurrentMapId", out var map) && map is string walkMap
+            ? walkMap
+            : null;
+
+        // The stored group names the map the connection is standing on, because EnterZone sets the two together.
+        // A request for a different map is a move between maps, and the destination's zone owns the scope: forwarding
+        // this group would hand the handler the zone being left, whose roster then got spawned at the destination.
+        var zoneGroup = string.Equals(currentMapId, request.MapId, StringComparison.OrdinalIgnoreCase)
+                        && TryGetCurrentZoneGroup(out var groupName)
+            ? groupName
             : string.Empty;
 
         try
@@ -1056,8 +1064,16 @@ public class GameHub : Hub
             return;
         }
 
-        var zoneGroup = Context.Items.TryGetValue("CurrentZoneGroupName", out var group) && group is string value
-            ? value
+        var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone) && zone is string here
+            ? here
+            : null;
+
+        // Same rule as a walk: the group describes the zone the connection is in, so it may only be forwarded for a
+        // location in that zone. A client asking for a location elsewhere hands the destination's scope to the
+        // handler instead of this one.
+        var zoneGroup = string.Equals(currentZoneId, request.ZoneId, StringComparison.OrdinalIgnoreCase)
+                        && TryGetCurrentZoneGroup(out var groupName)
+            ? groupName
             : string.Empty;
 
         try

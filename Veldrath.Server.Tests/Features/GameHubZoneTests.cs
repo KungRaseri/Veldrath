@@ -394,7 +394,7 @@ public class GameHubZoneTests : IDisposable
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
         var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
-        ctx.EnterZoneState(Guid.NewGuid());
+        ctx.EnterZoneState(Guid.NewGuid(), currentMapId: "zone:crestfall");
         var result = new TravelToNodeHubResult
         {
             Success = true,
@@ -403,14 +403,32 @@ public class GameHubZoneTests : IDisposable
         };
         mediator.Returns(result);
 
-        await hub.TravelToNode(new TravelToNodeHubRequest("map-1", "node-2"));
+        await hub.TravelToNode(new TravelToNodeHubRequest("zone:crestfall", "node-2"));
 
         var command = mediator.Invocations.Select(i => i.Arguments[0]).OfType<TravelToNodeHubCommand>().Single();
-        command.ZoneGroup.Should().Be("zone:crestfall", "the zone group is forwarded for peer broadcasts");
+        command.ZoneGroup.Should().Be("zone:crestfall", "a walk on the map the connection stands on keeps its group");
 
         clients.Caller.SentMessages.Should().Contain(m => m.Method == "NodeTraveled");
         clients.Caller.SentMessages.Should().Contain(m =>
             m.Method == "SystemMessage" && (string)m.Args[0]! == "Pool 'goblins' references no known actors");
+    }
+
+    [Fact]
+    public async Task TravelToNode_Does_Not_Forward_The_Group_For_A_Walk_Requested_On_Another_Map()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, _, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(Guid.NewGuid(), currentMapId: "zone:crestfall");
+        mediator.Returns(new TravelToNodeHubResult { Success = true, MapId = "zone:the-droveway" });
+
+        // The group names the map the connection is standing on. A request for another map is a move between maps,
+        // where only the destination's zone can say what the scope is — forwarding this one handed the handler the
+        // zone being left, whose roster the destination location then spawned under.
+        await hub.TravelToNode(new TravelToNodeHubRequest("zone:the-droveway", "zone:the-droveway:entry"));
+
+        var command = mediator.Invocations.Select(i => i.Arguments[0]).OfType<TravelToNodeHubCommand>().Single();
+        command.ZoneGroup.Should().BeEmpty("the destination's zone owns the scope, not the zone the walk left");
     }
 
     [Fact]

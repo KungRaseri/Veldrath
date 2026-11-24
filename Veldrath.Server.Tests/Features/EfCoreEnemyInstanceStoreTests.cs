@@ -228,6 +228,60 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
         (await store.TryGetAsync(enemy.Id)).Should().BeNull();
     }
 
+    [Fact]
+    public async Task RemoveForeignZoneGroupRowsAsync_Deletes_Only_Rows_Whose_Group_Names_No_Owning_Zone()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var store = CreateStore(db);
+
+        var instanceRun = Guid.NewGuid();
+        var correct = await SeedEnemyAsync(store, "zone:grevenmire_normal", "mire-crossing");
+        var deadRun = await SeedEnemyAsync(store, $"zone:grevenmire_hardcore#i1:{instanceRun:D}", "mire-crossing");
+
+        // The debris this card exists for: the same location's roster stored under the group of the zone the
+        // character walked out of.
+        var foreign = new EnemyInstance
+        {
+            ZoneGroup = "zone:crestfall",
+            LocationSlug = "mire-crossing",
+            ArchetypeSlug = "goblin",
+            Name = "Goblin",
+            Level = 1,
+            CurrentHealth = 10,
+            MaxHealth = 10,
+            SpawnedAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+        };
+
+        // A slug the catalog no longer holds cannot be judged, so it is left alone rather than deleted on absence.
+        var unknownLocation = new EnemyInstance
+        {
+            ZoneGroup = "zone:crestfall",
+            LocationSlug = "lost-place",
+            ArchetypeSlug = "goblin",
+            Name = "Goblin",
+            Level = 1,
+            CurrentHealth = 10,
+            MaxHealth = 10,
+            SpawnedAt = DateTimeOffset.UtcNow.AddMinutes(-6),
+        };
+
+        db.EnemyInstances.AddRange(foreign, unknownLocation);
+        await db.SaveChangesAsync();
+
+        var zones = new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["mire-crossing"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "grevenmire" },
+        };
+
+        var removed = await store.RemoveForeignZoneGroupRowsAsync(zones, CancellationToken.None);
+
+        removed.Should().Be(1);
+        (await store.TryGetAsync(foreign.Id)).Should().BeNull();
+        (await store.TryGetAsync(unknownLocation.Id)).Should().NotBeNull("an unknown slug is reported, never deleted");
+        (await store.TryGetAsync(correct.Id)).Should().NotBeNull();
+        (await store.TryGetAsync(deadRun.Id)).Should().NotBeNull("an instance scope still names its zone");
+    }
+
     private static async Task<SpawnedEnemy> SeedEnemyAsync(
         EfCoreEnemyInstanceStore store,
         string zoneGroup,

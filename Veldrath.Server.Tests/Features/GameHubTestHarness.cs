@@ -326,16 +326,24 @@ internal static class HubHarness
     /// <param name="characterName">Selected character name.</param>
     /// <param name="zoneId">Current zone id.</param>
     /// <param name="zoneGroup">Current zone SignalR group name.</param>
+    /// <param name="currentMapId">
+    /// Map the connection stands on, which <see cref="GameHub.EnterZone"/> records beside the group. Left unset when
+    /// <see langword="null"/>, so a test has to opt in to the invariant that the group names the map.
+    /// </param>
     public static void EnterZoneState(
         this FakeHubCallerContext ctx,
         Guid characterId,
         string characterName = "Tester",
         string zoneId = "crestfall",
-        string zoneGroup = "zone:crestfall")
+        string zoneGroup = "zone:crestfall",
+        string? currentMapId = null)
     {
         ctx.Items["CharacterId"] = characterId;
         ctx.Items["CharacterName"] = characterName;
         ctx.Items["CurrentZoneId"] = zoneId;
         ctx.Items["CurrentZoneGroupName"] = zoneGroup;
+
+        if (currentMapId is not null)
+            ctx.Items["CurrentMapId"] = currentMapId;
     }
 }

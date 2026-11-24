@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Features.Characters.Combat;
@@ -274,6 +275,63 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         _db.EnemyInstances
             .Where(e => e.Id == enemyId)
             .ExecuteDeleteAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<int> RemoveForeignZoneGroupRowsAsync(
+        IReadOnlyDictionary<string, IReadOnlySet<string>> zonesByLocationSlug,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(zonesByLocationSlug);
+
+        // The zone part of the group is the whole comparison, so the projection stays small and the decision is made
+        // by ZoneGroupName rather than by string surgery here.
+        var rows = await _db.EnemyInstances
+            .AsNoTracking()
+            .Select(enemy => new { enemy.Id, enemy.ZoneGroup, enemy.LocationSlug })
+            .ToListAsync(cancellationToken);
+
+        var foreign = rows
+            .Where(row => zonesByLocationSlug.TryGetValue(row.LocationSlug, out var zones)
+                          && !NamesAnyZone(row.ZoneGroup, zones))
+            .ToList();
+
+        if (foreign.Count == 0)
+        {
+            return 0;
+        }
+
+        var ids = foreign.Select(row => row.Id).ToList();
+
+        // Participants, combat sessions and any other referencing row cascade at the database, so the debris cannot
+        // leave an orphan behind.
+        var removed = await _db.EnemyInstances
+            .Where(e => ids.Contains(e.Id))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        DetachTracked(ids);
+
+        _logger.LogWarning(
+            "Deleted {Removed} of {Found} enemy row(s) whose zone group names no zone that owns their location: {Locations}",
+            removed,
+            foreign.Count,
+            string.Join(
+                ", ",
+                foreign
+                    .Select(row => $"{row.ZoneGroup}/{row.LocationSlug}")
+                    .Distinct(StringComparer.Ordinal)));
+
+        return removed;
+    }
+
+    /// <summary>
+    /// Answers whether a stored group names any of the zones that own a location. A group that does not parse names
+    /// none of them, which is what makes malformed debris sweepable instead of immortal.
+    /// </summary>
+    /// <param name="zoneGroup">Group stored on the row.</param>
+    /// <param name="zones">Zones that own the row's location.</param>
+    /// <returns><see langword="true"/> when the group belongs to one of the zones.</returns>
+    private static bool NamesAnyZone(string zoneGroup, IReadOnlySet<string> zones) =>
+        ZoneGroupName.TryParse(zoneGroup, out var group) && zones.Any(group.BelongsToZone);
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<EnemyRespawnedEvent>> SweepExpiredRespawnsAsync(
