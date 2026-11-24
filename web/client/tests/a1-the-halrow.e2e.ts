@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import {
 	bagDiff,
 	createDwarfWarrior,
@@ -78,13 +77,14 @@ import {
  * "prepared level-appropriate character" the card allows instead of repeating character creation and a grind:
  *
  *  1. character creation is the real seven-step wizard, so the species/background point buy is the game's;
- *  2. its level is raised through the real `GainExperience` hub command — the same handler a kill pays through
- *     (`GameHub.GainExperience` → `GainExperienceHubCommand`) — to the top of the zone's own authored band (`4–6`).
+ *  2. its level is raised through the server-side `GainExperienceHubCommand` a quest turn-in pays through, reached
+ *     through the development-only experience endpoint (`POST /api/dev/experience`) — the game hub deliberately has
+ *     no gain-experience method, because a client-callable one is a progression bypass — to the top of the zone's
+ *     own authored band (`4–6`).
  *
  * Nothing writes the database directly and no response is mocked: every fight and every reward after the preparation
- * is the production path. The browser is stepped off the play route first because the shell holds the character's
- * single active claim (`GameHub.SelectCharacter` → `IActiveCharacterTracker`) and would reject a second one; leaving
- * the route stops the hub cleanly, which releases the claim.
+ * is the production path. The endpoint is the same command the quest path dispatches and is unreachable outside
+ * Development/Test, which is the environment this isolated stack runs.
  *
  * Two things are deliberately *not* asserted, because pinning them would pin the dice rather than the content:
  *
@@ -315,51 +315,29 @@ async function readPooledArchetype(sql: Sql, slug: string): Promise<PooledArchet
 }
 
 /**
- * Raises the freshly created character to the zone's own top level through the real experience hub.
+ * Raises the freshly created character to the zone's own top level through the development-only experience endpoint.
  *
- * `GainExperienceHubCommand` is exactly what a kill pays through, so the level it produces is the level the game
- * produces — no row is written here and no payload is faked. The connection exists only because the browser never
- * calls this method (its parity allow-list records "Awarded by combat and quest handlers, never by the browser"); it
- * closes cleanly afterwards, which releases the character claim the shell needs back.
+ * The endpoint dispatches the same `GainExperienceHubCommand` a quest turn-in pays through, so the level it produces
+ * is the level the game produces — no row is written here and no payload is faked. The game hub has no
+ * gain-experience method on purpose (proven by the server's hub-shape test), which is why the sanctioned preparation
+ * path is the dev endpoint and not a client invoke.
  *
+ * @param request Playwright's API request context.
  * @param characterId Character to prepare.
  * @param token The session's short-lived game token, minted by the web app.
  * @returns Nothing; the caller re-reads the level from the database.
  */
-async function prepareJourneyCharacter(characterId: string, token: string): Promise<void> {
-	const connection = new HubConnectionBuilder()
-		.withUrl(`${apiBase}/hubs/game`, { accessTokenFactory: () => token })
-		.configureLogging(LogLevel.None)
-		.build();
-
-	let alreadyActive: boolean | undefined;
-	connection.on('CharacterAlreadyActive', () => {
-		alreadyActive = true;
+async function prepareJourneyCharacter(
+	request: APIRequestContext,
+	characterId: string,
+	token: string
+): Promise<void> {
+	const response = await request.post(`${apiBase}/api/dev/experience`, {
+		headers: { authorization: `Bearer ${token}` },
+		data: { characterId, amount: PREPARED_EXPERIENCE, source: 'A1 journey preparation' }
 	});
 
-	await connection.start();
-
-	try {
-		// Leaving the play route stops the shell's hub, but the release is a round trip — so claim, and retry
-		// while the previous connection is still the recorded holder.
-		let selected = false;
-		for (let attempt = 0; attempt < 15 && !selected; attempt += 1) {
-			alreadyActive = false;
-			await connection.invoke('SelectCharacter', characterId);
-			selected = !alreadyActive;
-
-			if (!selected) await new Promise((resolve) => setTimeout(resolve, 1_000));
-		}
-
-		expect(selected, 'the preparation connection must be able to claim the character').toBe(true);
-
-		await connection.invoke('GainExperience', {
-			amount: PREPARED_EXPERIENCE,
-			source: 'A1 journey preparation'
-		});
-	} finally {
-		await connection.stop().catch(() => undefined);
-	}
+	expect(response.status(), await response.text()).toBe(200);
 }
 
 /** The Local panel's engageable rows — one per living enemy, in the order the server sent them. */
@@ -639,7 +617,8 @@ test.describe('A1 — The Halrow pools', () => {
 	test.setTimeout(600_000);
 
 	test('Crestfall Square → the-halrow → the Rootbound Cellars → a pool kill pays the imported reward → the Halrow Threshold', async ({
-		page
+		page,
+		request
 	}) => {
 		await register(page, makeAccount('e2ehalrow'));
 
@@ -656,10 +635,9 @@ test.describe('A1 — The Halrow pools', () => {
 			/^[0-9a-f-]{36}$/
 		);
 
-		// Step off the play route so the shell's hub closes cleanly and releases the character claim the
-		// preparation connection needs, then raise the level through the same hub command combat pays through.
-		await page.goto('/characters');
-		await prepareJourneyCharacter(characterId, await gameToken(page));
+		// Raise the level through the server-side award a quest turn-in pays through, then reload the play route so
+		// the shell reads the prepared row from the server.
+		await prepareJourneyCharacter(request, characterId, await gameToken(page));
 		await page.goto(`/play/${characterId}`);
 		await expect(page.locator('.map-node-cell button').first()).toBeVisible({ timeout: 30_000 });
 
