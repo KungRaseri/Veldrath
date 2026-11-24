@@ -118,8 +118,10 @@ internal static class CombatHelpers
 
     // Splits the enemy's XP and gold across its contributors, awards each share and releases their combat
     // sessions. The shares always add up to the enemy's configured rewards — see CombatRewards.Split.
-    // Returns one CombatRewardShare per participant, carrying what the award left them at, for broadcasting.
-    internal static async Task<List<CombatRewardShare>> DistributeRewardsAsync(
+    // Returns one CombatRewardShare per credited participant, carrying what the award left them at, plus the ids
+    // of every session the kill released: a fight is shared, so the callers that only heard about their own turn
+    // are told the rest from that list.
+    internal static async Task<CombatRewardDistribution> DistributeRewardsAsync(
         SpawnedEnemy enemy,
         ICharacterRepository repo,
         ICharacterClassRepository classes,
@@ -134,7 +136,7 @@ internal static class CombatHelpers
             alreadyRewarded = enemy.WasRewarded;
             if (!alreadyRewarded) enemy.WasRewarded = true;
         }
-        if (alreadyRewarded) return [];
+        if (alreadyRewarded) return new CombatRewardDistribution([], []);
 
         List<(Guid CharacterId, int Damage)> contributions;
         lock (enemy.SyncRoot)
@@ -146,7 +148,7 @@ internal static class CombatHelpers
 
         // A participant who never landed a hit earns nothing; only the damaged set is paid.
         if (contributions.Count == 0 || contributions.Sum(contribution => contribution.Damage) <= 0)
-            return [];
+            return new CombatRewardDistribution([], []);
 
         var rewards = new List<CombatRewardShare>(contributions.Count);
 
@@ -180,10 +182,12 @@ internal static class CombatHelpers
         }
 
         // Release every engaged player; the enemy row stays behind as a dead row with a respawn time, so the
-        // world remembers it owes a respawn (D3's sweeper revives it).
-        await sessions.RemoveByEnemyIdAsync(enemy.Id, ct);
+        // world remembers it owes a respawn (D3's sweeper revives it). The released ids are part of the result
+        // because a fight is shared: everyone whose session this removed is now holding a panel for a fight the
+        // server has dropped, and CombatEnded (sent from those ids) is the only thing that closes it.
+        var released = await sessions.RemoveByEnemyIdAsync(enemy.Id, ct);
 
-        return rewards;
+        return new CombatRewardDistribution(rewards, released);
     }
 
     // Resolves the catalogue row the character was created from so a combat level-up extends the class's own
@@ -304,3 +308,18 @@ internal static class CombatHelpers
 /// The level and pools after the award, or <see langword="null"/> when the character row could not be loaded.
 /// </param>
 internal sealed record CombatRewardShare(Guid CharacterId, int Xp, int Gold, CombatProgression? Progression);
+
+/// <summary>
+/// What distributing one kill's rewards paid out, and which combat sessions the kill released.
+/// </summary>
+/// <remarks>
+/// A fight is shared: the enemy row is one instance and every engaged character holds a session pointed at it, so
+/// the killing blow releases all of them, not only the killer's. <paramref name="ReleasedCharacterIds"/> is that
+/// set — including a defender who never landed a hit and therefore earns no share — and it is what lets the hub
+/// tell each of them their fight is over instead of answering their next action with "Not in combat".
+/// </remarks>
+/// <param name="Rewards">One share per credited contributor, in the order the split paid them.</param>
+/// <param name="ReleasedCharacterIds">Characters whose combat session the kill removed.</param>
+internal sealed record CombatRewardDistribution(
+    IReadOnlyList<CombatRewardShare> Rewards,
+    IReadOnlyList<Guid> ReleasedCharacterIds);

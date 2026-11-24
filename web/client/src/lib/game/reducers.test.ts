@@ -6,7 +6,8 @@ import {
 	applyDamageToStats,
 	applyRestToStats,
 	barPercent,
-	describeCombatTurn
+	describeCombatTurn,
+	outcomeFromCombatEndReason
 } from './reducers';
 import type { CharacterStats, ChatMessage } from './types';
 
@@ -194,5 +195,19 @@ describe('barPercent', () => {
 		expect(barPercent(-5, 100)).toBe(0);
 		expect(barPercent(undefined, 100)).toBe(0);
 		expect(barPercent(1, 0)).toBe(0);
+	});
+});
+
+describe('outcomeFromCombatEndReason', () => {
+	it('summarises the two endings the player caused', () => {
+		expect(outcomeFromCombatEndReason('defeated')?.kind).toBe('defeat');
+		expect(outcomeFromCombatEndReason('Fled')?.kind).toBe('fled');
+	});
+
+	it('does not read a shared kill as a death', () => {
+		// Another character finished the fight. The character is still standing and lost nothing, so there is no
+		// summary to draw — and reporting it as a defeat is what the old `=== 'fled' ? fled : defeat` mapping did.
+		expect(outcomeFromCombatEndReason('shared kill')).toBeNull();
+		expect(outcomeFromCombatEndReason('a reason this client has never seen')).toBeNull();
 	});
 });

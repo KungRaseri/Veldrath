@@ -86,6 +86,18 @@ public record UseAbilityInCombatHubResult
     /// the turn paid no experience (or the caller was not credited with the kill).
     /// </summary>
     public CombatProgression? Progression { get; init; }
+
+    /// <summary>
+    /// Gets every character whose combat session this kill released — the caster and anyone else engaged with the
+    /// same enemy, including a defender who never landed a hit. Empty unless <see cref="EnemyDefeated"/> is
+    /// <see langword="true"/>.
+    /// </summary>
+    /// <remarks>
+    /// The enemy row is shared, so killing it ends every fight pointed at it, not only this one. The hub sends
+    /// each of these characters a <c>CombatEnded</c>; without that they keep a panel for a fight the server has
+    /// already dropped and their next action is answered "Not in combat".
+    /// </remarks>
+    public IReadOnlyList<Guid> ReleasedCombatCharacterIds { get; init; } = [];
 }
 
 /// <summary>
@@ -257,13 +269,15 @@ public class UseAbilityInCombatHubCommandHandler
             await _characterRepo.UpdateAsync(entity, cancellationToken);
 
             CombatRewardShare? myReward = null;
+            IReadOnlyList<Guid> released = [];
 
             // Only the caller that wins the death transition distributes rewards.
             if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
             {
-                var rewardList = await CombatHelpers.DistributeRewardsAsync(
+                var distribution = await CombatHelpers.DistributeRewardsAsync(
                     enemy, _characterRepo, _classRepo, _sessions, cancellationToken, _logger);
-                myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+                myReward = distribution.Rewards.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+                released = distribution.ReleasedCharacterIds;
             }
 
             return new UseAbilityInCombatHubResult
@@ -280,6 +294,7 @@ public class UseAbilityInCombatHubCommandHandler
                 XpEarned = myReward?.Xp ?? 0,
                 GoldEarned = myReward?.Gold ?? 0,
                 Progression = myReward?.Progression,
+                ReleasedCombatCharacterIds = released,
             };
         }
 

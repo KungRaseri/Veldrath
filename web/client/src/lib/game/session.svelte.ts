@@ -8,7 +8,8 @@ import {
 	applyDamageToStats,
 	applyRestToStats,
 	describeCombatTurn,
-	outcomeFrom
+	outcomeFrom,
+	outcomeFromCombatEndReason
 } from './reducers';
 import { craftedSummary } from './crafting';
 import { toArchetypeTier } from './archetype-portraits';
@@ -954,20 +955,19 @@ export class GameSession {
 		});
 
 		hub.on('CombatEnded', (payload: CombatEndedPayload) => {
+			const reason = payload.reason.trim();
+
+			// A fight can end without the player winning or dying: another character sharing the same enemy row can
+			// land the killing blow, and the server releases every session pointed at it (reason `shared kill`).
+			// That is a clean end, so it closes the panel and keeps whatever summary the player's own turns earned
+			// instead of being read as a defeat.
 			this.combat = {
 				...this.combat,
 				active: false,
-				log: [...this.combat.log, `Combat ended: ${payload.reason}.`].slice(-200),
-				outcome: this.combat.outcome ?? {
-					kind: payload.reason.toLowerCase() === 'fled' ? 'fled' : 'defeat',
-					xpEarned: 0,
-					goldEarned: 0,
-					xpLost: 0,
-					goldLost: 0,
-					hardcore: false
-				}
+				log: [...this.combat.log, `Combat ended: ${reason}.`].slice(-200),
+				outcome: this.combat.outcome ?? outcomeFromCombatEndReason(reason)
 			};
-			this.addSystemMessage(`Combat ended: ${payload.reason}.`);
+			this.addSystemMessage(`Combat ended: ${reason}.`);
 		});
 
 		hub.on('EnemyDefeated', () => {

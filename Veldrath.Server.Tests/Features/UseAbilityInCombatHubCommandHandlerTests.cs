@@ -149,4 +149,26 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
         result.AbilityDamage.Should().BeGreaterThan(0);
         enemy.CurrentHealth.Should().BeLessThan(200);
     }
+
+    [Fact]
+    public async Task Handle_Reports_Every_Session_The_Kill_Released()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var caster = await SeedCharacterAsync(db, """{"CurrentMana":50,"MaxMana":50}""");
+        var defender = await SeedCharacterAsync(db, """{"CurrentHealth":30,"MaxHealth":100}""");
+        var (zg, loc, enemy) = AddEnemy(hp: 1);
+        SetSession(caster.Id, zg, loc, enemy.Id);
+        SetSession(defender.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(
+            new UseAbilityInCombatHubCommand(caster.Id, "fireball"),
+            CancellationToken.None);
+
+        result.EnemyDefeated.Should().BeTrue();
+        // The killing blow is shared: the defender's session is gone with the caster's, so the hub needs both ids to
+        // close both panels — otherwise the defender sits on "Not in combat" for the rest of the session.
+        result.ReleasedCombatCharacterIds.Should().BeEquivalentTo([caster.Id, defender.Id]);
+        _sessions.IsInCombat(caster.Id).Should().BeFalse();
+        _sessions.IsInCombat(defender.Id).Should().BeFalse();
+    }
 }

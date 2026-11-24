@@ -1586,6 +1586,25 @@ describe('GameSession combat', () => {
 		expect(session.chat.at(-1)?.message).toBe('Combat ended: Fled.');
 	});
 
+	it('closes a fight another character finished without calling it a death', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		// The player spent the fight defending, so their own turn carries no summary and the character is alive.
+		hub.emit('CombatTurn', { action: 'defend', enemyDamage: 9, playerRemainingHealth: 21 });
+		hub.emit('CombatEnded', { characterId: 'char-1', reason: 'shared kill' });
+
+		// The server released this character's session because someone else landed the killing blow on the shared
+		// enemy. The panel has to close — and the character was neither victorious nor defeated, so the summary
+		// must stay empty rather than claim a death with no losses behind it.
+		expect(session.combat.active).toBe(false);
+		expect(session.dead).toBe(false);
+		expect(session.combat.outcome).toBeNull();
+		expect(session.combat.enemy?.name).toBe('Grey Wolf');
+		expect(session.combat.log.at(-1)).toBe('Combat ended: shared kill.');
+		expect(session.chat.at(-1)?.message).toBe('Combat ended: shared kill.');
+	});
+
 	it('marks death from damage and clears it on respawn', async () => {
 		const session = await connected();
 

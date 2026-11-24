@@ -259,6 +259,28 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Handle_Reports_Every_Session_The_Kill_Released()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var killer = await SeedCharacterAsync(db);
+        // A defender never lands a hit, so the split pays them nothing — but they are still engaged with the row.
+        var defender = await SeedCharacterAsync(db, """{"CurrentHealth":40,"MaxHealth":100}""");
+        var (zg, loc, enemy) = AddEnemy(1, killer.Id);
+        enemy.Participants.Add(defender.Id);
+        SetSession(killer.Id, zg, loc, enemy.Id);
+        SetSession(defender.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(killer.Id), CancellationToken.None);
+
+        result.EnemyDefeated.Should().BeTrue();
+        // Killing the row ends every fight pointed at it. Without these ids the hub can only tell the killer, and the
+        // defender's next Defend is answered "Not in combat" with its panel still up.
+        result.ReleasedCombatCharacterIds.Should().BeEquivalentTo([killer.Id, defender.Id]);
+        _sessions.IsInCombat(killer.Id).Should().BeFalse();
+        _sessions.IsInCombat(defender.Id).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Handle_Takes_Gold_First_When_The_Player_Dies_Carrying_Gold()
     {
         await using var db = _dbFactory.CreateContext();

@@ -110,7 +110,7 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 - `NavigateToLocation`: extracts `zoneGroupForNav` via `TryGetCurrentZoneGroup()`; passes as 4th arg to command; adds `SpawnedEnemies` to `LocationEntered` payload
 - Added `using Veldrath.Server.Features.Characters.Combat;`
 - Added 6 new hub methods: `EngageEnemy(EngageEnemyHubRequest)`, `AttackEnemy()`, `DefendAction()`, `FleeFromCombat()`, `UseAbilityInCombat(UseAbilityInCombatHubRequest)`, `Respawn()`
-- Hub broadcast events: `CombatStarted` (caller), `EnemyEngaged` (OthersInGroup), `CombatTurn` (caller), `EnemyDefeated` (OthersInGroup), `CombatEnded` (caller), `CharacterRespawned` (caller)
+- Hub broadcast events: `CombatStarted` (caller), `EnemyEngaged` (OthersInGroup), `CombatTurn` (caller), `EnemyDefeated` (OthersInGroup), `CombatEnded` (the caller; and, when a kill releases the combat sessions of everyone engaged with the same enemy row, each of those characters on their own connection, with reason `shared kill`), `CharacterRespawned` (caller)
 - Hub request DTOs (at bottom of GameHub.cs in `Veldrath.Server.Hubs` namespace): `EngageEnemyHubRequest(string LocationSlug, Guid EnemyId)`, `UseAbilityInCombatHubRequest(string AbilityId)`
 
 #### `Program.cs`
