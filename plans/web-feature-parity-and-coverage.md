@@ -111,7 +111,7 @@ proves the technique already works for one of them.
 
 | Check | Source of truth | Compared against | Allow-list rule |
 |---|---|---|---|
-| Hub methods | `public` methods in [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:210) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `GainExperience`, `AddGold`, `TakeDamage`, `AwardSkillXp`, `GetActiveCharacters`) |
+| Hub methods | `public` methods in [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:210) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `AddGold`, `AwardSkillXp`, `GetActiveCharacters`) |
 | Hub events | `SendAsync("<Event>"` in `GameHub.cs` | `hub.on('<Event>'` in [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:560) | Each ignored event listed with a reason. An entry with no reason fails the test |
 | REST routes | `group.MapGet/Post/Put/Delete` in `Veldrath.Server/Features/**/*Endpoints.cs` | Functions in `web/client/src/lib/server/*-api.ts` | Dev, internal bridge, Foundry, and Discord-only endpoints listed with a reason |
 | Content schema | Keys in `ContentSchemaRegistry` | Foundry editor type list and `web/shared` contracts | Every key must appear in both, or the test names the missing side |

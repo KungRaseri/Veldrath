@@ -124,7 +124,16 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
             ["ranged"] = entity.Traits.Ranged ?? false,
             ["stealth"] = entity.Traits.Stealth ?? false,
         },
-        Progression = new ClassProgression(),
+        // Creation reads StartingHealth/StartingMana from here and a level-up extends the same pools by the growth
+        // the seeded row carries, so the curve has to survive the mapping.
+        Progression = new ClassProgression
+        {
+            StatGrowth = new StatGrowth
+            {
+                HealthPerLevel = entity.Stats.HealthGrowth ?? 0,
+                ManaPerLevel = entity.Stats.ManaGrowth ?? 0,
+            },
+        },
     };
 
     // ActorClass stores playstyle traits rather than explicit proficiency lists. Derive the

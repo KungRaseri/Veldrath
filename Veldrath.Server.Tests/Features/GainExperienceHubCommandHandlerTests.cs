@@ -1,8 +1,11 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.LevelUp;
+using SharedModels = RealmEngine.Shared.Models;
 
 namespace Veldrath.Server.Tests.Features;
 
@@ -12,18 +15,51 @@ namespace Veldrath.Server.Tests.Features;
 /// </summary>
 public class GainExperienceHubCommandHandlerTests
 {
+    /// <summary>The seeded warrior curve: 120 health and 20 mana at level 1, 12/2 per level.</summary>
+    private static SharedModels.CharacterClass WarriorClass() => new()
+    {
+        Slug = "warrior",
+        Name = "Warrior",
+        DisplayName = "Warrior",
+        StartingHealth = 120,
+        StartingMana = 20,
+        Progression = new SharedModels.ClassProgression
+        {
+            StatGrowth = new SharedModels.StatGrowth { HealthPerLevel = 12, ManaPerLevel = 2 },
+        },
+    };
+
+    /// <summary>The seeded mage curve: 60 health and 100 mana at level 1, 6/10 per level.</summary>
+    private static SharedModels.CharacterClass MageClass() => new()
+    {
+        Slug = "mage",
+        Name = "Mage",
+        DisplayName = "Mage",
+        StartingHealth = 60,
+        StartingMana = 100,
+        Progression = new SharedModels.ClassProgression
+        {
+            StatGrowth = new SharedModels.StatGrowth { HealthPerLevel = 6, ManaPerLevel = 10 },
+        },
+    };
+
     private static (GainExperienceHubCommandHandler Handler, Mock<ICharacterRepository> Repo, Character Character)
-        Arrange(long experience = 0, int level = 1)
+        Arrange(
+            long experience = 0,
+            int level = 1,
+            string? attributes = null,
+            SharedModels.CharacterClass? characterClass = null)
     {
         var character = new Character
         {
             Id = Guid.NewGuid(),
             AccountId = Guid.NewGuid(),
             Name = "TestHero",
-            ClassName = "Warrior",
+            ClassName = characterClass?.Name ?? "Warrior",
             SlotIndex = 1,
             Level = level,
             Experience = experience,
+            Attributes = attributes ?? string.Empty,
         };
 
         var repo = new Mock<ICharacterRepository>();
@@ -31,8 +67,12 @@ public class GainExperienceHubCommandHandlerTests
         repo.Setup(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        var classRepo = new Mock<ICharacterClassRepository>();
+        classRepo.Setup(r => r.GetByName(It.IsAny<string>())).Returns(characterClass);
+
         var handler = new GainExperienceHubCommandHandler(
             repo.Object,
+            classRepo.Object,
             NullLogger<GainExperienceHubCommandHandler>.Instance);
 
         return (handler, repo, character);
@@ -60,8 +100,10 @@ public class GainExperienceHubCommandHandlerTests
         var repo = new Mock<ICharacterRepository>();
         repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Character?)null);
+        var classRepo = new Mock<ICharacterClassRepository>();
         var handler = new GainExperienceHubCommandHandler(
             repo.Object,
+            classRepo.Object,
             NullLogger<GainExperienceHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -122,6 +164,157 @@ public class GainExperienceHubCommandHandlerTests
         result.NewExperience.Should().Be(250);
         result.LeveledUp.Should().BeTrue();
         result.LeveledUpTo.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_ExtendsTheClassPoolsAndKeepsTheCurrentValues()
+    {
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+        {
+            ["Constitution"] = 12,
+            ["Wisdom"] = 10,
+            ["CurrentHealth"] = 100,
+            ["MaxHealth"] = 120,
+            ["CurrentMana"] = 15,
+            ["MaxMana"] = 20,
+        });
+        var (handler, _, character) = Arrange(
+            experience: 90, level: 1, attributes: attributes, characterClass: WarriorClass());
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LeveledUp.Should().BeTrue();
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        // The class curve creation encoded: warrior 120/20 at level 1, +12 health and +2 mana per level.
+        stored["MaxHealth"].Should().Be(132);
+        stored["MaxMana"].Should().Be(22);
+
+        // A bigger bar is a ceiling, not a heal: the current pools keep the value the fight left them at.
+        stored["CurrentHealth"].Should().Be(100);
+        stored["CurrentMana"].Should().Be(15);
+
+        result.MaxHealth.Should().Be(132);
+        result.CurrentHealth.Should().Be(100);
+        result.MaxMana.Should().Be(22);
+        result.CurrentMana.Should().Be(15);
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_NeverLowersAMagesManaBelowTheClassPool()
+    {
+        // A legal 27-point mage build: elf, Wisdom 9. The engine formula would derive 5×9 + 2×3 = 51 mana at level 2
+        // and clamp the level-1 class pool (100) down to it; the class curve must not.
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+        {
+            ["Constitution"] = 8,
+            ["Wisdom"] = 9,
+            ["CurrentHealth"] = 60,
+            ["MaxHealth"] = 60,
+            ["CurrentMana"] = 100,
+            ["MaxMana"] = 100,
+        });
+        var (handler, _, character) = Arrange(
+            experience: 90, level: 1, attributes: attributes, characterClass: MageClass());
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["MaxMana"].Should().Be(110, "the mage class curve grows mana by 10 per level from 100");
+        stored["CurrentMana"].Should().Be(100, "a rising ceiling must not clamp the current mana down");
+        stored["MaxHealth"].Should().Be(66, "the mage class curve grows health by 6 per level from 60");
+        result.MaxMana.Should().Be(110);
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_NeverLowersAPoolTheCurveDisagreesWith()
+    {
+        // The API creation path writes the engine formulas (Con 10 at level 1 → 105 health, 53 mana), so the class
+        // curve's level-2 mana (22) is below what the character already carries. The blob is the floor.
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+        {
+            ["Constitution"] = 10,
+            ["Wisdom"] = 10,
+            ["CurrentHealth"] = 105,
+            ["MaxHealth"] = 105,
+            ["CurrentMana"] = 53,
+            ["MaxMana"] = 53,
+        });
+        var (handler, _, character) = Arrange(
+            experience: 90, level: 1, attributes: attributes, characterClass: WarriorClass());
+
+        await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["MaxHealth"].Should().Be(132);
+        stored["MaxMana"].Should().Be(53, "the stored pool is a floor even when the class curve is lower");
+        stored["CurrentMana"].Should().Be(53);
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_WithoutAClassRow_FallsBackToTheEngineFormulas()
+    {
+        // No class catalogue row resolves (the stub repository returns null), so the engine formula is the only
+        // derivation left. Constitution 12 at level 2: 12 × 10 + 2 × 5 = 130; Wisdom 10: 10 × 5 + 2 × 3 = 56.
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+        {
+            ["Constitution"] = 12,
+            ["Wisdom"] = 10,
+            ["CurrentHealth"] = 100,
+            ["MaxHealth"] = 120,
+            ["CurrentMana"] = 15,
+            ["MaxMana"] = 50,
+        });
+        var (handler, _, character) = Arrange(experience: 90, level: 1, attributes: attributes);
+
+        await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["MaxHealth"].Should().Be(130);
+        stored["MaxMana"].Should().Be(56);
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_RebuildsACorruptAttributesBlobFromTheLevel()
+    {
+        var (handler, _, character) = Arrange(experience: 90, level: 1, attributes: "{not json");
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LeveledUp.Should().BeTrue();
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        // No Constitution/Wisdom in the blob and no class row, so the engine defaults of 10 apply at the new level.
+        stored["MaxHealth"].Should().Be(110);
+        stored["MaxMana"].Should().Be(56);
+    }
+
+    [Fact]
+    public async Task Handle_AwardInsideTheLevel_DoesNotRewriteTheAttributesBlob()
+    {
+        const string attributes = "{not json";
+        var (handler, repo, character) = Arrange(experience: 30, level: 2, attributes: attributes);
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 40 },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LeveledUp.Should().BeFalse();
+        character.Attributes.Should().Be(attributes, "only a level-up changes the derived pools");
+        repo.Verify(r => r.UpdateAsync(character, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

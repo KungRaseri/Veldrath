@@ -1609,13 +1609,46 @@ describe('GameSession progression and economy', () => {
 	it('updates level and experience, announcing level ups', async () => {
 		const session = await connected();
 
-		hub.emit('ExperienceGained', { newLevel: 3, newXP: 280, leveledUp: false, leveledUpTo: 0 });
+		hub.emit('ExperienceGained', {
+			newLevel: 3,
+			newExperience: 280,
+			leveledUp: false,
+			leveledUpTo: 0
+		});
 		expect(session.stats).toMatchObject({ level: 3, experience: 280 });
 		expect(session.chat).toEqual([]);
 
-		hub.emit('ExperienceGained', { newLevel: 4, newXP: 10, leveledUp: true, leveledUpTo: 4 });
+		hub.emit('ExperienceGained', {
+			newLevel: 4,
+			newExperience: 10,
+			leveledUp: true,
+			leveledUpTo: 4
+		});
 		expect(session.stats.level).toBe(4);
 		expect(session.chat.at(-1)?.message).toBe('Level up! You are now level 4.');
+	});
+
+	it('takes the re-derived pools from a level-up so the bar moves with the level', async () => {
+		const session = await connected();
+
+		hub.emit('ExperienceGained', {
+			newLevel: 4,
+			newExperience: 10,
+			leveledUp: true,
+			leveledUpTo: 4,
+			maxHealth: 150,
+			currentHealth: 120,
+			maxMana: 60,
+			currentMana: 40
+		});
+
+		expect(session.stats).toMatchObject({
+			level: 4,
+			maxHealth: 150,
+			currentHealth: 120,
+			maxMana: 60,
+			currentMana: 40
+		});
 	});
 
 	it('tracks gold from every gold-changing event', async () => {

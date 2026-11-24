@@ -64,10 +64,9 @@ const NO_WEB_CALLER: Record<string, string> = {
 	GetActiveCharacters:
 		'Multi-client diagnostic; the roster is server-rendered, so the UI never needs the live list.',
 
-	// Server-authoritative: the client never grants itself progression or applies its own damage.
-	GainExperience: 'Awarded by combat and quest handlers, never by the browser.',
+	// Server-authoritative commands the web UI never calls. They remain hub methods; the client only reads the
+	// server's authoritative values, so no UI path needs them.
 	AddGold: 'Awarded by loot and quest handlers, never by the browser.',
-	TakeDamage: 'Applied by combat handlers; a client-callable version would be a cheat.',
 	AwardSkillXp: 'Awarded by combat and quest handlers, never by the browser.',
 
 	// Deferred features: the hub bridge exists, the UI does not. See the plan file.
