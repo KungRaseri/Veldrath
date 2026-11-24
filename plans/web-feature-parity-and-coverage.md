@@ -49,10 +49,12 @@ still open.
   client-callable `AwardSkillXp` bridge was retired in PR #269.
 - Crafting shipped in the same milestone (PR #69). The recipe book that row asked for is
   [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte):
-  `GetCraftableRecipes` fills it with the recipes resolved against the bag, `ItemCrafted` is the event
-  that drives it, and `craftBlockedReason` ([`crafting.ts`](../web/client/src/lib/game/crafting.ts:58))
-  is the per-recipe disabled reason. Harvesting shipped beside it — `HarvestNode`, the `Harvested`
-  broadcast and a Gather button per node.
+  `GetCraftableRecipes` fills it with the recipes resolved against the bag, and `CraftItem` re-sends
+  `CraftableRecipes` after every craft
+  ([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1692)) so the list stays current; `ItemCrafted`
+  announces the outcome in the log and refreshes the bag, and `craftBlockedReason`
+  ([`crafting.ts`](../web/client/src/lib/game/crafting.ts:58)) is the per-recipe disabled reason.
+  Harvesting shipped beside it — `HarvestNode`, the `Harvested` event and a Gather button per node.
 - NPC dialogue shipped as E4 (PR #98) —
   [`DialogueOverlay.svelte`](../web/client/src/lib/game/DialogueOverlay.svelte) over `TalkToNpc` and
   `ChooseNpcOption`, with authored greetings and a requirement and consequence per option.
@@ -183,7 +185,7 @@ this plan measured rather than as open work.
 | NPC dialogue | [`TalkToNpc`](../Veldrath.Server/Hubs/GameHub.cs:1442), `GET /api/content/dialogues` | Closed — dialogue overlay shipped as E4 |
 | Dungeons | [`EnterDungeon`](../Veldrath.Server/Hubs/GameHub.cs:1937), `DungeonEntered` | Closed — dungeon panel shipped as F4; the entry method is still uncalled because dungeons are entered on foot |
 | Skills | `SkillXpGained`, broadcast from [`CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632); no client-callable award method — the old `AwardSkillXp` bridge was retired in PR #269 | Closed — skill sheet shipped in milestone E |
-| Harvesting | `HarvestNode`, the `Harvested` broadcast, a Gather button per node in `GameScreen.svelte` | Closed — shipped with crafting |
+| Harvesting | `HarvestNode`, the `Harvested` event, a Gather button per node in `GameScreen.svelte` | Closed — shipped with crafting |
 | Enchanting, salvaging, socketing, upgrading, reputation, achievements, NG+ | `RealmEngine.Core/Features/` only; no folder under `Veldrath.Server/Features/` | Deferred |
 | Unused client-facing calls | `GetActiveCharacters` | Deferred, evaluate when multi-character is designed |
 

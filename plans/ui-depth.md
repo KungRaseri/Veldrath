@@ -1,7 +1,7 @@
 # UI Depth (Milestone E)
 
 > **Position in the roadmap:** D → C → A → B → **E**.
-> D, C, A and B are closed (see [`README.md`](README.md:11)), so this is not a tail of unfinished work:
+> D, C, A and B are closed (see [`README.md`](README.md:25)), so this is not a tail of unfinished work:
 > the game systems those milestones built are reachable from the browser and mostly *thin* once they
 > arrive. E is the milestone that makes them legible.
 > **Tracker:** no epic yet — this file is the specification; cards get created per phase after review.
@@ -295,13 +295,13 @@ Building a crafting UI on the current handler would ship a menu that takes money
 > [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:75) reads
 > the recipe, checks level, skill rank and every material, consumes them, adds the output, refunds the
 > materials when a later step fails, and dispatches `AwardSkillXpHubCommand` at :237.
-> [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632) broadcasts `ItemCrafted` to the zone
-> group (:1666), and `GetCraftableRecipes` (:1709) answers with the recipes resolved against the current
-> bag. The panel is [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte), mounted
+> [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632) sends `ItemCrafted` (:1666), and
+> `GetCraftableRecipes` (:1709) answers with the recipes resolved against the current bag and skill ranks.
+> The panel is [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte), mounted
 > from [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:269) and asked for its list
 > by [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:1491); its disabled reason is the
 > server's own sentence ([`crafting.ts`](../web/client/src/lib/game/crafting.ts:58)). Harvesting shipped
-> beside it — `HarvestNode`, the `Harvested` broadcast and a Gather button per node in
+> beside it — `HarvestNode`, the `Harvested` event and a Gather button per node in
 > [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:264). `DefaultCraftingCost` survives
 > in no source file, so the last sentence above no longer holds and the definition of done below is met.
 
@@ -344,7 +344,7 @@ its id, and does nothing else ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/
 The `DungeonInstance` model exists but nothing creates one.
 
 > **Update 2026-11-24 — E6 shipped as F4, so the paragraph above is history.** `EnterDungeon` now resolves
-> the zone's entrance location, moves the character through `EnterZoneLocationHubCommand` and returns
+> the zone's entrance location, hands the move to `EnterZoneLocationHubCommand` and returns
 > `LocationSlug`, `RecommendedLevel`, `YourLevel` and `LevelWarning`
 > ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:92)).
 > The client slice is [`DungeonPanel.svelte`](../web/client/src/lib/game/DungeonPanel.svelte) — the room
