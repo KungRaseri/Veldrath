@@ -1688,9 +1688,7 @@ public class GameHub : Hub
                     await Clients.Caller.SendAsync("SkillXpGained", skillPayload);
             }
 
-            // The bag and the recipe list both changed, so the caller re-reads both: the crafted item has to
-            // appear in the bag snapshot, and the recipe list has to show the materials it just consumed.
-            await TrySendInventorySnapshotAsync(characterId);
+            // The bag and the recipe list both changed, so the caller re-reads what it can now make.
             await SendCraftableRecipesAsync(characterId);
 
             _logger.LogInformation(

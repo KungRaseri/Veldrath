@@ -13,9 +13,9 @@ namespace Veldrath.Server.Features.Characters;
 ///
 /// The blob is a JSON array of objects with at least <c>ItemRef</c> and <c>Quantity</c>. It is read as
 /// dictionaries rather than a typed record on purpose: a field this code does not know about survives a write.
-/// Entries written by harvesting, chests and combat hold the bare slug (<c>iron-ingot</c>), while recipes and the
-/// shop name the full reference (<c>@items/materials/ingots:iron-ingot</c>); <see cref="Count"/> and
-/// <see cref="Take"/> accept either form so the two cannot drift apart.
+/// Entries written by harvesting, chests, combat, character creation and the shop hold the bare slug
+/// (<c>iron-ingot</c>), while recipes name the full reference (<c>@items/materials/ingots:iron-ingot</c>);
+/// <see cref="Count"/> and <see cref="Take"/> accept either form so the two cannot drift apart.
 /// </remarks>
 public static class CharacterBag
 {
@@ -45,8 +45,8 @@ public static class CharacterBag
         ArgumentNullException.ThrowIfNull(bag);
         ArgumentNullException.ThrowIfNull(itemRef);
 
-        // Match by leaf as well as by literal reference: harvest writes `iron-ingot`, the shop and recipes
-        // write `@items/...:iron-ingot`, and one item must not become two stacks.
+        // Match by leaf as well as by literal reference: harvest, chests, combat, character creation and the
+        // shop write `iron-ingot`, recipes write `@items/...:iron-ingot`, and one item must not become two stacks.
         var slug = Slug(itemRef);
         var existing = bag.FirstOrDefault(entry => Matches(entry, itemRef, slug));
 
@@ -60,7 +60,7 @@ public static class CharacterBag
             return;
         }
 
-        var current = existing.TryGetValue("Quantity", out var stored) && stored.TryGetInt32(out var value) ? value : 0;
+        var current = QuantityOf(existing);
         existing["Quantity"] = JsonSerializer.SerializeToElement(current + quantity);
     }
 
@@ -95,7 +95,7 @@ public static class CharacterBag
         var slug = Slug(itemRef);
         return bag
             .Where(entry => Matches(entry, itemRef, slug))
-            .Sum(entry => entry.TryGetValue("Quantity", out var stored) && stored.TryGetInt32(out var value) ? value : 0);
+            .Sum(QuantityOf);
     }
 
     /// <summary>
@@ -122,9 +122,12 @@ public static class CharacterBag
         {
             if (!Matches(bag[index], itemRef, slug)) continue;
 
-            var carried = bag[index].TryGetValue("Quantity", out var stored) && stored.TryGetInt32(out var value)
-                ? value
-                : 0;
+            var carried = QuantityOf(bag[index]);
+
+            // An entry with no readable positive quantity counts as zero in Count, so it can never pay towards
+            // the take; skipping it keeps both methods reading the same entry the same way.
+            if (carried <= 0) continue;
+
             var taken = Math.Min(carried, remaining);
             remaining -= taken;
 
@@ -136,6 +139,20 @@ public static class CharacterBag
 
         return remaining == 0;
     }
+
+    /// <summary>
+    /// An entry's quantity, or zero when it is missing or not a whole number. <c>JsonElement.TryGetInt32</c>
+    /// throws on a non-numeric element rather than returning false, so the kind is checked first: a corrupt
+    /// blob must read as an empty stack, not crash every bag operation.
+    /// </summary>
+    /// <param name="entry">The bag entry to read.</param>
+    /// <returns>The stored quantity, or zero.</returns>
+    private static int QuantityOf(Dictionary<string, JsonElement> entry) =>
+        entry.TryGetValue("Quantity", out var stored) &&
+        stored.ValueKind == JsonValueKind.Number &&
+        stored.TryGetInt32(out var value)
+            ? value
+            : 0;
 
     private static bool Matches(Dictionary<string, JsonElement> entry, string itemRef, string slug)
     {

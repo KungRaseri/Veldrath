@@ -36,9 +36,9 @@ title: "CraftItem Handler Details (session-13)"
 - Announcement: `GameHub.CraftItem` sends `ItemCrafted` to the zone group, or to the caller when it is not in a
   zone, with `{ CharacterId, RecipeSlug, RecipeName, ItemRef, OutputQuantity, ConsumedMaterials, SkillId,
   SkillXp }`. A second `SkillXpGained` announcement follows when the craft trained a skill. Both payloads are
-  anonymous objects — there is no C# `ItemCraftedPayload` record. After the announcements the hub re-sends the
-  caller's inventory snapshot and the craftable recipe list, so the new item and the spent materials show up
-  without a manual refresh (t_fd868f7e).
+  anonymous objects — there is no C# `ItemCraftedPayload` record. The client's `ItemCrafted` handler reloads the
+  bag with `openInventory()`, and the hub re-sends the caller's craftable recipe list after the announcement, so
+  the new item and the spent materials both show up without a manual refresh.
 - Web client: `ItemCraftedPayload` in `web/client/src/lib/game/types.ts`; `Session` subscribes with
   `hub.on('ItemCrafted')` in `web/client/src/lib/game/session.svelte.ts` and renders `craftedSummary(...)`
   (`web/client/src/lib/game/crafting.ts`) before refreshing the bag with `openInventory()`, so the sheet never
