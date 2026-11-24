@@ -22,16 +22,16 @@ bands and its slugs are unchanged from what was approved.
   third organisation, promoting a slug the catalogue already referenced (`elder-goblin-chief`'s
   `FactionOverride`, seeded in `bf715a9b`); it asserts no new world claim, and no roster row's faction
   tie changes. The record is under *Organisation promotion recorded — the Goblin Warband* below.
-- **The syndicate is placed on one instance — corrected 2026-11-24.** The faction paragraph, the
-  *What this roster does not cover* row and the ash-plain bullet each said the Shadowhand Syndicate
-  had no geography, and the roster row added that placing its members anywhere was a new claim. The
-  catalogue says otherwise: `captain-blackthorn` is a story instance at `collapsed-vault`, in
-  `the-halrow`, carrying `FactionOverride = "shadowhand-syndicate"`. All four passages — those
-  three and the proposal 6–8 decline record — now read precisely: the faction paragraph and the
-  roster row say the organisation is assigned no region, zone or city and that one placed person is
-  not a ground; the ash-plain bullet says neither organisation has ground in the ash plain; and the
-  decline record says what was declined is a *grant* of geography, not the absence of one. Proposal
-  7 stays declined and no roster row's faction column changes.
+- **The syndicate is placed on one instance — corrected 2026-11-24.** Four passages said the
+  Shadowhand Syndicate had no geography — the proposal 6–8 decline record, the faction paragraph,
+  the *What this roster does not cover* row and the ash-plain bullet — and the roster row added
+  that placing its members anywhere was a new claim. The catalogue says otherwise:
+  `captain-blackthorn` is a story instance at `collapsed-vault`, in `the-halrow`, carrying
+  `FactionOverride = "shadowhand-syndicate"`. All four now read precisely: the decline record says
+  what was declined is a *grant* of geography, not the absence of one; the faction paragraph and
+  the roster row say the organisation is assigned no region, zone or city and that one placed
+  person is not a ground; the ash-plain bullet says neither organisation has ground in the ash
+  plain. Proposal 7 stays declined and no roster row's faction column changes.
 - **Proposal 9 — decided 2026-11-20.** The content standard is published in `game-context/GAME.md`
   §3 (Teen-equivalent and self-imposed, with the permitted, testimony-only and not-permitted lists)
   and the four design pillars with their fails-when clauses in §4. A borderline description is
