@@ -11,8 +11,8 @@ directly. The companion files are `docs/design/content/pools/<zone>.yaml`, one p
 This document decides *placement only*. It does not decide stat lines (D0 owns those), does not
 re-name an archetype (D1 owns the roster, and a slug is permanent identity), and changes no gameplay
 code: the only code in this commit is three location traits and the three seeder pools they force
-(amendment 3 and 4). The pools are not imported yet: a pack importer now exists, and it is why the 18
-skeletons sit in the design set rather than under `content/` (§8).
+(amendment 3 and 4). The pools import zone by zone: a pack importer exists, and each zone's pack is written
+beside its design file under `content/zonelocations/` rather than replacing it (§8).
 
 ## Amendments (2026-11-20)
 
@@ -54,11 +54,11 @@ above `b23-26` re-measures one tail pool; it is listed with the rest so the file
 
 One consequence follows from amendments 3 and 4 rather than being an amendment itself, and is flagged
 for D5 rather than decided here: `ashfields` no longer has a hostile location below level 21, so
-`ash-jack` and `forge-deserter` (roster band 19–20) must be **seeded with `MaxLevel = 22`** or they can
+`ash-jack` and `forge-deserter` (roster band 19–20) had to be **seeded with `MaxLevel = 22`** or they could
 appear nowhere — the engine's overlap guard requires the archetype's range to reach the battlefield's
-`MinLevel` (`SeededEncounterCoverageTests.cs:207-239`). §6 carries the range; the roster band is
-unchanged, which is the same pattern as the seven carried-over archetypes whose seeded range is wider
-than their band.
+`MinLevel` (`SeededEncounterCoverageTests.cs:207-239`). §6 records the range they were seeded with; the
+roster band is unchanged, which is the same pattern as the seven carried-over archetypes whose seeded
+range is wider than their band.
 
 ## 1. What is authoritative, and what I measured
 
@@ -70,7 +70,7 @@ than their band.
 | A non-hostile pool entry is dropped from the roster with a warning | `ActorPoolResolver.cs:133-139` | read |
 | The roster roll is **2–4, globally** — `MinCount`/`MaxCount` are private consts, rolled once per location as a fill target: the location's placed **hostile** instances go in first (a non-hostile placement is dropped), and the pool fills from their count up to the roll, so five or more hostile placements at one location would exceed it | `ActorPoolResolver.cs:32-33`, `:94`, `:100-106`, `:117` | read |
 | The roster is rolled **once** into `EnemyInstances` and never re-rolled; respawn revives the same row | `Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:56-98` | D0 measured it; I re-read the method |
-| Seeded archetypes and their real `MinLevel`/`MaxLevel` | `RealmEngine.Data/Seeders/ArchetypeSeeder.cs` | parsed all 17 archetypes (14 hostile, 3 non-hostile) |
+| Seeded archetypes and their real `MinLevel`/`MaxLevel` | `RealmEngine.Data/Seeders/ArchetypeSeeder.cs` | parsed every archetype block in the seeder |
 | The archetype roster, its bands, and each archetype's zones | `docs/design/content/archetypes.md` (D1) | read, proposed 2026-11-20 |
 | Level bands, spawn and loot semantics | `game-context/budget.yaml` (D0) | read, approved 2026-11-20 |
 
@@ -100,10 +100,11 @@ Two band sets exist and they are not the same set. Both are used, for different 
 - **D1 roster bands** — `1-3, 4-6, 7-9, 10-12, 13-15, 16-18, 19-20`, plus the **tail band `21-30`**. These
   band the *archetypes*, and they are what the one-band tolerance rule is measured on. D6/L6 added five
   tail rows to that roster without splitting the band; the split is D0's, not D1's.
-- Levels 21–30 were D1's declared gap ("needs its own card"), and only two *seeded* archetypes sit there:
-  `pyreling` (seeded 23–28) and `fire-ancient` (seeded 26–30, a boss). D6/L6 authored five tail rows on
-  top of them, of which `ash-eater` (26–30) and `maw-serpent` (28–30) are above level 26. That gap — and
-  the one pool the published band re-measures — is §7.
+- Levels 21–30 were D1's declared gap ("needs its own card"), and when D1 was written only two *seeded*
+  archetypes sat there: `pyreling` (23–28) and `fire-ancient` (26–30, a boss). D6/L6 authored five tail
+  rows on top of them — `vent-stalker`, `crust-crawler` and `ash-picker` at 23–26, `ash-eater` at 26–30
+  and `maw-serpent` (28–30) — and all five are seeded (§7). That gap, and the one pool the published
+  band re-measures, is §7.
 
 **The one-band rule, stated precisely** (the card asks for it; it needs a definition to be testable):
 for a pool entry at location `L`, `|band(archetype) − band(L.MinLevel)| ≤ 1` on the D1 ladder, where
@@ -144,8 +145,8 @@ this section, run over these files and the two seeders.
 | No archetype appears more than one band from its location's entry band | **all 74 entries pass** on the D1 ladder + tail band. **3 entries** additionally break D1's per-archetype *zone* list (`cinderling` outside `ashfields`, §7) — a documented deviation, not an oversight |
 | **Tolerance cap (2026-11-20):** at most **one** entry above its location's top band, that entry `weight ≤ 2` | **1 of 74 entries is above its location's top band** — `moor-wight` in `bone-hollow`, now weight 1 (amendment 2). **0 pools breach the cap.** The 30 adjacent entries are listed below with their bands, so the difference between "adjacent" and "above" is measured, not asserted. One entry is out of band without being above it: `pyreling` at `kaldreks-heart` is the same D1 tail band as its location and one band **below** it on the published `b27-30` table — amendment 5, weight 2 |
 | Weights are relative integers, no zero, no percentages | **all 74 entries** are integers in `1..6`; no pool sums to 100 and none is normalised. The seeder's pre-amendment `60/40` pairs are the same ratios written as percentages-looking numbers, which is why these are not |
-| Every pool entry survives the seeder's own overlap rule (`archetype.MinLevel <= L.MaxLevel && archetype.MaxLevel >= L.MinLevel`) | **all 74 pass** against the seeded ranges, and against the level range each new archetype must be seeded with (§6) — including the two whose seeded range is widened to `19–22` by the amendments |
-| Every pooled archetype exists and is hostile | **not true yet, by construction**: 16 of the 28 pooled archetypes do not exist in `ArchetypeSeeder.cs` — the 15 D1 rows plus D6's `maw-serpent`. The import gate refuses them until they are seeded (§8) |
+| Every pool entry survives the seeder's own overlap rule (`archetype.MinLevel <= L.MaxLevel && archetype.MaxLevel >= L.MinLevel`) | **all 74 pass** against the ranges the archetypes are seeded with (§6) — including the two the amendments widened to `19–22` |
+| Every pooled archetype exists and is hostile | **holds** — every pooled slug resolves in `ArchetypeSeeder.cs` and carries `Traits.Hostile = true`, so the import gate's `missing-spawn-archetype` check has nothing to refuse on this axis (§8) |
 
 ### The 30 adjacent entries, and why 29 of them are not tolerance
 
@@ -189,7 +190,7 @@ occupies. Every adjacent entry is listed here: **22 sit above the entry band and
 | `tidal-grotto` | 14-18 | `storm-harrower` | 16-18 | 3 | +1 | yes |
 
 Verification was a script over the two seeder files and this matrix's own data, not by eye: it parses all
-67 location blocks, all 17 seeded archetypes, the D1 roster and the 18 packs, then checks the rules above
+67 location blocks, every seeded archetype, the D1 roster and the 18 packs, then checks the rules above
 plus `SeededEncounterCoverageTests.Settlements_and_dungeon_lobbies_never_spawn_anything`,
 `….Every_other_location_can_spawn_something` and
 `….Every_pooled_archetype_exists_and_is_hostile` entry by entry, and
@@ -394,12 +395,13 @@ the keeper-only class, and no person is a pool entry either way. The other fifte
 | `pyreling` | 21-30 | `vent-fields`, `pyreling-den`, `fire-ancients-chamber`, `kaldreks-heart` | 4 |
 | `maw-serpent` | 28-30 | `kaldreks-heart` (amendment 5) | 1 |
 
-**What must exist before these pools can be imported.** 16 of the pooled archetypes are roster rows that
-`ArchetypeSeeder.cs` does not contain yet — the 15 D1 rows below plus D6's `maw-serpent` (28–30, §7),
-which C4 pooled under amendment 5. Each needs the level range in this table, or the pool entry fails the
-two guards that already exist:
+**What the pooled archetypes are seeded as.** Every pooled slug exists in `ArchetypeSeeder.cs` with
+`Traits.Hostile = true` (#210, 2026-11-22), so the import gate has nothing to refuse on that axis. The
+table below records the level range each row that had to be added was seeded with — the 15 D1 rows plus
+D6's `maw-serpent` (28–30, §7), which C4 pooled under amendment 5. The range is not cosmetic: a pool
+entry fails the overlap guard when the archetype's range misses the location's:
 
-| new archetype | band to seed |
+| archetype | seeded level range |
 |---|---|
 | `drove-cur` | 1–3 |
 | `peat-adder` | 1–3 |
@@ -420,8 +422,9 @@ two guards that already exist:
 
 The two `19–22` rows are the amendment consequence (§Amendments): the roster bands them 19–20, but after
 amendments 3 and 4 the only hostile location left in their zone (`scorched-battlefield`) starts at level
-21, and the overlap guard needs `MaxLevel >= 21`. Seed them at 19–22 and both pools work; seed them at
-19–20 and the import fails `SeededEncounterCoverageTests.cs:207-239` for two of the three entries.
+21, and the overlap guard needs `MaxLevel >= 21`. They are seeded at 19–22, which is what lets both
+entries resolve; at 19–20 the import would fail `SeededEncounterCoverageTests.cs:207-239` for two of the
+three entries.
 
 The ranges are D1's bands, not new numbers: D1 says a row's band is its level band, and the seeder needs
 `MinLevel`/`MaxLevel` to run the overlap check. A pool entry whose archetype is missing logs an Error and
@@ -435,9 +438,10 @@ Three consequences landed on this card, and they are reported rather than papere
 first two on 2026-11-20 and C4 published the band that re-measures the second (§7.1, §7.2); the third is
 still D6's to close or D5's to accept.
 
-1. **There are exactly two *seeded* archetypes above level 22**: `pyreling` (seeded 23–28) and
-   `fire-ancient` (26–30). One of the two is a boss, which D0 holds out of every pool. D6/L6 authored five
-   non-boss tail rows on top of them (23–26, 26–30 and 28–30); none is seeded yet (§6).
+1. **The tail was thin when this card was written.** Only two *seeded* archetypes sat above level 22 then:
+   `pyreling` (23–28) and `fire-ancient` (26–30), the second a boss that D0 holds out of every pool. D6/L6
+   authored five non-boss tail rows on top of them (23–26, 26–30 and 28–30), and all five are seeded now
+   (§6).
 2. **`kaldreks-heart` (L28–30) had a single-entry pool.** `pyreling` was the only non-boss archetype whose
    seeded range reached 28; `cinderling` stops at 26 and would fail the overlap guard. It reached two
    entries with amendment 5 (§7.2), and without using the boss.
@@ -449,20 +453,24 @@ still D6's to close or D5's to accept.
 
 ### 7.1 What the band extension changed, and what it did not
 
-`budget.yaml` published `b27-30` and now covers 1–30 (C4, `t_259ac697`). The band is anchored on the only
-things that exist at that height:
+`budget.yaml` published `b27-30` and now covers 1–30 (C4, `t_259ac697`). The band was anchored on the only
+things that existed at that height:
 
-- **`fire-ancient` is the only seeded archetype there** — 900 HP, 42 damage, 1200 XP, 150–300 gold,
-  seeded 26–30 (`ArchetypeSeeder.cs:662-669`). It is a boss and stays out of every pool, so it sets the
-  band's *ceiling* rather than its population: `hp.max` is 450 exactly because 900 / 2 is the floor of
-  D0's approved `bosses.hp_multiplier`, and `xp` and `gold` check out against the same multipliers.
+- **`fire-ancient` was the only seeded archetype there when the band was published** — 900 HP, 42 damage,
+  1200 XP, 150–300 gold, seeded 26–30 (`ArchetypeSeeder.cs:662-669`). It is a boss and stays out of every
+  pool, so it set the band's *ceiling* rather than its population: `hp.max` is 450 exactly because 900 / 2
+  is the floor of D0's approved `bosses.hp_multiplier`, and `xp` and `gold` check out against the same
+  multipliers.
 - **`ash-eater` (26–30) and `maw-serpent` (28–30) are the only authored entries** (D6/L6,
-  `archetypes.md`), and neither carries a stat line yet. Every value in `b27-30` is therefore a range
-  continued from `b23-26` by the step the ladder last took — one basis line per value, in `budget.yaml`
-  itself, so the arithmetic can be re-run rather than re-argued.
+  `archetypes.md`), and neither carried a stat line when the band was published. Every value in `b27-30`
+  is therefore a range continued from `b23-26` by the step the ladder last took — one basis line per
+  value, in `budget.yaml` itself, so the arithmetic can be re-run rather than re-argued. Both are seeded
+  now (#210, 2026-11-22), with stat lines inside the `b27-30` ranges: `ash-eater` 380 HP, 42 damage,
+  375 XP; `maw-serpent` 430 HP, 46 damage, 450 XP.
 - **No hostile archetype was re-banded to fill it.** The band exists because the rooms run to level 30
-  (`ZoneLocationsSeeder.cs`, the three `kaldrek-maw` room blocks), not because a slot needed a tenant. A
-  band whose only seeded occupant is a boss is the honest state of the ladder at 27–30.
+  (`ZoneLocationsSeeder.cs`, the three `kaldrek-maw` room blocks), not because a slot needed a tenant. Its
+  only seeded occupant when the band was published was a boss; `maw-serpent` (28–30) is a non-boss
+  occupant now.
 - **No boss is authored for 27–30.** `fire-ancient` already occupies the tier and stays unpooled: boss
   placement is still held for the uniqueness mechanism D0 named.
 
@@ -488,8 +496,8 @@ room — it dens in it (§3) — but it is no longer what the room *is*. Nothing
 pools, the other six bands, `merchants:` and every seeder trait are untouched.
 
 **Reference closure, stated for the consolidation pass.** Every pool slug resolves at runtime against
-`ArchetypeSeeder.cs`, and 16 of them need to be added there first (§6). `pyreling` resolves there today
-but is **not** in `archetypes.md`, because D1 put 21–30 out of scope — so a reference-closure check that
+`ArchetypeSeeder.cs` (§6), which is the catalogue `missing-spawn-archetype` reads. `pyreling` resolves
+there but is **not** in `archetypes.md`, because D1 put 21–30 out of scope — so a reference-closure check that
 reads only the roster will report it as missing. It is not missing; it is seeded and out of roster scope.
 D6/L6 added their five new tail rows but did not add `pyreling`, so the tail landing does not close this:
 it is a roster edit, not a pool edit.
@@ -500,7 +508,7 @@ deviant `cinderling`, because `ash-eater` is pooled nowhere yet (§10). `scorche
 remains the fifth tail location, taking the grove's band-19–20 scavenger pool, which is why `ash-jack` and
 `forge-deserter` must be seeded to 19–22 (§6). `kaldreks-heart` is the one that moved (§7.2).
 
-## 8. The pack shape — and why the 18 files live in the design set for now
+## 8. The pack shape — and why the design files are not import packs
 
 The card was written before a pack importer existed. **One landed on 2026-11-20**
 (`RealmEngine.Data/Authoring/ContentPacks/`, card `t_f41880d2`, PR #108) with a CI guard:
@@ -509,22 +517,25 @@ The card was written before a pack importer existed. **One landed on 2026-11-20*
 `content/**`. The importer takes one **family** per directory — `content/<family>/<batch>.yaml` with
 `family:` and `entities:` at the top — and `zonelocation` is a family (`ContentEntityTypes`,
 `docs/content-packs.md`). The shape below is close to it, and the two differences are both
-Error-severity, which is why these files do not sit under `content/`:
+Error-severity, which is why the design files are not themselves import packs:
 
 | This document | The importer | Rule that fires |
 |---|---|---|
 | `content/pools/<zone>.yaml` | the directory name is the family, and `pools` resolves to no content type | `pack-family-unknown` — **Error** (`ContentPackRules.FamilyUnknown`, `ContentPackReader.ResolveFamily`) |
-| `pool[].archetype` may name a roster archetype that is not seeded yet | every spawn entry must resolve in the catalogue | `missing-spawn-archetype` — **Error** (`ContentReferenceRules.AuditSpawnPools`) |
+| `pool[].archetype` names an archetype by slug | the slug must resolve in the archetype catalogue; nothing falls back to the roster | `missing-spawn-archetype` — **Error** (`ContentReferenceRules.AuditSpawnPools`) |
 
-The second is the real blocker, and it is the landing-order problem this document has always named: 16 of
-the 28 pooled archetypes do not exist yet (§6), so every one of the 18 files fails the guard as written.
+The second is not a defect in the design but the landing-order rule this document has always named: an
+entry may only name an archetype that already exists, so archetypes land first. That gate is satisfied —
+every pooled slug resolves (§6) — and the remaining work is the translation itself.
 
-**So the 18 files land at `docs/design/content/pools/<zone>.yaml`** — the design set, which `docfx.json`
-already excludes from the published site — as design data, not importable packs. They move to
-`content/zonelocations/<zone>.yaml` in the shape below once the archetypes are seeded.
+**So the design files stay at `docs/design/content/pools/<zone>.yaml`** — the design set, which
+`docfx.json` already excludes from the published site — as design data, not importable packs. Each zone's
+pack is written beside it at `content/zonelocations/<zone>.yaml` in the shape below and imported on its
+own; `content/zonelocations/` is the list of zones that have landed, and each pack says so in its own
+header — "The design file stays the design set; this is the pack the importer reads."
 
-Both failures were reproduced rather than assumed, by running the guard over a scratch pack root holding
-one file of each shape:
+Both failures were reproduced on 2026-11-20 rather than assumed, by running the guard over a scratch pack
+root holding one file of each shape — the second names `ash-jack`, which was still unseeded then:
 
 ```
 Error   pack-family-unknown: '…/pools/ashfields.yaml' belongs to family 'pools', which is not a content type the engine stores. (field: family)
@@ -569,7 +580,7 @@ to one in that zone); `locations[].pool[].archetype` → `ActorPoolEntry.Archety
 ### The translation, abridged
 
 ```yaml
-# content/zonelocations/the-droveway.yaml — the import shape, once the archetypes exist
+# content/zonelocations/the-droveway.yaml — the import shape (this one has landed)
 family: zonelocation
 entities:
   - slug: drove-road
@@ -613,18 +624,19 @@ third from the seeder:
 | A town, `SafeRespawn` location or lobby must not spawn anything — which now means an empty pool **and** no active placements, hostile or not (the test's placement assertion, `:53-65`, rejects any active placement in a quiet location) | `SeededEncounterCoverageTests.cs:27-66`; at runtime the resolver spawns whatever hostile content it is handed — a hostile placement or a pool (`ActorPoolResolver.cs:86-92`, `:100-106`, `:111-115`) |
 | The level-overlap check still runs | `SeededEncounterCoverageTests.cs:207-239` |
 
-**Landing order — this is the part that will bite.** The pools name 16 archetypes that do not exist yet,
-and the seeder only *inserts* (`plans/content-seeding-pass.md` §2: an existing slug is never updated). So:
+**Landing order.** A pool may only name archetypes that already exist, and the seeder only *inserts*
+(`plans/content-seeding-pass.md` §2: an existing slug is never updated). So:
 
 0. **landed 2026-11-20 (L3, t_6c70dc04):** the three trait changes and the three seeder pools they force.
    `scorched-battlefield` is now pooled and hostile, `obsidian-grove` is the respawn point with no pool,
    and `ash-shrine` is `SafeRespawn` with no pool. The battlefield's *seeded* pool is the interim
    `cinderling 70 / pyreling 30` — the pool the grove used to carry, moved with the flag — because the
-   designed entries (`ash-jack`, `forge-deserter`) do not exist yet. §9 records the difference;
-1. seed the 16 archetypes (with hostility and the level ranges in §6) and merge that PR — `maw-serpent` is
-   the sixteenth and it must land before `kaldreks-heart`'s pool imports;
-2. then translate the 18 design files into `content/zonelocations/<zone>.yaml` (§8) and import them, which
-   replaces that interim pair with the designed three;
+   designed entries (`ash-jack`, `forge-deserter`) did not exist yet at that point. §9 records the difference;
+1. **landed 2026-11-22 (#210):** the archetypes, with hostility and the level ranges §6 records.
+   `maw-serpent` landed with them, which is what `kaldreks-heart`'s pool needs;
+2. **in progress:** translate the 18 design files into `content/zonelocations/<zone>.yaml` (§8) and import
+   them zone by zone (`content/zonelocations/` lists the zones that have landed). An import replaces each
+   seeder pair with the designed pool — for `scorched-battlefield`, the interim pair with the designed three;
 3. then run `dotnet test Veldrath.Server.slnx --filter Category=Validation` —
    `SeededEncounterCoverageTests` is the gate that proves this document:
    `Every_pooled_archetype_exists_and_is_hostile`, `Every_pooled_archetype_fits_its_location_level_band`,
@@ -684,8 +696,8 @@ entries the seeder carries today are removed: `bandit-captain` from `ancestor-va
 `fire-ancient` from `fire-ancients-chamber`/`kaldreks-heart`, on D0's approved instruction. That is a real
 behaviour change: until a uniqueness mechanism exists, those two rooms are ordinary rooms, not boss rooms.
 
-**What this commit changed in the live seeder** is only what amendments 3 and 4 require, because the
-pools cannot be imported before their archetypes exist (§8): three traits (`obsidian-grove` gains
+**What this commit changed in the live seeder** is only what amendments 3 and 4 require, because a pool
+pack may only name archetypes that already exist (§8): three traits (`obsidian-grove` gains
 `SafeRespawn`, `scorched-battlefield` loses it, `ash-shrine` gains it) and three `SpawnPools` entries
 (`obsidian-grove` and `ash-shrine` removed; `scorched-battlefield` takes the interim
 `cinderling 70 / pyreling 30`). The rest of the table above is the import target, not the current state.
@@ -703,17 +715,22 @@ fifth is a separate card. Nothing here is still an open question about *this* do
 | 4 | `scorched-battlefield` | **Respawn moves to `obsidian-grove`; the battlefield keeps a pool** | Amendment §4; §4 sanctuaries; the battlefield row in §3 |
 | 5 | The 21–30 tail | **Authorise a small tail roster** — 4–6 archetypes, levels 21–30, no bosses | Card `t_98def8d8` (D6); §7 status |
 
-Three things stay open, and none is decided here: the `cinderling` zone-list deviation (§7 item 3) is D6's
-to close or D5's to accept; `ash-eater` — the other D6 row above 26 — is pooled nowhere yet, so
-`fire-ancients-chamber` still draws `cinderling` (§7.1); and one consequence of amendments 3 and 4 needs a
-D5 ruling rather than a decision in this file: `ash-jack` and `forge-deserter` must be seeded to `19–22`
-(§6) or their zone has no place for them.
+Three things were left open, and none was decided here: the `cinderling` zone-list deviation (§7 item 3) is
+D6's to close or D5's to accept; `ash-eater` — the other D6 row above 26 — is pooled nowhere yet, so
+`fire-ancients-chamber` still draws `cinderling` (§7.1); and one consequence of amendments 3 and 4 needed a
+D5 ruling rather than a decision in this file: `ash-jack` and `forge-deserter` had to be seeded to `19–22`
+(§6) or their zone would have no place for them, and both are seeded at that range.
 
 ## 11. See also
 
 - `game-context/budget.yaml` — the bands and the spawn/loot semantics these pools sit on (D0).
 - `docs/design/content/archetypes.md` — the roster, its bands, and each archetype's zones (D1).
 - `plans/content-seeding-pass.md` — the measured gaps; note the stale `sunken-estate` line at :71.
-- `docs/design/content/pools/*.yaml` — the machine-readable form of §3 and §4, 18 files, parked in the
-  design set until their archetypes exist (§8).
+- `docs/design/content/pools/*.yaml` — the machine-readable form of §3 and §4, 18 files in the design
+  set; each zone's import pack is written beside it at `content/zonelocations/<zone>.yaml` (§8).
 - `Veldrath.Server.Tests/Features/SeededEncounterCoverageTests.cs` — the gate that proves this document.
+
+*Revised 2026-11-23 by card `t_5a0e0cf0` (docs truth pass). #210 had seeded every pooled archetype, so the
+sentences that had the pools waiting on them now state the rule instead — a pool entry may only name an
+archetype that already exists — and the design-file/import-pack split is stated as it is practised. No
+placement, weight or band moved.*
