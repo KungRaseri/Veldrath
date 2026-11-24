@@ -27,7 +27,7 @@ locations:
     level_range: [10, null]   # no MaxLevel authored at this location
     excluded: true
     exclusion_class: safe_respawn
-    exclusion_reason: 'SafeRespawn + IsTown. Saltcliff''s respawn point; dock-hand is placed here as an NPC.'
+    exclusion_reason: 'SafeRespawn + IsTown. Saltcliff''s respawn point; the harbour-master is placed here as an NPC.'
     pool: []   # empty by design
   - slug: cliff-road-market
     # band: b7-10 (D0 budget) | location L10+
