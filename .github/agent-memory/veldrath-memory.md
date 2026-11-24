@@ -1025,23 +1025,25 @@ carried forward from the session-44 snapshot (that one said 23 / 130 / 196 and i
   `MapGraphImportModels.cs` (catalog/report records), and the only remaining reference to those types is
   `RealmEngine.Data.Tests/DataLayerStubAndReportTests.cs` — nothing produces a `MapGraphImportCatalog` any more.
   `RealmEngine.Data/Authoring/ContentPacks/ContentPackImporter.cs` is the content-pack importer and unrelated.
-- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` authors the graph directly: **23 maps (4 region + 19 zone), 135
-  nodes, 210 edges**, plus a seed-time walk chain (`ConnectZoneEntriesToLocations`) and the hidden-node bypass
-  (`ConnectVisibleLocationsAcrossHiddenNodes`) that add **94 more `Walk` edges — 304 edges once seeded**.
-  `MapGraphSeederTests` asserts 23 / 135 / 304 and idempotency. Measured on a fresh `--fresh` e2e stack
+- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` authors the graph directly: **23 maps (4 region + 19 zone), 136
+  nodes, 212 edges**, plus a seed-time walk chain (`ConnectZoneEntriesToLocations`) and the hidden-node bypass
+  (`ConnectVisibleLocationsAcrossHiddenNodes`) that add **94 more `Walk` edges — 306 edges once seeded**.
+  `MapGraphSeederTests` asserts 23 / 136 / 306 and idempotency. Measured on a fresh `--fresh` e2e stack
   2026-11-23, not carried forward: the same sentence read 134 / 208 / 298 while the test already asserted 302.
-- Nodes by type: `EntryPoint` 24, `Zone` 18, `RegionExit` 17, `Location` 67, `ZoneExit` 10. Eighteen `Zone` nodes
+- Nodes by type: `EntryPoint` 23, `Zone` 18, `RegionExit` 17, `Location` 67, `ZoneExit` 11. Eighteen `Zone` nodes
   for nineteen zone maps because `playground` (`IsDevOnly`) sits on no region map.
-- Edges by type once seeded: `Walk` 246, `ExitToRegion` 35, `ExitToZone` 23.
+- Edges by type once seeded: `Walk` 246, `ExitToRegion` 35, `ExitToZone` 25.
 - **A live zone being targeted is not the same as being walkable into.** `LinkRegionZonesToZoneMaps` gives every
   region `Zone` node a `TargetMapId`, so `map_unreachable` used to stay silent for a zone whose only inbound target
   is its region node — the region board is not a through-route: `region:varenmark`'s entry node is adjacent to
   `zone:crestfall` alone, and every `Zone` node on the board enters its zone. The Drowning Pits was unreachable on
   foot until `zone:grevenmire:exit:zone:drowning-pits` (a `ZoneExit` on the Sunken Estate, the same shape as
   `ashlen-wood → grevenmire`) landed in t_a39b46eb. Since t_53311432 the rule does not count a region board's
-  `Zone` node as an inbound exit, so it now warns on the 14 seeded zones that still have no door — `the-halrow`
-  among them — and `MapGraphSeederTests.SeedAsync_EveryLiveZoneCanBeEnteredThroughADoorRatherThanItsRegionNode`
-  pins that list and may only shrink.
+  `Zone` node as an inbound exit, so it warned on the 14 seeded zones that still had no door — `the-halrow` among
+  them — and `MapGraphSeederTests.SeedAsync_EveryLiveZoneCanBeEnteredThroughADoorRatherThanItsRegionNode` pins that
+  list and may only shrink. t_835e7914 gave the Halrow the same repair the Pits got
+  (`zone:the-droveway:exit:zone:the-halrow` on the Weathered Waypost), so the list drops to **13** and the test's
+  row for it goes with it — a stale row would pass silently and stop catching the next zone that loses its door.
 - The chain is per zone map: entry → each `Location` node in `SortOrder`, one hop each way. 39 of those hop
   directions already existed as authored edges, and 5 were dropped because the source node already used all four
   cardinal directions (`zone:crestfall` 2, `zone:playground` 3). All 67 `Location` nodes still have a path from
@@ -4802,6 +4804,24 @@ projection) kept the flat 50 HP / 25 XP / 10 gold forever: nothing in production
 - Tests: `Veldrath.Server.Tests/Features/EnemyInstanceStatsReconciliationTests.cs` (8 facts, one of them the real seeded
   catalog through the real projection). Seven of them fail on the old store; the eighth pins that a missing archetype
   leaves the row alone.
+
+## The Halrow Import Pack and Its Way In (2026-11-23)
+
+- `content/zonelocations/the-halrow.yaml` is the pool-matrix §8 translation: `rootbound-cellars` bandit-ruffian 5 /
+  sump-crawler 5, `collapsed-vault` sump-crawler 6 / bandit-ruffian 4, `halrow-threshold` `[]` (the `SafeRespawn` +
+  `IsDungeon=false` dungeon lobby). Every other authored value is the `ZoneLocationsSeeder` row, so a re-import is
+  0 created / 0 updated / 3 unchanged.
+- **The zone had no way in on foot**: the only node naming it was the region board's `TargetMapId = null` zone node.
+  `zone:the-droveway` now carries `zone:the-droveway:exit:zone:the-halrow` on `weathered-waypost` — "Descent into the
+  Halrow", the two-way pair labelled `halrow-stair` — and `MapGraphSeederTests` moves to 136 nodes / 306 edges. The
+  waypost's West (drove-road) and the entry chain's East (sunken-fields) are taken, so the exit takes North; check the
+  chain's free slots before authoring another exit on a location node.
+- Proof on a throwaway Postgres (`rv-content-pg` :55433, database `rv_halrow_a1`, migrated and seeded by running the
+  API once against it): loottables 30/2/0 → archetypes 0/30/3 → this file alone 0/2/1 → rerun 0/0/3; stored pools
+  entry for entry, `halrow-threshold` `[]` with zero `EnemyInstances`.
+- E2E `web/client/tests/a1-the-halrow.e2e.ts` (registered in the manifest stack run, now 27 specs): Crestfall Square
+  → the Droveway → the Drove Road → the Weathered Waypost → the halrow stair → the Threshold → the Rootbound Cellars,
+  a pool kill pays its imported loot and the bag shows it, home through Varenmark. Focused run 11.7s, non-skipped.
 
 ### Session-D4-t_990e7186 (2026-11-23) — Respawn moves the map node, so a reload wakes where the player did
 
