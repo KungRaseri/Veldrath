@@ -3,8 +3,9 @@
 # Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4).
 # DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
 # rejects an unknown spawn archetype (missing-spawn-archetype, Error), so a pool imports only
-# once every archetype it names is seeded. These files move to content/zonelocations/ once they
-# are translated — the translation is written out in pool-matrix.md §8.
+# once every archetype it names is seeded. The design file stays the design set; each zone's
+# pack is written beside it at content/zonelocations/soddenfen.yaml and is what the importer
+# reads (pool-matrix.md §8).
 # The roster roll is 2-4 per location, from one global const pair (ActorPoolResolver.cs:32-33,
 # rolled at :94), and it is a fill target, not a cap: the location's placed hostile instances
 # go in first and the pool fills from their count up to the roll (:117). Five or more hostile
