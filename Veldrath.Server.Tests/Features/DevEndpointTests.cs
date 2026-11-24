@@ -195,9 +195,14 @@ public class DevEndpointTests(WebAppFactory factory)
 
         stored.Level.Should().Be(2);
         var attributes = JsonSerializer.Deserialize<Dictionary<string, int>>(stored.Attributes)!;
-        // The level-up rewrote the derived pool, and the response reports the same value the row now carries.
-        attributes["MaxHealth"].Should().BeGreaterThan(0);
+        // The character was created through POST /api/characters, which writes the engine formulas (Con 10 at level 1
+        // → 105 health, 53 mana). The award applies the warrior class curve creation encodes — 120 health and 20 mana
+        // at level 1, +12/+2 per level — and the stored pool is the floor: level 2 gives 132 health while the 53 mana
+        // stays, because the class curve alone would clamp it back to 22.
+        attributes["MaxHealth"].Should().Be(132);
+        attributes["MaxMana"].Should().Be(53);
         attributes["MaxHealth"].Should().Be(result.MaxHealth);
+        attributes["MaxMana"].Should().Be(result.MaxMana);
     }
 
     // ─── GET /api/dev/zones/{id} ─────────────────────────────────────────────

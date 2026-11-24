@@ -94,35 +94,35 @@ When a client sends `HubConnection.InvokeAsync("DoThing", new { Amount = 100, So
 
 ```csharp
 // SIGNALR WILL SILENTLY FAIL TO BIND THESE
-public async Task GainExperience(int amount, string? source = null) { }
-public async Task AddGold(int amount, string? source = null) { }
-public async Task TakeDamage(int damageAmount, string? source = null) { }
+public async Task EquipItem(string slot, string? itemRef) { }
+public async Task RestAtLocation(string locationId, int costInGold = 10) { }
+public async Task UseAbilityInCombat(string abilityId) { }
 ```
 
 ### Right ✅
 
 ```csharp
 // ALWAYS use a single DTO record parameter
-public async Task GainExperience(GainExperienceHubRequest request) { }
-public async Task AddGold(AddGoldHubRequest request) { }
-public async Task TakeDamage(TakeDamageHubRequest request) { }
+public async Task EquipItem(EquipItemHubRequest request) { }
+public async Task RestAtLocation(RestAtLocationHubRequest request) { }
+public async Task UseAbilityInCombat(UseAbilityInCombatHubRequest request) { }
 ```
 
 ### DTO Location
 
-> The `GainExperience`/`TakeDamage` names above illustrate the shape only. The live hub deliberately exposes neither
-> (2026-11-23): both were client-callable progression/damage bypasses and are now server-side commands. Do not
-> re-create them as hub methods.
+> The shape examples below are live hub methods. `GainExperience` and `TakeDamage` used to illustrate this section
+> and are **not** hub methods any more (2026-11-23): both were client-callable progression/damage bypasses, they are
+> server-side commands now, and a hub-shape test pins their absence. Do not re-create them as hub methods.
 
 Hub request DTOs can live in one of two places:
 
 1. **Bottom of [`GameHub.cs`](../../Veldrath.Server/Hubs/GameHub.cs)** — For DTOs that are strictly internal to the hub method signature (not shared with client code):
 ```csharp
 // At bottom of GameHub.cs
-/// <summary>Request payload for <see cref="GameHub.GainExperience"/>.</summary>
-/// <param name="Amount">Positive number of experience points to award.</param>
-/// <param name="Source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
-public record GainExperienceHubRequest(int Amount, string? Source = null);
+/// <summary>Request payload for <see cref="GameHub.RestAtLocation"/>.</summary>
+/// <param name="LocationId">ID of the inn or rest-point location.</param>
+/// <param name="CostInGold">Gold deducted for the rest (default: 10).</param>
+public record RestAtLocationHubRequest(string LocationId, int CostInGold = 10);
 ```
 
 2. **[`Veldrath.Contracts/`](../../Veldrath.Contracts/)** — For DTOs shared between server and client (connection, chat, tilemap contracts):
@@ -187,8 +187,8 @@ public class GameHub : Hub
     public async Task LeaveZone() { }
 
     // --- Gameplay Operations ---
-    public async Task MoveCharacter(MoveCharacterHubRequest request) { }
-    public async Task GainExperience(GainExperienceHubRequest request) { }
+    public async Task EquipItem(EquipItemHubRequest request) { }
+    public async Task RestAtLocation(RestAtLocationHubRequest request) { }
     // ... etc.
 
     // --- Private Helpers ---
@@ -199,7 +199,7 @@ public class GameHub : Hub
 
 ### Method Naming
 
-- Hub methods use **PascalCase**: `SelectCharacter`, `EnterZone`, `GainExperience`.
+- Hub methods use **PascalCase**: `SelectCharacter`, `EnterZone`, `RestAtLocation`.
 - Use `[HubMethodName("camelCaseName")]` only if you need the client to call a different name than the C# method. The SignalR client automatically converts PascalCase to camelCase by default in the .NET client, but explicit naming is clearer.
 
 ---
@@ -409,9 +409,8 @@ as `CombatTurn`. When you add or rename a field, change `GameHub.cs` and `types.
 ### Calling Hub Methods from Client
 
 ```csharp
-// Single-DTO parameter
-await _connection.InvokeAsync<GainExperienceHubResult>("GainExperience",
-    new GainExperienceHubRequest(100, "Combat"));
+// Single-DTO parameter (fire-and-forget: the server broadcasts the outcome)
+await _connection.SendAsync("RestAtLocation", new RestAtLocationHubRequest("waypost-inn", 10));
 
 // Zero-arg method
 await _connection.InvokeAsync("LeaveZone");
@@ -501,38 +500,38 @@ public class FakeGroupManager : IGroupManager
 
 ```csharp
 [Fact]
-public async Task GainExperience_WithValidCharacter_CallsMediatorAndBroadcasts()
+public async Task RestAtLocation_WithValidCharacter_CallsMediatorAndBroadcasts()
 {
     // Arrange
     var mediator = new Mock<ISender>();
-    mediator.Setup(m => m.Send(It.IsAny<GainExperienceHubCommand>(), It.IsAny<CancellationToken>()))
-        .ReturnsAsync(new GainExperienceHubResult { Success = true, NewTotalXp = 500 });
+    mediator.Setup(m => m.Send(It.IsAny<RestAtLocationHubCommand>(), It.IsAny<CancellationToken>()))
+        .ReturnsAsync(new RestAtLocationHubResult { Success = true, CurrentHealth = 120, MaxHealth = 120 });
 
     var hub = CreateHub(mediator: mediator.Object);
     SetupAuthenticatedCaller(hub, characterId: testCharacterId);
     SetupZoneGroup(hub, "zone-darkwood");
 
     // Act
-    await hub.GainExperience(new GainExperienceHubRequest(100, "Combat"));
+    await hub.RestAtLocation(new RestAtLocationHubRequest("waypost-inn", 10));
 
     // Assert
     mediator.Verify(m => m.Send(
-        It.Is<GainExperienceHubCommand>(c => c.CharacterId == testCharacterId && c.Amount == 100),
+        It.Is<RestAtLocationHubCommand>(c => c.CharacterId == testCharacterId && c.LocationId == "waypost-inn"),
         It.IsAny<CancellationToken>()), Times.Once);
 
     Assert.Contains(hub.Clients.GroupProxy.SentMessages,
-        m => m.Method == "ExperienceGained");
+        m => m.Method == "CharacterRested");
 }
 
 [Fact]
-public async Task GainExperience_WithoutSelectedCharacter_SendsError()
+public async Task RestAtLocation_WithoutSelectedCharacter_SendsError()
 {
     // Arrange
     var hub = CreateHub();
     // Do NOT call SetupAuthenticatedCaller — no character selected
 
     // Act
-    await hub.GainExperience(new GainExperienceHubRequest(100, "Combat"));
+    await hub.RestAtLocation(new RestAtLocationHubRequest("waypost-inn", 10));
 
     // Assert
     Assert.Contains(hub.Clients.CallerProxy.SentMessages,
