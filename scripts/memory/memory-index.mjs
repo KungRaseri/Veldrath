@@ -31,6 +31,13 @@
  *                                                    non-blank line of the pre-split hub
  *                                                    is still present exactly once
  *
+ * --verify only makes sense during the migration, and its two arguments are not optional
+ * there. `--from` must be a **pre-split** ref: after the split lands on `development`,
+ * `veldrath-memory.md` at that ref is the generated hub, so the audit compares the hub
+ * with itself. `--rewritten` must name every file whose counter lines the migration
+ * deliberately rewrote (the map-graph note and the Halrow area); without them the audit
+ * reports those eight rewritten lines as both lost and duplicated and exits 1.
+ *
  * No dependencies: node's own fs, path and child_process only.
  */
 
