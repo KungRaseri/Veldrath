@@ -48,15 +48,15 @@ and a row whose phase has since shipped says so.
 
 | Surface | What the player saw then | Where |
 |---|---|---|
-| Abilities in combat | Six raw slugs, `ability.replaceAll('_', ' ')`, no cost or cooldown | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
-| Abilities out of combat | A list of slugs with one `Use` button each | [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte) |
-| The ability payload | `LearnedAbilities: string[]` — slugs only, deliberately | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:448) |
+| Abilities in combat | Six raw slugs, `ability.replaceAll('_', ' ')`, no cost or cooldown (closed in E1, PR #65) | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
+| Abilities out of combat | A list of slugs with one `Use` button each (closed in E1, PR #65) | [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte) |
+| The ability payload | `LearnedAbilities: string[]` — slugs only, deliberately (closed in E1, PR #65: `LearnedPowers` now carries the resolved catalog beside the slug list) | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:448) |
 | Skills | Nothing at plan time: `SkillXpGained` was broadcast and no client subscribed (closed in E2, PR #66) | [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632) |
-| Combat | One enemy, four buttons, log capped at the last 12 lines; party participants invisible | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
+| Combat | One enemy, four buttons, log capped at the last 12 lines; party participants invisible (closed in E3, PR #67) | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
 | Quests | `objective.key · 2/5` — the raw key, no prose | [`QuestTracker.svelte`](../web/client/src/lib/game/QuestTracker.svelte) |
-| NPCs | `TalkToNpc` records a `talk:` quest objective and returns nothing | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1442) |
+| NPCs | `TalkToNpc` records a `talk:` quest objective and returns nothing (closed in E4, PR #98) | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1442) |
 | Crafting | At plan time: a flat 50 gold, no recipe lookup, no ingredients and no item produced (closed in E5, PR #69) | [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:75) |
-| Dungeons | Validates the zone is a dungeon and returns its id | [`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:50) |
+| Dungeons | Validates the zone is a dungeon and returns its id (closed in E6, shipped as F4 of [`dungeons.md`](dungeons.md)) | [`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:50) |
 
 Two structural facts make every phase more expensive than it looks: [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte)
 is 746 lines holding six unrelated overlays, and [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts)

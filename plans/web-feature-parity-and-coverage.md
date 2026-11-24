@@ -24,7 +24,7 @@ Two outcomes, one gate:
 | Coverage gate | **90% global immediately**, with per-glob floors. No staged ratchet |
 | E2E scope | Journey and route parity, not statement coverage. Playwright cannot feed reliable v8 statement coverage back through sourcemaps |
 | Game loop e2e | Stays live against `Veldrath.Server`. Staff surfaces may be mocked; the wire contract check does not |
-| Deferred features | Crafting, NPC dialogue, dungeons, skills UI, and every engine-only system — all four features have since shipped; only the engine-only systems are still deferred (see "Closed since this list was written") |
+| Deferred features | Crafting, NPC dialogue, dungeons, skills UI, and every engine-only system — all four features have since shipped; the engine-only systems and the product/UI pass (persisted settings, responsive shell) are still deferred (see "Closed since this list was written") |
 | PR 1 boundary | Phase 0 + matrix + plumbing fixes only. No new game features |
 | Coverage comment accounting | **The comment quotes the gate.** [`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) heads the sticky comment with the totals the `Coverage gate` step printed; the reporter's per-directory table is labelled as the other accounting. Decided 2026-11-20, see "Coverage comment accounting" below |
 
@@ -39,8 +39,9 @@ features with design work, not test work, so they get their own plans after the 
 | Reputation, achievement listing, New Game Plus | Engine-only. Achievements are evaluated but never surfaced |
 | Persisted game settings, responsive game shell | Product/UI pass. [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:596) is diagnostics-only; [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:1) has no breakpoints |
 
-**Closed since this list was written:** every feature this table used to hold has shipped except the
-engine-only systems above.
+**Closed since this list was written:** every game feature this table used to hold has shipped except
+the engine-only systems above. The product/UI pass — persisted settings and a responsive game shell — is
+still open.
 
 - The skills UI shipped in milestone E (PR #66) —
   [`SkillsOverlay.svelte`](../web/client/src/lib/game/SkillsOverlay.svelte) over
