@@ -15,18 +15,20 @@ title: "AwardSkillXp Handler Details (session-5)"
   `GameHub.CraftItem` read that constant instead of restating `100`
 - `newRank = newXp / XpPerRank`; `rankedUp = newRank > previousRank`, where `previousRank` is the stored
   `Skill_{SkillId}_Rank` value — not a rank re-derived from the accumulated XP
-- **No client-callable hub method.** `AwardSkillXpHubCommand` is dispatched only by `CraftItemHubCommandHandler`
-  (`Veldrath.Server/Features/Characters/CraftItemHubCommand.cs`). The `GameHub.AwardSkillXp` bridge was retired
-  2026-11-24 (#269), and `GameHubTests.GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods` pins
-  its absence
-- **The craft handler owns the attributes-blob write.** Crafting passes the character it already loaded through
+- **No client-callable hub method.** `AwardSkillXpHubCommand` has exactly one production caller,
+  `CraftItemHubCommandHandler` (`Veldrath.Server/Features/Characters/CraftItemHubCommand.cs`). The
+  `GameHub.AwardSkillXp` bridge was retired 2026-11-24 (#269), and
+  `GameHubTests.GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods` pins its absence
+- **The craft handler owns the character-row write.** Crafting passes the character it already loaded through
   `internal Character? LoadedCharacter`, so the award handler applies the award to that instance in memory and
-  skips both its own load and its own `UpdateAsync`; the craft's single `UpdateAsync`
-  (`CraftItemHubCommandHandler.Handle`, right after the dispatch) persists the craft and the award together. A
-  second load/save there would write the blob back over the craft it was meant to accompany
+  skips both its own load and its own `UpdateAsync`. `CraftItemHubCommandHandler.Handle` then makes the one
+  character-row `UpdateAsync` after the dispatch, which persists the award in the attributes blob (and
+  `LastPlayedAt`) — not the craft: the materials and the output go through `IInventoryService`
+  (`EfCoreInventoryService` → `GameDbContext.InventoryRecords`), which saves them itself before the award is
+  dispatched. The two writes are ordered, not atomic — different `DbContext`s, with no transaction spanning them
 - A supplied `LoadedCharacter` whose `Id` is not the command's `CharacterId` is refused
 - Without `LoadedCharacter` the handler loads the character and saves it itself, so the command still works
-  standalone — but nothing in the tree dispatches it that way
+  standalone — but nothing in production dispatches it that way (the server tests call the handler directly)
 - Broadcast: `GameHub.CraftItem` sends `SkillXpGained` to the character's zone group (to the caller when it is in
   none) after the award, with `{ CharacterId, SkillId, TotalXp, CurrentRank, RankedUp, XpIntoRank, XpToNextRank }`.
   `XpIntoRank = TotalXp % XpPerRank`; `XpToNextRank = XpPerRank`, a constant rank size rather than the XP left in
