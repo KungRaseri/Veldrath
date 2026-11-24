@@ -78,7 +78,6 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
 
     private const string SkillKeyPrefix = "Skill_";
     private const string SkillRankSuffix = "_Rank";
-    private const string SkillXpSuffix = "_XP";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -88,22 +87,26 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
     private readonly ICharacterRepository _characterRepo;
     private readonly IRecipeRepository _recipes;
     private readonly IInventoryService _inventory;
+    private readonly IMediator _mediator;
     private readonly ILogger<CraftItemHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="CraftItemHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository used to load and persist characters.</param>
     /// <param name="recipes">Recipe catalog.</param>
     /// <param name="inventory">Inventory service, keyed by character name.</param>
+    /// <param name="mediator">Mediator used to award the recipe's skill experience.</param>
     /// <param name="logger">Logger instance.</param>
     public CraftItemHubCommandHandler(
         ICharacterRepository characterRepo,
         IRecipeRepository recipes,
         IInventoryService inventory,
+        IMediator mediator,
         ILogger<CraftItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
         _recipes = recipes;
         _inventory = inventory;
+        _mediator = mediator;
         _logger = logger;
     }
 
@@ -223,10 +226,34 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             return Fail(request.RecipeSlug, "There was no room for the result, so nothing was crafted.", recipe.Name);
         }
 
-        var skillAward = AwardSkillExperience(attributes, skillId, recipe.ExperienceGained);
-        if (skillAward.Awarded > 0)
+        // The award itself is a command, so the key convention and the rank size live in one place. The character
+        // is handed over already loaded because this handler owns the attributes-blob write: the award handler
+        // applies it in memory and leaves it unsaved, and the single UpdateAsync below persists the craft and the
+        // award together. A second load/save here would write the blob back over the craft it was meant to accompany.
+        AwardSkillXpHubResult? award = null;
+        if (skillId is not null && recipe.ExperienceGained > 0)
         {
-            character.Attributes = JsonSerializer.Serialize(attributes);
+            award = await _mediator.Send(
+                new AwardSkillXpHubCommand
+                {
+                    CharacterId = character.Id,
+                    SkillId = skillId,
+                    Amount = recipe.ExperienceGained,
+                    LoadedCharacter = character,
+                },
+                cancellationToken);
+
+            if (!award.Success)
+            {
+                _logger.LogWarning(
+                    "Character {CharacterId} crafted {RecipeSlug} but the skill award failed: {Error}",
+                    character.Id, recipe.Slug, award.ErrorMessage);
+                award = null;
+            }
+        }
+
+        if (award is not null)
+        {
             character.LastPlayedAt = DateTimeOffset.UtcNow;
             await _characterRepo.UpdateAsync(character, cancellationToken);
         }
@@ -243,11 +270,11 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             ItemRef = recipe.OutputItemReference,
             OutputQuantity = outputQuantity,
             ConsumedMaterials = consumed,
-            SkillId = skillId,
-            SkillXp = skillAward.Awarded,
-            SkillTotalXp = skillAward.TotalXp,
-            SkillRank = skillAward.Rank,
-            SkillRankedUp = skillAward.RankedUp,
+            SkillId = award?.SkillId,
+            SkillXp = award is null ? 0 : recipe.ExperienceGained,
+            SkillTotalXp = award?.TotalXp ?? 0,
+            SkillRank = award?.CurrentRank ?? 0,
+            SkillRankedUp = award?.RankedUp ?? false,
         };
     }
 
@@ -259,42 +286,6 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             await _inventory.AddItemAsync(characterName, material.ItemRef, material.Quantity);
         }
     }
-
-    /// <summary>
-    /// Adds the recipe's experience to the named skill, using the same key convention and rank size
-    /// as <see cref="AwardSkillXpHubCommandHandler"/> so the two cannot drift.
-    /// </summary>
-    /// <returns>The award, or <see langword="default"/> when the recipe trains no skill.</returns>
-    private static SkillAward AwardSkillExperience(
-        Dictionary<string, int> attributes,
-        string? skillId,
-        int experienceGained)
-    {
-        if (skillId is null || experienceGained <= 0)
-            return default;
-
-        var xpKey = $"{SkillKeyPrefix}{skillId}{SkillXpSuffix}";
-        var rankKey = $"{SkillKeyPrefix}{skillId}{SkillRankSuffix}";
-
-        // The rank is derived from the experience, so both the previous and the new rank come from
-        // the same rule instead of trusting a rank key that content edits can leave behind.
-        var storedXp = attributes.TryGetValue(xpKey, out var current) ? current : 0;
-        var total = storedXp + experienceGained;
-        var previousRank = storedXp / AwardSkillXpHubCommandHandler.XpPerRank;
-        var rank = total / AwardSkillXpHubCommandHandler.XpPerRank;
-
-        attributes[xpKey] = total;
-        attributes[rankKey] = rank;
-
-        return new SkillAward(experienceGained, total, rank, rank > previousRank);
-    }
-
-    /// <summary>The outcome of one skill-experience award.</summary>
-    /// <param name="Awarded">The experience this award added.</param>
-    /// <param name="TotalXp">The skill's experience total after the award.</param>
-    /// <param name="Rank">The skill's rank after the award.</param>
-    /// <param name="RankedUp">Whether the award crossed a rank boundary.</param>
-    private readonly record struct SkillAward(int Awarded, int TotalXp, int Rank, bool RankedUp);
 
     private Dictionary<string, int> ReadAttributes(string? attributesJson, Guid characterId)
     {

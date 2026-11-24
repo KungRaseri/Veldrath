@@ -1793,6 +1793,79 @@ public class GameHubTests : IDisposable
         result.ErrorMessage.Should().Contain("positive");
     }
 
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Leave_The_Save_To_The_Caller_When_The_Character_Is_Supplied()
+    {
+        // Crafting hands over the character it already loaded because it owns the single attributes-blob write;
+        // a second load/save inside the award handler would write the blob back over the craft it accompanies.
+        var character = new Character
+        {
+            Id = Guid.NewGuid(),
+            AccountId = Guid.NewGuid(),
+            Name = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 1,
+            Attributes = """{"Skill_blacksmithing_XP":95}""",
+        };
+
+        var repo = new Mock<ICharacterRepository>();
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            repo.Object,
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = character.Id,
+            SkillId = "blacksmithing",
+            Amount = 15,
+            LoadedCharacter = character,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.TotalXp.Should().Be(110);
+        result.CurrentRank.Should().Be(1);
+        result.RankedUp.Should().BeTrue();
+        character.Attributes.Should().Contain("\"Skill_blacksmithing_XP\":110");
+        repo.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Refuse_A_Supplied_Character_That_Is_Not_The_One_It_Names()
+    {
+        var character = new Character
+        {
+            Id = Guid.NewGuid(),
+            AccountId = Guid.NewGuid(),
+            Name = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 1,
+        };
+        var attributesBefore = character.Attributes;
+
+        var repo = new Mock<ICharacterRepository>();
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            repo.Object,
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = Guid.NewGuid(),
+            SkillId = "blacksmithing",
+            Amount = 15,
+            LoadedCharacter = character,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+        character.Attributes.Should().Be(attributesBefore, "a mismatched character is never touched");
+        repo.Verify(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // SelectCharacter — missing paths
     [Fact]
     public async Task SelectCharacter_Should_Send_CharacterAlreadyActive_When_Already_Claimed()
