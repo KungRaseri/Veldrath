@@ -36,19 +36,20 @@ Replaces `ZoneSession`. New properties vs old:
 `ZoneId`, `CurrentMapId`, `CurrentNodeId`, `ZoneInstanceId`, `EnteredAt`. Position on the map graph is the
 `CurrentMapId` / `CurrentNodeId` pair. `ZoneInstanceId` is the run pointer for the zone instance the character is
 inside, `null` in the shared zone: `GameHub.ApplyArrivalGroupAsync` writes it when a travel resolves into a run and
-clears it on a shared-zone arrival, `EfCoreZoneInstanceService` writes and clears it on run join and leave, the run's
-chests and floor loot are scoped by it (`ChestHubCommands`, `GroundItemHubCommands`), `LeaveCurrentZoneAsync` reads
-it to close the character's participation, and admin counts occupants by it. Enemy rows carry the pointer so a run's
-roster cascades away when it is purged, but the roster itself is read by zone group and location slug
-(`EfCoreEnemyInstanceStore.LoadLocationAsync`). A reconnect does **not** carry it, in two steps: `onreconnected` calls
-`restoreSession()`, which calls `SelectCharacter`, and that removes the stale session and inserts a fresh one with
-`ZoneId = null` and no run pointer at `ResolveResumeNodeId`; the `CharacterSelected` reply then carries
-`Character.CurrentZoneId`, and the shell answers it with `if (payload.currentZoneId) await this.enterZone(...)`
-(`session.svelte.ts:1404`). `GameHub.EnterZone` replaces that session with one carrying `ZoneId` set, the saved
-location node and still no run pointer, so a character who dropped inside a zone comes back inside that zone in its
-shared scope; only one who stood on the region map stays there. Two doc comments still promise otherwise — the
-`ZoneInstanceId` summary in `PlayerSession.cs` and the summary above `ApplyArrivalGroupAsync` — and the bodies do
-not. `ZoneSession` exists nowhere.
+clears it on a shared-zone arrival, `EfCoreZoneInstanceService` keeps the run's separate participation rows (joined
+on entry, `LeftAt` set on leave), the run's chests and floor loot are scoped by it (`ChestHubCommands`,
+`GroundItemHubCommands`), `LeaveCurrentZoneAsync` reads it to close the character's participation, and admin counts
+occupants by it. Enemy rows carry the pointer so a run's roster cascades away when it is purged, but the roster
+itself is read by zone group and location slug (`EfCoreEnemyInstanceStore.LoadLocationAsync`). A reconnect does
+**not** carry it, in two steps: `onreconnected` calls `restoreSession()`, which calls `SelectCharacter`, and that
+removes the stale session and inserts a fresh one with `ZoneId = null` and no run pointer at
+`ResolveResumeNodeId`; the `CharacterSelected` reply then carries `Character.CurrentZoneId`, and the shell answers
+it with `if (payload.currentZoneId) await this.enterZone(...)` (`session.svelte.ts:1404`). `GameHub.EnterZone`
+replaces that session with one carrying `ZoneId` set, the saved location node and still no run pointer, so a
+character who dropped inside a zone comes back inside that zone in its shared scope; only one who stood on the
+region map stays there. Two doc comments still promise otherwise — the `ZoneInstanceId` summary in
+`PlayerSession.cs` and the summary above `ApplyArrivalGroupAsync` — and the bodies do not. `ZoneSession` exists
+nowhere.
 
 ### IPlayerSessionRepository (in `IZoneRepository.cs`)
 Replaces `IZoneSessionRepository`. Same core methods plus new:
