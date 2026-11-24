@@ -328,23 +328,29 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 
 - Server hub commands follow the **blob pattern**: read `Character.Attributes` JSON, mutate, save. Never call Core handlers (type mismatch).
 - Wired bridges: `RestAtLocation`, `AllocateAttributePoints`, `UseAbility` (`GainExperience` and `TakeDamage` were retired from the hub 2026-11-23; their commands are dispatched server-side only)
-- **P3 stubs: closed.** `CharacterSelectViewModel.ServerUrl` is no longer hardcoded — the desktop client
-  reads `Server:BaseUrl` and the old `ScopedSession`/`TravelToNode` stubs were wired to real hub commands.
+- **P3 stubs: closed — historical.** The item described `CharacterSelectViewModel.ServerUrl` and the
+  `ScopedSession`/`TravelToNode` stubs of the Avalonia desktop client, which was retired together with its test
+  project. Nothing in the tree reads a `Server:BaseUrl` key; the SvelteKit app reaches the API through the
+  `PUBLIC_API_URL` / `PUBLIC_HUB_URL` values inlined at build time.
 - **P4 XML docs: closed** (re-audited 2026-10-24). `IPlayerAccountRepository`, `IZoneRepository`, and
   `IZoneSessionRepository` all carry `<summary>` docs, and CS1591 is a compile error, so an undocumented
   public member cannot land in the first place.
-======= REPLACE
 
-### Avalonia Thread Affinity in Client Tests
-- `MapEdgeViewModel.ComputeStyle` creates `SolidColorBrush` (inherits `AvaloniaObject`) which requires the Avalonia dispatcher thread.
-- Any test that constructs `MapEdgeViewModel` (directly or indirectly via `MapViewModel`) will throw `InvalidOperationException: Call from invalid thread` when run after `[AvaloniaFact]` tests that initialized the dispatcher on a different thread.
-- **Fix**: use `[AvaloniaFact]` (not `[Fact]`) for any test that creates `MapEdgeViewModel` or a `MapViewModel` that loads zone-exit edges.
-- Tests that create `MapViewModel` but with no zone connections (so no `MapEdgeViewModel` is created) are safe to remain as `[Fact]`.
+### Avalonia client test notes — deleted, do not apply
 
-### ActorClassDto Changed (2026-03-19)
-- `ActorClassDto` in `Veldrath.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
-- This was a breaking change that broke `FakeServices.cs` and `CharacterSelectViewModelTests.cs` in Client.Tests
-- Fix: update all `new ActorClassDto(slug, name, typeKey)` calls to `new ActorClassDto(slug, name, typeKey, hitDie, primaryStat, rarityWeight)`
+The desktop client and its test project were retired, so the old `[AvaloniaFact]` dispatcher rule for
+`MapEdgeViewModel` / `MapViewModel` has no target. Do not add `[AvaloniaFact]`, and do not look for
+`MapEdgeViewModel`, `MapViewModel`, `CharacterSelectViewModel` or `CharacterSelectViewModelTests` — none exist.
+
+### ActorClassDto shape (2026-03-19)
+
+- `ActorClassDto` in `Veldrath.Contracts` takes six positional parameters — `Slug`, `DisplayName`, `TypeKey`,
+  `HitDie`, `PrimaryStat`, `RarityWeight` — followed by optional fields that default to null/false:
+  `BaseHealth`, `BaseMana`, `HealthGrowth`, `ManaGrowth`, `StrengthGrowth`, `DexterityGrowth`,
+  `IntelligenceGrowth`, `ConstitutionGrowth`, and the `IsSpellcaster` / `IsMelee` / `IsRanged` / `IsStealth` /
+  `CanDualWield` / `CanWearHeavy` / `CanWearShield` flags.
+- Historical: the three-parameter → six-parameter change broke the deleted Avalonia client's `FakeServices` and
+  `CharacterSelectViewModelTests`. Those files are gone; only the constructor shape matters now.
 
 ### Session-17 Integration Test Notes
 - `ContentTypedEndpointsFixture` seeds ActorClass, Species, Background, Skill, 2×Enchantment (different TargetSlot), Ability, Item into `ContentDbContext` — all routes under test resolve through the SQLite in-memory DB
@@ -361,12 +367,6 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `Item.TypeKey` on the shared model can be null — use `?? string.Empty` when mapping to `ItemDto.TypeKey`
 - `GetSpeciesQuery` handler namespace is `RealmEngine.Core.Features.Species.Queries` (feature folder named `Species`)
 - `EfCoreHallOfFameRepository` methods are synchronous (no async) — tests use `using var db` not `await using var db`
-
-### AvailableClasses Test Gotcha
-- `CharacterSelectViewModel.LoadAsync` fires-and-forgets on construction; `FakeContentService.GetClassesAsync()` completes synchronously (Task.FromResult)
-- So `LoadAsync` replaces `AvailableClasses` before the test's first assertion if a non-empty `FakeContentService` is used
-- Test for fallback list: pass `new FakeContentService { Classes = [] }` + `await Task.Delay(50)` to let fire-and-forget complete
-- Test for catalog-populated list: pass classes with `Task.Delay(50)` wait
 
 ### ISpeciesRepository (added session-13)
 - `ISpeciesRepository` interface in `RealmEngine.Shared/Abstractions/`
@@ -484,8 +484,8 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 The `Veldrath.GameClient.Components` Razor class library (region-map page, game sidebar, action-bar
 hotbar, `wwwroot/css/game.css`) and its 14 tests were **deleted** with the Blazor decommission. The
 equivalent UI now lives in the SvelteKit app under `web/client/src/lib/game/` (map panel, left
-sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewModel`. There are no
-`.razor` files left in the tree — do not look for them.
+sidebar, hotbar inside the game shell). There are no `.razor` files left in the tree — do not look
+for them, and the Avalonia `GameViewModel` it once mirrored is retired too.
 
 ### Open Items (re-audited Session-47, 2026-10-22)
 
@@ -545,8 +545,8 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 
 ### Web-first RCL actions (Session-53, 2026-10-23)
 
-- The browser game client (SvelteKit) is the primary experience; see `docs/client-ui-architecture.md`.
-  Desktop/Avalonia follows web decisions.
+- The browser game client (SvelteKit) is the only client; see `docs/client-ui-architecture.md`.
+  There is no desktop client to keep in step.
 - **Hub request shapes matter.** `VisitShop` requires `{ ZoneId }`, `RestAtLocation` requires
   `{ LocationId, CostInGold }`, and `NavigateToLocation` requires `{ LocationSlug }`. Sending a
   bare string or no argument fails SignalR binding before the hub body runs.
@@ -558,9 +558,10 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 - **Shop hub method signatures** — `BuyItem(string itemRef)`, `SellItem(string itemRef)`, and
   `DropItem(string itemRef)` take a single string, not an object. `GetShopCatalog()` takes no
   arguments. `ShopVisited` only announces the merchant; clients must send `GetShopCatalog`.
-- **ShopCatalog payload** — server sends both `Items` (Avalonia `ShopItemDto`: ItemRef,
-  DisplayName, BuyPrice, SellPrice) and `Catalog` (RCL `ShopItemEntry`: Slug, Name, Rarity,
-  Price). Keep both until the desktop client moves to the shared payload.
+- **ShopCatalog payload** — one shape: `GameHub.GetShopCatalog` sends `{ ZoneId, Catalog }`, where each
+  entry is `{ Slug, Name, Rarity, Price }` (rarity is currently always `Common`). There is no `Items` /
+  `ShopItemDto` half any more — that existed for the retired Avalonia client. The web types are
+  `ShopCatalogPayload` / `ShopCatalogItem` in `web/client/src/lib/game/types.ts`.
 - **Transaction refresh** — after buy/sell/drop the server sends a background `InventoryLoaded`
   snapshot with `OpenOverlay = false`; clients update bag/equipment/gold without switching panels.
   Explicit `GetInventory` uses `OpenOverlay = true`.
