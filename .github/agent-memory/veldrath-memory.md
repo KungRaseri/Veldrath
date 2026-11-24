@@ -57,6 +57,7 @@ Newest first. `—` in the Date column means the note carries no date of its own
 <!-- memory-index:begin -->
 | Date | Area | Card | PR | Title | File |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-24 | engine | `t_00ce09b5` |  | The retired gold and skill-XP bridges leave the agent memory | [work-items/2026-11-24-t_00ce09b5-the-retired-gold-and-skill-xp-bridges-leave-the-agent-memory.md](work-items/2026-11-24-t_00ce09b5-the-retired-gold-and-skill-xp-bridges-leave-the-agent-memory.md) |
 | 2026-11-24 | engine | `t_181315e1` |  | Quest turn-in announces its gold with GoldChanged | [work-items/2026-11-24-t_181315e1-quest-turn-in-announces-the-gold.md](work-items/2026-11-24-t_181315e1-quest-turn-in-announces-the-gold.md) |
 | 2026-11-24 | engine | `t_2bb90599` |  | Server-side gold awards are announced from the server's own total | [work-items/2026-11-24-t_2bb90599-gold-awards-are-announced-with-the-servers-total.md](work-items/2026-11-24-t_2bb90599-gold-awards-are-announced-with-the-servers-total.md) |
 | 2026-11-24 | content | `t_58ccac38` |  | Twelve zones got a door: the seeded world has one inbound-door gap left, and it is the sandbox | [work-items/2026-11-24-t_58ccac38-twelve-zones-got-a-door.md](work-items/2026-11-24-t_58ccac38-twelve-zones-got-a-door.md) |
