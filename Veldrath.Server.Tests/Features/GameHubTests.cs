@@ -688,8 +688,9 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // Progression is server-side: the hub must not expose a method that lets a client award itself experience
-    // or apply its own damage. Both are dispatch-only commands now (quest rewards and combat handlers).
+    // Progression is server-side: the hub must not expose a method that lets a client award itself experience,
+    // gold or skill experience, nor one that lets it apply its own damage. All four are dispatch-only commands
+    // now (quest rewards, loot/chest and dialogue gold, crafting skill experience, combat handlers).
     [Fact]
     public void GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods()
     {
@@ -703,6 +704,8 @@ public class GameHubTests : IDisposable
 
         hubMethods.Should().NotContain("GainExperience", "experience is awarded by server-side commands only");
         hubMethods.Should().NotContain("TakeDamage", "damage is applied by the combat handlers only");
+        hubMethods.Should().NotContain("AddGold", "gold is awarded by the quest, chest and dialogue commands only");
+        hubMethods.Should().NotContain("AwardSkillXp", "skill experience is awarded by the crafting command only");
     }
 
     // AllocateAttributePoints
@@ -1652,135 +1655,7 @@ public class GameHubTests : IDisposable
             "the player is told why the fight is gone");
     }
 
-    // AwardSkillXp
-    [Fact]
-    public async Task AwardSkillXp_Should_Send_Error_When_No_Character_Selected()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var (hub, clients, _, _) = CreateHub(db, accountId);
-
-        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "Error");
-    }
-
-    [Fact]
-    public async Task AwardSkillXp_Should_Dispatch_Command_To_ISender()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AwardSkillXpHubResult
-            {
-                Success = true,
-                SkillId = "swordsmanship",
-                TotalXp = 50,
-                CurrentRank = 0,
-                RankedUp = false,
-            });
-
-        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-
-        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
-
-        mediatorMock.Verify(
-            m => m.Send(It.Is<AwardSkillXpHubCommand>(
-                c => c.CharacterId == character.Id && c.SkillId == "swordsmanship" && c.Amount == 50),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task AwardSkillXp_Should_Broadcast_SkillXpGained_To_Zone_Group_When_In_Zone()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AwardSkillXpHubResult
-            {
-                Success = true,
-                SkillId = "swordsmanship",
-                TotalXp = 50,
-                CurrentRank = 0,
-                RankedUp = false,
-            });
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-        ctx.Items["CurrentZoneId"] = "starting-zone";
-        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
-
-        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
-
-        clients.GroupProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "SkillXpGained");
-    }
-
-    [Fact]
-    public async Task AwardSkillXp_Should_Send_SkillXpGained_To_Caller_When_Not_In_Zone()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AwardSkillXpHubResult
-            {
-                Success = true,
-                SkillId = "swordsmanship",
-                TotalXp = 50,
-                CurrentRank = 0,
-                RankedUp = false,
-            });
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-        // CurrentZoneId intentionally NOT set
-
-        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "SkillXpGained");
-    }
-
-    [Fact]
-    public async Task AwardSkillXp_Should_Send_Error_On_Handler_Failure()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AwardSkillXpHubResult
-            {
-                Success = false,
-                ErrorMessage = "Amount must be positive.",
-            });
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-
-        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 0));
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "Error");
-    }
-
+    // AwardSkillXpHubCommandHandler
     [Fact]
     public async Task AwardSkillXp_Handler_Should_Accumulate_Xp_And_Persist()
     {
@@ -2033,27 +1908,6 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"] = character.Id;
 
         await hub.UseAbility("fireball");
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "Error");
-    }
-
-    [Fact]
-    public async Task AwardSkillXp_Should_Send_Error_When_Mediator_Throws()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.Characters.AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB failure"));
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-
-        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 10));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -2872,131 +2726,6 @@ public class GameHubTests : IDisposable
         return c;
     }
 
-    // AddGold hub method
-    [Fact]
-    public async Task AddGold_Should_Send_Error_When_No_Character_Selected()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var (hub, clients, _, _) = CreateHub(db, accountId);
-
-        await hub.AddGold(new AddGoldHubRequest(100));
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "Error");
-    }
-
-    [Fact]
-    public async Task AddGold_Should_Dispatch_Command_To_ISender()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AddGoldHubResult { Success = true, GoldAdded = 50, NewGoldTotal = 50 });
-
-        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-
-        await hub.AddGold(new AddGoldHubRequest(50, "Quest"));
-
-        mediatorMock.Verify(
-            m => m.Send(It.Is<AddGoldHubCommand>(
-                c => c.CharacterId == character.Id && c.Amount == 50 && c.Source == "Quest"),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task AddGold_Should_Broadcast_GoldChanged_To_Zone_Group_When_In_Zone()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AddGoldHubResult { Success = true, GoldAdded = 100, NewGoldTotal = 100 });
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-        ctx.Items["CurrentZoneId"] = "starting-zone";
-        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
-
-        await hub.AddGold(new AddGoldHubRequest(100));
-
-        clients.GroupProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "GoldChanged");
-    }
-
-    [Fact]
-    public async Task AddGold_Should_Send_GoldChanged_To_Caller_When_Not_In_Zone()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AddGoldHubResult { Success = true, GoldAdded = 25, NewGoldTotal = 25 });
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-        // CurrentZoneId intentionally NOT set
-
-        await hub.AddGold(new AddGoldHubRequest(25));
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "GoldChanged");
-    }
-
-    [Fact]
-    public async Task AddGold_Should_Send_Error_On_Handler_Failure()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AddGoldHubResult { Success = false, ErrorMessage = "Not enough gold" });
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-
-        await hub.AddGold(new AddGoldHubRequest(-999));
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "Error");
-    }
-
-    [Fact]
-    public async Task AddGold_Should_Send_Error_When_Mediator_Throws()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-
-        var mediatorMock = new Mock<ISender>();
-        mediatorMock
-            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB failure"));
-
-        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"] = character.Id;
-
-        await hub.AddGold(new AddGoldHubRequest(50));
-
-        clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "Error");
-    }
-
     // AddGoldHubCommandHandler
     [Fact]
     public async Task AddGold_Handler_Should_Add_Gold_To_Character()
@@ -3247,6 +2976,77 @@ public class GameHubTests : IDisposable
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "ItemCrafted");
+    }
+
+    // Crafting is the only server-side skill-experience path now that the client-callable AwardSkillXp bridge is
+    // gone, so the award must reach the player as SkillXpGained — the event the skill sheet folds.
+    [Fact]
+    public async Task CraftItem_Should_Send_SkillXpGained_When_The_Craft_Awards_Skill_Xp()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CraftItemHubResult
+            {
+                Success = true,
+                RecipeSlug = "iron-sword",
+                RecipeName = "Iron sword",
+                ItemRef = "@items/weapons/swords:iron-sword",
+                OutputQuantity = 1,
+                SkillId = "blacksmithing",
+                SkillXp = 15,
+                SkillTotalXp = 215,
+                SkillRank = 2,
+                SkillRankedUp = true,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.CraftItem("iron-sword");
+
+        var message = clients.CallerProxy.SentMessages.Single(m => m.Method == "SkillXpGained");
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(message.Args[0]));
+        var payload = doc.RootElement;
+        payload.GetProperty("CharacterId").GetString().Should().Be(character.Id.ToString());
+        payload.GetProperty("SkillId").GetString().Should().Be("blacksmithing");
+        payload.GetProperty("TotalXp").GetInt32().Should().Be(215);
+        payload.GetProperty("CurrentRank").GetInt32().Should().Be(2);
+        payload.GetProperty("RankedUp").GetBoolean().Should().BeTrue();
+        payload.GetProperty("XpIntoRank").GetInt32().Should().Be(15);
+        payload.GetProperty("XpToNextRank").GetInt32().Should().Be(100);
+    }
+
+    [Fact]
+    public async Task CraftItem_Should_Not_Send_SkillXpGained_When_The_Recipe_Trains_No_Skill()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CraftItemHubResult
+            {
+                Success = true,
+                RecipeSlug = "iron-sword",
+                RecipeName = "Iron sword",
+                ItemRef = "@items/weapons/swords:iron-sword",
+                OutputQuantity = 1,
+                SkillXp = 0,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.CraftItem("iron-sword");
+
+        clients.CallerProxy.SentMessages.Should().NotContain(m => m.Method == "SkillXpGained");
     }
 
     [Fact]
