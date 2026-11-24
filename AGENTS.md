@@ -340,6 +340,8 @@ The directory [`.github/agent-memory/`](.github/agent-memory/) is the **canonica
 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, decisions made, next steps |
 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop architecture plan (actual turn-based implementation supersedes original design) |
 | [`.github/agent-memory/world-lore-plan.md`](.github/agent-memory/world-lore-plan.md) | World lore plan, Calethic language reference, open items |
+| [`.github/agent-memory/work-items/`](.github/agent-memory/work-items/) | One file per work item — the note a card or session leaves behind; the index above is generated from its front matter |
+| [`.github/agent-memory/areas/`](.github/agent-memory/areas/) | A topic that outgrew a session log: long-lived reference, edited in place like the files above |
 
 ### Writing to Memory Files
 
