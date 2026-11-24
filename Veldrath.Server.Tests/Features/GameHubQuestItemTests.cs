@@ -430,7 +430,7 @@ public class GameHubQuestItemTests : IDisposable
         var account = await HubHarness.SeedAccountAsync(db);
         var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
         var characterId = Guid.NewGuid();
-        ctx.Items["CharacterId"] = characterId;
+        ctx.EnterZoneState(characterId);
         mediator.Returns(new TurnInQuestHubResult
         {
             Success = true,
@@ -455,6 +455,19 @@ public class GameHubQuestItemTests : IDisposable
         var xp = mediator.Invocations.Select(i => i.Arguments[0]).OfType<GainExperienceHubCommand>().Single();
         xp.Amount.Should().Be(60);
         xp.Source.Should().Be("Quest");
+
+        // The toast names the reward; the purse moves on GoldChanged, and it carries the writer's total so
+        // stats.gold cannot drift from what the server stored. Gold is private: the caller alone is told.
+        clients.Caller.SentMessages.Single(m => m.Method == "GoldChanged").Args[0]
+            .Should().BeEquivalentTo(new
+            {
+                CharacterId = characterId,
+                GoldAdded = 25,
+                NewGoldTotal = 125,
+                Source = "Quest:rats",
+            });
+        clients.GroupNamed("zone:crestfall").SentMessages.Should()
+            .NotContain(m => m.Method == "GoldChanged", "one player's purse is not the zone's business");
 
         // The turn-in is the only thing that tells the client what the award paid: the level, the pools a
         // level-up re-derives, and the attribute points it banked — the allocation panel budgets from that last
@@ -493,6 +506,8 @@ public class GameHubQuestItemTests : IDisposable
         mediator.Invocations.Select(i => i.Arguments[0])
             .Should().NotContain(a => a is AddGoldHubCommand || a is GainExperienceHubCommand);
         clients.Caller.SentMessages.Should().ContainSingle(m => m.Method == "QuestTurnedIn");
+        clients.EveryMessage.Should().NotContain(m => m.Method == "GoldChanged",
+            "a turn-in that paid no gold must not move the purse");
     }
 
     // ── TalkToNpc ────────────────────────────────────────────────────────────

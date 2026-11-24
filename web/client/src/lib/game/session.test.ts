@@ -1943,6 +1943,26 @@ describe('GameSession progression and economy', () => {
 		expect(session.questTurnInToast).toBeNull();
 	});
 
+	it('moves the gold stat on the turn-in announcement, not on the reward toast', async () => {
+		const session = await connected();
+
+		// The reward event names what was earned for the toast; the purse moves on GoldChanged, which the
+		// server sends from its own post-payment total. Without the second event stats.gold stayed at
+		// whatever CharacterSelected seeded until the next character load.
+		hub.emit('QuestTurnedIn', { slug: 'rats', goldReward: 25, xpReward: 150, quests: [] });
+		expect(session.stats.gold).toBe(0);
+		expect(session.questTurnInToast).toEqual({ slug: 'rats', gold: 25, xp: 150 });
+
+		hub.emit('GoldChanged', {
+			characterId: 'char-1',
+			goldAdded: 25,
+			newGoldTotal: 84,
+			source: 'Quest:rats'
+		});
+
+		expect(session.stats.gold).toBe(84);
+	});
+
 	it('records a turned-in quest and announces the rewards', async () => {
 		const session = await connected();
 
