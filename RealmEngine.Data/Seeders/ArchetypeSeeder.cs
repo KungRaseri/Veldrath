@@ -13,7 +13,7 @@ namespace RealmEngine.Data.Seeders;
 /// points at.
 /// </para>
 /// <para>
-/// Two of these archetypes are NPCs (<see cref="ActorArchetype.Traits"/>.<c>Hostile</c> is false). They are not
+/// Some of these archetypes are NPCs (<see cref="ActorArchetype.Traits"/>.<c>Hostile</c> is false). They are not
 /// placed in spawn pools — a pool turns every entry into an enemy — and exist so trade, quest and dialogue content
 /// has an actor to hang off.
 /// </para>
