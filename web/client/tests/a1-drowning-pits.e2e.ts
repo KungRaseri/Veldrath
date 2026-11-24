@@ -63,7 +63,7 @@ import {
  * The Drowning Pits had no inbound `ZoneExit` on the seeded graph when this card was written: the only node pointing
  * at `zone:drowning-pits` was the region map's own `Zone` node, and a region board is not a through-route (its entry
  * node is adjacent to Crestfall alone, and every `Zone` node on it enters its zone). `MapGraphValidator` reports that
- * shape as `map_unreachable` — "live but no other map exits to it, so nobody can reach it" — so this journey is the
+ * shape as `map_unreachable` — a live zone no other map has a door into — so this journey is the
  * walk that repair buys: Grevenmire's Sunken Estate now carries a `ZoneExit` into the zone's arrival node
  * (`RealmEngine.Data/Seeders/MapGraphSeeder.cs`), authored the same way `ashlen-wood → grevenmire` already was.
  * The spec therefore walks in through the real map graph, and never calls `EnterZone` behind the client's back.
