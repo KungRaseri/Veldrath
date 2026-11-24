@@ -6,11 +6,11 @@ only changes made on landing are the mechanical consequences of the five decisio
 silently applied, in [§8](#8-decisions).
 
 > **Audience:** whoever draws the portraits (`dev-creative`) and whoever accepts them.
-> **Purpose:** make 34 roster rows look like one world rather than 34 commissions — a silhouette
+> **Purpose:** make the roster look like one world rather than one commission per row — a silhouette
 > language, a per-region palette, and one asset class per row, expressed inside the budgets
 > [`asset-specs.md`](../asset-specs.md) already sets.
-> **Related:** [archetype roster](archetypes.md) (44 rows: the 34-row roster plus the ten adopted
-> townspeople, the `§` rows at the end of its table) · [brand guide](../brand-guide.md)
+> **Related:** [archetype roster](archetypes.md) (the whole roster — the 1–20 rows, the tail hostiles
+> and the ten adopted townspeople) · [brand guide](../brand-guide.md)
 > (materials and light) · [asset specs](../asset-specs.md) (canvas, format, budget, naming) ·
 > [tokens.json](../tokens.json) (the palette, `locked: true`).
 
@@ -23,7 +23,7 @@ silently applied, in [§8](#8-decisions).
 | [`asset-specs.md`](../asset-specs.md) | canvas sizes, formats, weight budgets, naming | quotes them, never re-decides them |
 | [`brand-guide.md`](../brand-guide.md) | three materials, light from within and above, **no off-palette hue** | applies them per region |
 | [`tokens.json`](../tokens.json) | `locked: true` — 49 tokens, no new colour without a human decision | uses 16 existing tokens, adds **none** |
-| [`archetypes.md`](archetypes.md) | 44 rows — the approved 34-row roster plus the ten adopted townspeople (the `§` rows at the end of the table) — slugs, zones, classes, faction ties | classifies every row, invents no slug |
+| [`archetypes.md`](archetypes.md) | the whole roster — the 1–20 rows, the tail hostiles and the ten adopted townspeople (the `§` rows at the end of the table) — slugs, zones, classes, faction ties | classifies every row it can, names the five it cannot, invents no slug |
 | [`GAME.md`](../../../game-context/GAME.md) §6, §8 | five regions; region *character* beyond biome is **TBD (Q2)** | ramps from seeded biome words only |
 
 `designctx Veldrath/Veldrath` reports convention `docs/design`, 49 palette tokens, palette matching
@@ -99,13 +99,24 @@ self-test (9 synthetic fixtures, no generated art) is the proof it discriminates
 `TypeKey` (`beasts`, `humanoids`, `undead`, `spirits`, `elementals`, `townspeople`). Five silhouette
 classes cover all of it, and the fifth (townsfolk) is the one the seeder gets exactly right.
 
-| Class | Proportion | Facing | Opaque coverage at 64 px | Rows |
+| Class | Proportion | Facing | Opaque coverage at 64 px | Rows classified |
 |---|---|---|---|---|
 | **beast** | horizontal, mass low, longer axis ≥ 1.15× the vertical | profile, head leading **left** | 0.22–0.55 | 11 |
 | **humanoid** | vertical, shoulders 0.60–0.75 of width, head in the top third | three-quarter, off-centre | 0.22–0.55 | 8 |
 | **unquiet** | vertical but **no lower mass** — the figure frays out above the bottom margin | three-quarter, tilted | 0.22–0.55 | 4 |
 | **spirit** | one non-limbed mass, no neck, no narrow waist (elementals share this class) | arbitrary, never symmetrical | 0.22–0.55 | 4 |
-| **townsfolk** | vertical, square shoulders, head centred | **front-on and mirror-symmetric** | 0.22–0.55 | 7 |
+| **townsfolk** | vertical, square shoulders, head centred | **front-on and mirror-symmetric** | 0.22–0.55 | 17 |
+
+**The `Rows classified` column is counted, not estimated, and it is not the size of the roster.** It is
+the `class` column of §4.1 and §4.1b tallied by slug against the 8-column roster rows in
+`archetypes.md` (the 1–20 table plus the five-row tail) — re-run that tally to check it, in either
+direction. It covers **44 of the roster's rows — every row but the five tail hostiles**: the four
+hostile classes account for all 27 hostile rows of the 1–20 roster, and townsfolk for all 17
+non-hostile rows (the seven in §4.1 and the ten adopted ones in §4.1b). **The five are in no row of
+this table**, because the tail states no class for any of them — `vent-stalker`, `crust-crawler`,
+`ash-picker`, `ash-eater`, `maw-serpent`, bands 23–30. A class is what these proportions and R2's
+outline break are drawn from, so naming one is a decision owed by the tail roster (§4.1, *What these
+two tables cover*), never a drawing choice taken here.
 
 **Facing is the hostility read.** Hostiles are three-quarter (symmetry ≤ 0.85); townsfolk are
 front-on (symmetry ≥ 0.88). A player learns it in one screen: *front-on means talk, three-quarter
@@ -136,12 +147,20 @@ flourish: at 64 px two breaks average into a blob.
 
 One portrait per slug, whatever its tier. The UI draws the tier:
 
-| Tier | Frame | Rows today |
+| Tier | Frame | Rows the frame applies to |
 |---|---|---|
-| boss | double gold ring plus four cardinal spikes — the crest's own frame language | `bandit-captain` (`Traits.Boss = true`) |
-| elite | single 1.5 px `gold/gold-dark` ring | `storm-harrower` (`Traits.Elite = true`) |
-| regular | no ring | 25 hostile rows |
-| townsfolk | no ring, `background/bg-1` plate behind the bust | 7 rows |
+| boss | double gold ring plus four cardinal spikes — the crest's own frame language | the rows carrying `Traits.Boss = true`; §4.1 names `bandit-captain` |
+| elite | single 1.5 px `gold/gold-dark` ring | the rows carrying `Traits.Elite = true`; §4.1 names `storm-harrower` |
+| regular | no ring | every hostile row that carries neither flag |
+| townsfolk | no ring, `background/bg-1` plate behind the bust | every non-hostile row |
+
+R3 counts no rows, for R4's reason (§2 R4): a hostile-row tally is a fact about how big the roster is,
+and the roster grows with every content wave, so a written tally rots while the frame it describes
+does not. The tier is read off two traits, which is why the roster's size never enters the rule —
+boss is whatever carries `Traits.Boss`, elite whatever carries `Traits.Elite`, regular is every other
+hostile row, and townsfolk is every non-hostile row. **If another row is flagged**, it takes the frame
+with no redraw and no edit here; that is the whole reason tier is drawn in the UI rather than in the
+paint.
 
 This follows the precedent [asset-specs §4.7](../asset-specs.md) sets for item rarity — *"Not drawn
 into the art. Rarity is a text colour and a future UI frame — art stays neutral so it can be
@@ -207,8 +226,8 @@ are the review's job, against §2's rules and the prompt in §5.
 ## 3. Region palettes
 
 **A region ramp is not an identification channel.** A player identifies hostiles by silhouette and
-tier frame (R1–R3). The ramp exists so that 34 portraits look lit in the same world, and so that
-the same archetype appearing in two regions is re-graded rather than redrawn.
+tier frame (R1–R3). The ramp exists so that the roster's portraits look lit in the same world, and so
+that the same archetype appearing in two regions is re-graded rather than redrawn.
 
 Every value below is a token from `tokens.json`, cited by its own name. **No new colour token is
 required, and none is proposed.** The five ramps are five different *selections and placements*
@@ -372,9 +391,21 @@ and **re-lit, never redrawn**, in the others.
 | `forge-deserter` | 19–20 | cinderplain | humanoid | — | **P1** | the forge kit *is* the identity |
 | `shrine-keeper` | — | cinderplain | townsfolk | npc | **P2** | elder's robed pose, ash dedication |
 
-**Counts: P0 9 · P1 18 · P2 7 = 34.** By region: Varenmark 14 (9 P0 / 5 P1), Greymoor 8 (5 P1 / 3 P2),
-Saltcliff 8 (5 P1 / 3 P2), Cinderplain 4 (3 P1 / 1 P2). The five Varenmark townsfolk are P1 by
-decision 3 ([§8](#8-decisions)) — the draft had them P0; nothing else in this table moved.
+**Counts: P0 9 · P1 18 · P2 7 = 34** — this table's own total, taken off its rows, and **not** the size
+of the roster. By region: Varenmark 14 (9 P0 / 5 P1), Greymoor 8 (5 P1 / 3 P2), Saltcliff 8 (5 P1 /
+3 P2), Cinderplain 4 (3 P1 / 1 P2). The five Varenmark townsfolk are P1 by decision 3
+([§8](#8-decisions)) — the draft had them P0; nothing else in this table moved.
+
+**What these two tables cover, and what they do not.** Counted off the 8-column roster rows in
+`archetypes.md` — the 1–20 table plus the five-row tail — §4.1 and §4.1b classify **44 of the
+roster's 49 rows**: all 27 hostiles and all 17 townsfolk of the 1–20 table, which is every row of it.
+**The five they cannot classify are the tail hostiles** — `vent-stalker`, `crust-crawler`,
+`ash-picker`, `ash-eater`, `maw-serpent` (`archetypes.md`, *The tail roster*) — and not because anyone
+overlooked them: that table states a band, a faction tie, a zone, hostility and a combat role for each
+of the five, and never a class. R1's proportions and R2's outline break are drawn from the class, so
+naming one is a decision against the tail roster's own table, recorded under [§8](#8-decisions),
+*Left open on purpose*. Until it is taken, no tail portrait can be requested and R1's count stops at
+the 44 rows these two tables hold.
 
 **P2 dependencies** — a P2 row cannot be requested before its base exists: `moor-tollman` ←
 `bandit-ruffian` (P0) · `cairn-haunt` ← `moor-wight` (P0) · `fen-lurker` ← `sump-crawler` (P0) ·
@@ -568,8 +599,8 @@ come back for review until it exits 0.
 **IoU is exempt within a set** — these are deliberately distinct creatures, so `assetkit compare` is
 run with `--min-iou 0` and only the material bands are read: ink weight 80–120 % of the anchor, gold
 and ember shares within 50 % relative or 8 pp. The IoU gate in [specs/README](../specs/README.md)
-exists for *derivations of one mark*, and applying 85 % IoU to 34 silhouettes would force them to be
-the same creature.
+exists for *derivations of one mark*, and applying 85 % IoU across a roster's silhouettes would force
+them to be the same creature.
 
 ---
 
@@ -577,8 +608,11 @@ the same creature.
 
 1. **A per-tier portrait.** Boss and elite get a frame (§2 R3), not a second file. Drawing tier
    doubles the set and makes a band change a redraw.
-2. **Faction marks for factionless rows.** 25 of 27 hostile rows are `none recorded`. A badge would
-   assert canon that proposals 6–7 explicitly withheld. Only the gull-rider harpoon exists.
+2. **Faction marks for factionless rows.** Every hostile row except the gull-riders carries no faction:
+   `none recorded`, or a parenthetical that says the same thing in longer words (`unaffiliated
+   banditry (no organisation)`, `independent vent-claimants — no organisation`). A badge would assert
+   canon that proposals 6–7 explicitly withheld. Only the gull-rider harpoon exists, and R4 counts no
+   rows (§2 R4).
 3. **Region character beyond biome.** Greymoor, Saltcliff and Cinderplain are working names and
    their character is Q2 TBD (`GAME.md` §8 item 1). The ramps are built from the zones' *seeded biome
    words*; they will be re-decided when region prose exists. I will not smuggle "a proud seafaring
@@ -666,6 +700,7 @@ changed.
 | §4.1b, §5.1 | three home regions corrected — Aldenmere's `keep-castellan`, `mead-seller` and `cellar-keeper` are **greymoor**, not varenmark — so the ten split Varenmark 1 · Greymoor 3 · Saltcliff 3 · Cinderplain 3; §4.1b's light sentence now names Greymoor's ramp | review of this landing: `aldenmere` is seeded `RegionId = "greymoor"` (`ApplicationDataSeeder.cs`) and `world-lore-plan.md` records Aldenmere under *Greymoor settlements* (`towns.md` §5 P2 is where that entry was proposed), so §4.1's first-zone rule puts all three there |
 | §4.1b ×2, corrections table | `§6.8` → `§6 item 8`: §6 is a numbered list of eight refusals with no `6.x` sub-headings | review of this landing: the citation named no heading; the item number was right and only the form changed |
 | header, §0 | "44 rows: the 34-row roster plus the ten `§` townspeople" → "plus the ten adopted townspeople (the `§` rows at the end of the table)" | review of this landing: 17 rows carry `§` — the seven earlier townsfolk and the ten — so the old phrasing read as if only the ten were marked |
+| header, §0, §2 R1, §2 R3, §3, §4.1, §5.5, §6 item 2 | the roster-size tallies dropped or recomputed: R3's `Rows today` column became `Rows the frame applies to` and counts nothing; R1's `Rows` became `Rows classified`, cites the table it is counted off, and reads townsfolk **17**, not 7; §4.1 states that it and §4.1b classify 44 of the roster's 49 rows and names the five tail hostiles they cannot; the header, §0, §3, §5.5 and §6 item 2 no longer quote a roster size | card `t_23f83ab4`: the roster is **49 rows — 32 hostile, 17 non-hostile** (measured off the 8-column rows in `archetypes.md`, 1–20 table plus tail) and four sites still described the 34-row 1–20 roster with seven townsfolk — text written before the ten-townsperson wave and the tail landed. R4 set the precedent in PR #258 (`t_9e9549d5`): a hostile-row tally is a fact about roster size, so it rots with every wave while the rule it illustrates does not |
 
 ### Left open on purpose
 
@@ -676,6 +711,12 @@ changed.
 - **The ten adopted townspeople have no request yet.** They are classified — ten P2 rows in §4.1b —
   but a P2 row cannot be requested before its base exists, so none is commissioned until its base is
   drawn, or until a later card re-prioritises one to P1.
+- **The five tail hostiles have no silhouette class.** `archetypes.md`'s tail roster states a band, a
+  faction tie, a zone, hostility and a combat role for each of `vent-stalker`, `crust-crawler`,
+  `ash-picker`, `ash-eater` and `maw-serpent`, never a class — so §4.1 stops at 44 of the roster's 49
+  rows and R1's count with it. The class is owed against the tail roster's own table; R1's proportions
+  and R2's outline break are drawn from it, so until it is written down no tail portrait can be
+  requested. This document takes no part of that decision.
 
 ---
 
