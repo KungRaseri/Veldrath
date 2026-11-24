@@ -15,7 +15,7 @@
 |---|---|---|
 | Death cost | [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:185) | **10% XP and 10% gold**, both at once, hardcoded |
 | Hardcore death | same method | `DeletedAt` is set — the character is soft-deleted and cannot respawn |
-| Respawn | [`RespawnHubCommandHandler`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:56) | 25% of max HP, full mana, and the character **stays exactly where they died** |
+| Respawn | [`RespawnHubCommandHandler`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:54) | 25% of max HP, full mana, and the character **stays exactly where they died** |
 | Death sickness / blessing | — | None. The deleted `RespawnService` had an unwired version |
 | Tutorial | — | No `tutorial` identifier anywhere in the codebase. Session-72 only added `ResolveResumeNodeId` (resume at the last known node) |
 | Quest objectives | [`QuestJournal.Advance`](../Veldrath.Server/Features/Quest/CharacterQuestEntry.cs:85) | Kinds `kill:`, `collect:`, `visit:` only |
