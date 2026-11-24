@@ -15,7 +15,7 @@
 | 1 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Key model facts, positional record constructors, known handler quirks, testing gotchas, known open P3/P4 items |
 | 2 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration history and completed work log |
 | 3 |  [`.github/agent-memory/foundry-content-schema.md`](.github/agent-memory/foundry-content-schema.md) | Foundry content schema, write endpoints, integration test gotchas |
-| 4 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Veldrath Server + web client hub architecture, blob schema, auth/env matrix, session log |
+| 4 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Veldrath Server + web client hub architecture, blob schema, auth/env matrix, generated index of work-item notes |
 | 5 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start |
 | 6 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, implementation decisions |
 | 7 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop + multiplayer architecture plan (actual turn-based implementation supersedes original tick-based design) |
@@ -75,7 +75,7 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── web/                          # SvelteKit 3 / Svelte 5 app — the only client, plus Foundry (shared + client workspaces)
 ├── [Project].Tests/              # One test project per .NET library/application (5 total)
 ├── .github/
-│   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
+│   ├── agent-memory/             # Canonical memory store: 8 reference files + work-items/ (one per card) + areas/, see Required Reading
 │   ├── instructions/             # Detailed instruction files (7 files)
 │   └── workflows/                # CI/CD workflows (per-component + docs + hygiene + release)
 ├── .roo/skills/                  # Agent skills (build, test, run server, web); catalog in .roo/skills/README.md
@@ -335,7 +335,7 @@ The directory [`.github/agent-memory/`](.github/agent-memory/) is the **canonica
 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Codebase notes: model facts, constructor patterns, handler quirks, testing gotchas, open items |
 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration log, completed work, deleted files |
 | [`.github/agent-memory/foundry-content-schema.md`](.github/agent-memory/foundry-content-schema.md) | Foundry content schema, write endpoints, integration test gotchas |
-| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, session log |
+| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, generated index of work-item notes |
 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start (prompt templates) |
 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, decisions made, next steps |
 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop architecture plan (actual turn-based implementation supersedes original design) |
@@ -349,7 +349,19 @@ When you discover something new about the codebase that future sessions should k
 2. **Edit it directly** with the new information
 3. **Commit the change** so it travels with the repo
 
-Do **not** create new memory files unless the existing 8 files are insufficient. Keep information organized by topic.
+**A note that belongs to one work item goes in its own file.** Create
+`.github/agent-memory/work-items/<yyyy-mm-dd>-<card>-<slug>.md` and write only that file; front matter is
+`kind: work-item`, `date`, `area`, `card`, `pr`, `title`. Never edit another work item's file, and never
+edit [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) — it is generated
+from that front matter by `node scripts/memory/memory-index.mjs`, and CI fails a change the generator did
+not produce.
+
+**Stable reference keeps its file.** The other seven are edited in place; a topic that outgrows a session
+log becomes `.github/agent-memory/areas/<topic>.md`. Create a new reference file only when none of them
+fits.
+
+One file per work item is what keeps two cards from colliding: a new path cannot conflict, and the index
+that no branch ever hand-edits cannot either.
 
 ---
 
