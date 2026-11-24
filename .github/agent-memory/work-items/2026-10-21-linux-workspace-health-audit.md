@@ -1,7 +1,7 @@
 ---
 kind: work-item
 date: 2026-10-21
-area: content
+area: engine
 title: "Linux workspace health audit"
 ---
 

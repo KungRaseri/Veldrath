@@ -17,11 +17,14 @@
  *
  * Two branches that each add a file never touch the same path, so they cannot
  * conflict; the table is the only shared region, and regenerating it is one command.
+ * The hub is rendered **whole** from `scripts/memory/veldrath-memory.template.md` plus
+ * that table — the committed hub is never read as input — so `--check` catches a hand
+ * edit in the preamble, in the table, or appended after the closing marker.
  *
  * Usage (from the repository root):
  *
- *   node scripts/memory/memory-index.mjs --write     rewrite the table
- *   node scripts/memory/memory-index.mjs --check     exit 1 unless the file is exactly
+ *   node scripts/memory/memory-index.mjs --write     rewrite the whole hub
+ *   node scripts/memory/memory-index.mjs --check     exit 1 unless the file is byte-for-byte
  *                                                    what --write would produce (CI gate)
  *   node scripts/memory/memory-index.mjs --verify --from <git-ref> [--rewritten <path>]
  *                                                    one-off migration audit: every
@@ -40,6 +43,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MEMORY = join(ROOT, '.github', 'agent-memory');
 const HUB = join(MEMORY, 'veldrath-memory.md');
 const HUB_REPO_PATH = '.github/agent-memory/veldrath-memory.md';
+const TEMPLATE = join(ROOT, 'scripts', 'memory', 'veldrath-memory.template.md');
+const TEMPLATE_REPO_PATH = 'scripts/memory/veldrath-memory.template.md';
 const KINDS = new Map([
 	['work-items', 'work-item'],
 	['areas', 'area']
@@ -165,43 +170,74 @@ function renderTable(entries) {
 	return [HEADER, SEPARATOR, ...rows].join('\n');
 }
 
-function renderHub(text, entries) {
-	const begin = text.indexOf(BEGIN);
-	const end = text.indexOf(END);
-	if (begin < 0 || end < 0) die(`${HUB_REPO_PATH}: the generated region is marked by ${BEGIN} and ${END}`);
-	if (end < begin) die(`${HUB_REPO_PATH}: ${END} appears before ${BEGIN}`);
-	return `${text.slice(0, begin + BEGIN.length)}\n${renderTable(entries)}\n${text.slice(end)}`;
+/**
+ * Renders the complete hub from the template plus the table built from the notes.
+ *
+ * The committed hub is never consulted: the output depends only on the template and the
+ * note front matter, so `--check` compares the whole file byte-for-byte and a hand edit
+ * anywhere — above the markers, in the table, or appended after `END` — is a difference.
+ */
+function renderHub(entries) {
+	let template;
+	try {
+		template = readFileSync(TEMPLATE, 'utf8');
+	} catch {
+		die(`cannot read ${TEMPLATE_REPO_PATH} (the hub is generated from it)`);
+	}
+	const begin = template.indexOf(BEGIN);
+	const end = template.indexOf(END);
+	if (begin < 0 || end < 0) die(`${TEMPLATE_REPO_PATH}: the table region is marked by ${BEGIN} and ${END}`);
+	if (end < begin) die(`${TEMPLATE_REPO_PATH}: ${END} appears before ${BEGIN}`);
+	if (template.indexOf(BEGIN, begin + BEGIN.length) >= 0) die(`${TEMPLATE_REPO_PATH}: ${BEGIN} appears more than once`);
+	if (template.indexOf(END, end + END.length) >= 0) die(`${TEMPLATE_REPO_PATH}: ${END} appears more than once`);
+	return `${template.slice(0, begin + BEGIN.length)}\n${renderTable(entries)}\n${template.slice(end)}`;
 }
 
 // ------------------------------------------------------------------ modes
 
 function write() {
 	const entries = readEntries();
-	const current = readFileSync(HUB, 'utf8');
-	const next = renderHub(current, entries);
+	const next = renderHub(entries);
+	let current = '';
+	try {
+		current = readFileSync(HUB, 'utf8');
+	} catch {
+		// A missing hub is simply a hub that needs writing.
+	}
 	if (next !== current) writeFileSync(HUB, next);
 	const counts = entries.reduce((acc, entry) => ({ ...acc, [entry.kind]: (acc[entry.kind] ?? 0) + 1 }), {});
 	console.log(
-		`memory-index: ${counts['work-item'] ?? 0} work items, ${counts.area ?? 0} areas — ${next === current ? 'already current' : 'rewrote'} ${HUB_REPO_PATH}`
+		`memory-index: ${counts['work-item'] ?? 0} work items, ${counts.area ?? 0} areas — ${next === current ? 'already current' : 'wrote'} ${HUB_REPO_PATH}`
 	);
 }
 
 function check() {
 	const entries = readEntries();
-	const current = readFileSync(HUB, 'utf8');
-	const next = renderHub(current, entries);
+	const next = renderHub(entries);
+	let current;
+	try {
+		current = readFileSync(HUB, 'utf8');
+	} catch {
+		die(`${HUB_REPO_PATH} is missing; run: node scripts/memory/memory-index.mjs --write`);
+	}
 	if (next === current) {
-		console.log(`memory-index: ${HUB_REPO_PATH} matches the notes (${entries.length} rows)`);
+		console.log(`memory-index: ${HUB_REPO_PATH} matches the generator (${entries.length} rows, whole file)`);
 		return;
 	}
 	const currentLines = current.split('\n');
 	const nextLines = next.split('\n');
 	const at = nextLines.findIndex((line, index) => line !== currentLines[index]);
-	const line = Math.min(...[at, currentLines.length - 1].filter((n) => n >= 0)) + 1;
 	console.error(`memory-index: ${HUB_REPO_PATH} is not what the generator produces.`);
-	console.error(`  first difference at line ${line}:`);
-	console.error(`    committed: ${JSON.stringify(currentLines[line - 1] ?? '')}`);
-	console.error(`    generated: ${JSON.stringify(nextLines[line - 1] ?? '')}`);
+	if (at < 0) {
+		const extra = currentLines.length - nextLines.length;
+		console.error(`  the committed file has ${extra} line(s) the generator does not produce (a hand edit below the table?)`);
+		console.error(`    committed: ${JSON.stringify(currentLines[nextLines.length - 1] ?? '')}`);
+	} else {
+		console.error(`  first difference at line ${at + 1}:`);
+		console.error(`    committed: ${JSON.stringify(currentLines[at] ?? '')}`);
+		console.error(`    generated: ${JSON.stringify(nextLines[at] ?? '')}`);
+	}
+	console.error(`  the file is generated from ${TEMPLATE_REPO_PATH}; do not hand-edit it.`);
 	console.error('  run: node scripts/memory/memory-index.mjs --write');
 	process.exit(1);
 }
@@ -230,9 +266,12 @@ function verify(options) {
 	const originalLines = originalRaw.split('\n');
 	if (originalLines[originalLines.length - 1] === '') originalLines.pop();
 	const original = [];
-	for (const line of originalLines) {
-		if (line.trim() !== '') original.push(normalise(line));
-	}
+	originalLines.forEach((line, index) => {
+		if (line.trim() !== '') original.push({ index, line: normalise(line) });
+	});
+	// The hub's own header is the preamble before the first note heading. It is generated
+	// from the template, so it is allowed to change — no note content lives there.
+	const firstNoteHeading = originalLines.findIndex((line) => /^#{2,3} /.test(line));
 
 	const entries = readEntries();
 	const rewritten = new Set(options.rewritten.map((path) => resolve(ROOT, path)));
@@ -253,12 +292,12 @@ function verify(options) {
 	// side is a lost or an added line.
 	const unionBudget = countLines(sources.map((source) => source.line));
 	const missing = [];
-	for (const line of original) {
+	for (const { index, line } of original) {
 		const left = unionBudget.get(line) ?? 0;
 		if (left > 0) unionBudget.set(line, left - 1);
-		else missing.push(line);
+		else missing.push({ index, line });
 	}
-	const budget = countLines(original);
+	const budget = countLines(original.map(({ line }) => line));
 	const added = [];
 	for (const source of sources) {
 		const left = budget.get(source.line) ?? 0;
@@ -275,13 +314,14 @@ function verify(options) {
 		files.add(source.file);
 		owners.set(source.line, files);
 	}
+	const originalStrings = original.map(({ line }) => line);
 	const attribute = (line) => {
-		const index = original.indexOf(line);
+		const index = originalStrings.indexOf(line);
 		if (index < 0) return null;
 		for (let distance = 1; distance < 200; distance += 1) {
 			for (const i of [index + distance, index - distance]) {
-				if (i < 0 || i >= original.length) continue;
-				const files = owners.get(original[i]);
+				if (i < 0 || i >= originalStrings.length) continue;
+				const files = owners.get(originalStrings[i]);
 				if (files && files.size === 1) return [...files][0];
 			}
 		}
@@ -290,9 +330,11 @@ function verify(options) {
 
 	const permittedMissing = [];
 	const lostMissing = [];
-	for (const line of missing) {
+	for (const { index, line } of missing) {
 		const file = attribute(line);
-		if (file && rewritten.has(file)) permittedMissing.push({ file, line });
+		// The header is the hub's, and the hub is generated from the template: permitted.
+		if (firstNoteHeading > 0 && index < firstNoteHeading) permittedMissing.push({ file: HUB, line });
+		else if (file && rewritten.has(file)) permittedMissing.push({ file, line });
 		else lostMissing.push({ file, line });
 	}
 	const addedByFile = new Map();
@@ -313,7 +355,8 @@ function verify(options) {
 	console.log(`lost       ${lostMissing.length}`);
 	console.log(`duplicated ${duplicated.length}`);
 	if (permittedMissing.length) {
-		console.log(`permitted  ${permittedMissing.length} line(s) rewritten on purpose in ${[...rewritten].map(rel).join(', ')}:`);
+		const files = [...new Set(permittedMissing.map(({ file }) => (file === HUB ? HUB_REPO_PATH : rel(file))))];
+		console.log(`permitted  ${permittedMissing.length} line(s) rewritten on purpose in ${files.join(', ')}:`);
 		for (const { file, line } of permittedMissing) console.log(`  - ${rel(file)}: ${line}`);
 	}
 	if (lostMissing.length) {

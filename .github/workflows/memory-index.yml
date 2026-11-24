@@ -1,10 +1,13 @@
 name: CI - Memory index
 
-# The memory hub (`.github/agent-memory/veldrath-memory.md`) is generated: the table at its
-# foot is built from the YAML front matter of `.github/agent-memory/work-items/*.md` and
-# `.github/agent-memory/areas/*.md` by `node scripts/memory/memory-index.mjs`. This workflow
-# is what keeps it generated — `--check` regenerates the table in memory and fails unless the
-# committed file is byte-for-byte what the generator produces.
+# The memory hub (`.github/agent-memory/veldrath-memory.md`) is generated **whole**: its prose
+# comes from `scripts/memory/veldrath-memory.template.md` and its table is built from the YAML
+# front matter of `.github/agent-memory/work-items/*.md` and `.github/agent-memory/areas/*.md` by
+# `node scripts/memory/memory-index.mjs`. This workflow is what keeps it generated — `--check`
+# renders the complete file in memory and fails unless the committed file is byte-for-byte what
+# the generator produces. Nothing in the hub is read as input, so a hand edit anywhere — the
+# preamble, a table cell, or a `### Session-*` block appended below the table — fails, while the
+# normal pull request ("add a note, run --write, commit both") passes.
 #
 # Why a byte-for-byte check rather than "fail any pull request whose diff touches the hub":
 # a pull request that adds a work-item note **must** regenerate the index, so touching the hub
@@ -20,7 +23,9 @@ name: CI - Memory index
 # instead, which is the only place a commit can be added.
 #
 # `pull_request.branches` filters on the base branch, so `development` here means "a pull
-# request into development" (docs/ci-forgejo.md, "What runs where").
+# request into development" (docs/ci-forgejo.md, "What runs where"). The `development → main`
+# release PR has base `main` and is therefore not triggered — it legitimately carries the whole
+# file and needs no check.
 
 concurrency:
   group: ci-memory-index-${{ github.ref }}

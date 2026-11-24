@@ -3,6 +3,7 @@ kind: work-item
 date: 2026-11-23
 area: content
 card: t_d97538ea
+pr: 244
 title: "Progression is server-side; a level-up moves the health bar"
 ---
 

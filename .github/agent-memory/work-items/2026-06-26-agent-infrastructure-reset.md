@@ -1,7 +1,7 @@
 ---
 kind: work-item
 date: 2026-06-26
-area: web
+area: infra
 title: "Agent Infrastructure Reset"
 ---
 

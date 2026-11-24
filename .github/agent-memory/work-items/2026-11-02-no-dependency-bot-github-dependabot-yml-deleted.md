@@ -1,7 +1,7 @@
 ---
 kind: work-item
 date: 2026-11-02
-area: engine
+area: infra
 title: "No dependency bot: `.github/dependabot.yml` deleted"
 ---
 

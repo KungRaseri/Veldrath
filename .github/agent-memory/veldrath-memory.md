@@ -1,17 +1,14 @@
 # Veldrath Server + Web Client — Memory Notes
 
-> **Status**: Updated through Session-68 (2026-10-25). The Avalonia desktop client is gone —
-> Veldrath is web-first, and the SvelteKit app in `web/` is the only client. Entries below that
-> mention `Veldrath.Client`, `GameClient.Core`, `Razor`/`MudBlazor`, or `/api/foundry-bridge/*` are
-> historical session logs, not current guidance.
+> **Status**: this file is the **index** of the memory store, not a log. Every note lives in
+> `work-items/` (one file per work item) or `areas/` (one file per stable topic). The table at
+> the foot is generated from their YAML front matter, and this whole file is generated from
+> `scripts/memory/veldrath-memory.template.md` — a hand edit is a failed build.
 
----
-
-**This file is generated.** It is the index of the memory store; the notes themselves live in
-[`work-items/`](work-items/) (one file per work item) and [`areas/`](areas/) (one file per stable
-topic). `node scripts/memory/memory-index.mjs --write` rewrites the table at the bottom from the
-YAML front matter of those files, and CI runs `--check`, which fails unless this file is
-byte-for-byte what the generator produces. Do not hand-edit it.
+The Avalonia desktop client is gone — Veldrath is web-first, and the SvelteKit app in `web/` is the
+only client. Notes written before that pivot mention `Veldrath.Client`, `GameClient.Core`,
+`Razor`/`MudBlazor` or `/api/foundry-bridge/*`; they are historical session logs, not current
+guidance.
 
 ## How to add a note
 
@@ -40,8 +37,10 @@ A stable topic that outgrows a session log becomes `areas/<topic>.md` with `kind
 ## Rules
 
 - **One file per work item.** Never append to another card's file, and never append a
-  `### Session-*` block to this one.
-- **This file is generated.** `--check` is the gate; a hand edit is a failed build.
+  `### Session-*` block to this one — the generator would erase it.
+- **This file is generated.** `node scripts/memory/memory-index.mjs --check` compares the whole
+  file byte-for-byte with what the template and the notes produce, so any hand edit — a preamble
+  change, a table cell, or a note appended below the table — fails.
 - **Counters have one source.** Where a number is asserted by a test, the note points at the test
   and does not restate the number — the seeded map graph is the worked example, and
   `RealmEngine.Data.Tests/Seeders/MapGraphSeederTests.cs` owns both the map/node/edge totals and the
@@ -49,7 +48,7 @@ A stable topic that outgrows a session log becomes `areas/<topic>.md` with `kind
 - **The other seven reference files are not split.** `engine-codebase.md`,
   `json-migration-status.md`, `foundry-content-schema.md`, `gap-analysis-process.md`,
   `auth-and-character-creation-plan.md`, `combat-loop-plan.md` and `world-lore-plan.md` are edited in
-  place; only the hub below is generated.
+  place; only this index is generated.
 
 ## Index
 
@@ -59,7 +58,7 @@ Newest first. `—` in the Date column means the note carries no date of its own
 | Date | Area | Card | PR | Title | File |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-23 | map | `t_990e7186` |  | Respawn moves the map node, so a reload wakes where the player did | [work-items/2026-11-23-t_990e7186-respawn-moves-the-map-node-so-a-reload-wakes-where-the-player-did.md](work-items/2026-11-23-t_990e7186-respawn-moves-the-map-node-so-a-reload-wakes-where-the-player-did.md) |
-| 2026-11-23 | content | `t_d97538ea` |  | Progression is server-side; a level-up moves the health bar | [work-items/2026-11-23-t_d97538ea-progression-is-server-side-a-level-up-moves-the-health-bar.md](work-items/2026-11-23-t_d97538ea-progression-is-server-side-a-level-up-moves-the-health-bar.md) |
+| 2026-11-23 | content | `t_d97538ea` | #244 | Progression is server-side; a level-up moves the health bar | [work-items/2026-11-23-t_d97538ea-progression-is-server-side-a-level-up-moves-the-health-bar.md](work-items/2026-11-23-t_d97538ea-progression-is-server-side-a-level-up-moves-the-health-bar.md) |
 | 2026-11-23 | content |  |  | The Halrow Import Pack and Its Way In (2026-11-23) | [areas/the-halrow-import-pack-and-its-way-in-2026-11-23.md](areas/the-halrow-import-pack-and-its-way-in-2026-11-23.md) |
 | 2026-11-21 | content | `t_d65b853d` |  | The people arrive: D3's roster is seeded, and the three towns can trade again | [work-items/2026-11-21-t_d65b853d-the-people-arrive-d3-s-roster-is-seeded-and-the-three-towns-can-trade.md](work-items/2026-11-21-t_d65b853d-the-people-arrive-d3-s-roster-is-seeded-and-the-three-towns-can-trade.md) |
 | 2026-11-20 | web |  |  | A script the web job runs now triggers the web job | [work-items/2026-11-20-a-script-the-web-job-runs-now-triggers-the-web-job.md](work-items/2026-11-20-a-script-the-web-job-runs-now-triggers-the-web-job.md) |
@@ -85,7 +84,7 @@ Newest first. `—` in the Date column means the note carries no date of its own
 | 2026-11-03 | web |  |  | Web coverage gate green: branch tail closed | [work-items/2026-11-03-web-coverage-gate-green-branch-tail-closed.md](work-items/2026-11-03-web-coverage-gate-green-branch-tail-closed.md) |
 | 2026-11-02 | infra |  |  | Forgejo CI actually green: the four real blockers | [work-items/2026-11-02-forgejo-ci-actually-green-the-four-real-blockers.md](work-items/2026-11-02-forgejo-ci-actually-green-the-four-real-blockers.md) |
 | 2026-11-02 | engine |  |  | Forgejo CI migration: mirrored actions, registry, releases | [work-items/2026-11-02-forgejo-ci-migration-mirrored-actions-registry-releases.md](work-items/2026-11-02-forgejo-ci-migration-mirrored-actions-registry-releases.md) |
-| 2026-11-02 | engine |  |  | No dependency bot: `.github/dependabot.yml` deleted | [work-items/2026-11-02-no-dependency-bot-github-dependabot-yml-deleted.md](work-items/2026-11-02-no-dependency-bot-github-dependabot-yml-deleted.md) |
+| 2026-11-02 | infra |  |  | No dependency bot: `.github/dependabot.yml` deleted | [work-items/2026-11-02-no-dependency-bot-github-dependabot-yml-deleted.md](work-items/2026-11-02-no-dependency-bot-github-dependabot-yml-deleted.md) |
 | 2026-11-02 | web |  |  | web parity matrix + coverage gate (PR 1 of the web pass) | [work-items/2026-11-02-web-parity-matrix-coverage-gate-pr-1-of-the-web-pass.md](work-items/2026-11-02-web-parity-matrix-coverage-gate-pr-1-of-the-web-pass.md) |
 | 2026-10-26 | infra |  |  | B1: one content rule set, shared by audit / write path / CI | [work-items/2026-10-26-b1-one-content-rule-set-shared-by-audit-write-path-ci.md](work-items/2026-10-26-b1-one-content-rule-set-shared-by-audit-write-path-ci.md) |
 | 2026-10-26 | web |  |  | B2: the Foundry content editor (write path + edit form) | [work-items/2026-10-26-b2-the-foundry-content-editor-write-path-edit-form.md](work-items/2026-10-26-b2-the-foundry-content-editor-write-path-edit-form.md) |
@@ -134,14 +133,14 @@ Newest first. `—` in the Date column means the note carries no date of its own
 | 2026-10-22 | content |  |  | P1 documentation re-audit + P2 gap fixes | [work-items/2026-10-22-p1-documentation-re-audit-p2-gap-fixes.md](work-items/2026-10-22-p1-documentation-re-audit-p2-gap-fixes.md) |
 | 2026-10-22 | map |  |  | Phase 25 complete: RealmForge map graph editor + JSON authoring | [work-items/2026-10-22-phase-25-complete-realmforge-map-graph-editor-json-authoring.md](work-items/2026-10-22-phase-25-complete-realmforge-map-graph-editor-json-authoring.md) |
 | 2026-10-22 | content |  |  | Phase 7b complete: TMX layer fully removed | [work-items/2026-10-22-phase-7b-complete-tmx-layer-fully-removed.md](work-items/2026-10-22-phase-7b-complete-tmx-layer-fully-removed.md) |
-| 2026-10-21 | content |  |  | Linux workspace health audit | [work-items/2026-10-21-linux-workspace-health-audit.md](work-items/2026-10-21-linux-workspace-health-audit.md) |
+| 2026-10-21 | engine |  |  | Linux workspace health audit | [work-items/2026-10-21-linux-workspace-health-audit.md](work-items/2026-10-21-linux-workspace-health-audit.md) |
 | 2026-10-21 | content |  |  | Text dashboard, cardinal map, and tile removal (Phases 3–7a) | [work-items/2026-10-21-text-dashboard-cardinal-map-and-tile-removal-phases-3-7a.md](work-items/2026-10-21-text-dashboard-cardinal-map-and-tile-removal-phases-3-7a.md) |
 | 2026-10-21 | map |  |  | Text dashboard map graph: Phases 0–2 complete | [work-items/2026-10-21-text-dashboard-map-graph-phases-0-2-complete.md](work-items/2026-10-21-text-dashboard-map-graph-phases-0-2-complete.md) |
 | 2026-09-11 | web |  |  | Dev-container `obj/`/`bin/` isolation (fixes NETSDK1064 + dotnet-watch watcher crash) | [work-items/2026-09-11-dev-container-obj-bin-isolation-fixes-netsdk1064-dotnet-watch-watcher.md](work-items/2026-09-11-dev-container-obj-bin-isolation-fixes-netsdk1064-dotnet-watch-watcher.md) |
 | 2026-09-11 | infra |  |  | NuGet Fallback Folder / Linux Docker `dotnet watch` Fix | [work-items/2026-09-11-nuget-fallback-folder-linux-docker-dotnet-watch-fix.md](work-items/2026-09-11-nuget-fallback-folder-linux-docker-dotnet-watch-fix.md) |
 | 2026-06-30 | content |  |  | Reactive UI Pivot + Test Fixes | [work-items/2026-06-30-reactive-ui-pivot-test-fixes.md](work-items/2026-06-30-reactive-ui-pivot-test-fixes.md) |
 | 2026-06-27 | content |  |  | Expansion, Polish & Cleanup | [work-items/2026-06-27-expansion-polish-cleanup.md](work-items/2026-06-27-expansion-polish-cleanup.md) |
-| 2026-06-26 | web |  |  | Agent Infrastructure Reset | [work-items/2026-06-26-agent-infrastructure-reset.md](work-items/2026-06-26-agent-infrastructure-reset.md) |
+| 2026-06-26 | infra |  |  | Agent Infrastructure Reset | [work-items/2026-06-26-agent-infrastructure-reset.md](work-items/2026-06-26-agent-infrastructure-reset.md) |
 | 2026-04-27 | content |  |  | Stability, Chat, Moderation, Dev Tools | [work-items/2026-04-27-stability-chat-moderation-dev-tools.md](work-items/2026-04-27-stability-chat-moderation-dev-tools.md) |
 | 2026-04-16 | auth |  |  | Auth Overhaul & Account Management | [work-items/2026-04-16-auth-overhaul-account-management.md](work-items/2026-04-16-auth-overhaul-account-management.md) |
 | 2026-04-16 | engine |  |  | Design System, DB Consolidation, Language Catalog | [work-items/2026-04-16-design-system-db-consolidation-language-catalog.md](work-items/2026-04-16-design-system-db-consolidation-language-catalog.md) |
