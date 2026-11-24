@@ -208,7 +208,9 @@ public class MapGraphSeederTests
         // The seeder links every region Zone node to its zone map, so a reachability rule that counts any
         // target sees every zone as reachable and cannot tell a zone with a door from one a player can only
         // reach by standing on the region board next to its marker. A zone authored without a door has to be
-        // visible here: the Drowning Pits sat live and unenterable while every per-map rule passed.
+        // visible here: the Drowning Pits sat live and unenterable while every per-map rule passed. The rule
+        // measures doors, not reachability — a marker beside the region entry is still a way in, and the warning
+        // says so — so this list is the authored debt of zones with no door, not a claim that nobody reaches them.
         await using var db = CreateDbContext();
 
         await MapGraphSeeder.SeedAsync(db);
@@ -240,10 +242,11 @@ public class MapGraphSeederTests
     }
 
     /// <summary>
-    /// Live zone maps that no door on another map leads to, so the only way in is the marker on their region
-    /// board and a character can reach them only by being next to that marker. Fixing one is content work: add a
-    /// <c>ZoneExit</c> on a neighbouring zone map, the shape of <c>zone:grevenmire:exit:zone:drowning-pits</c>,
-    /// and delete its row here. The list may only shrink.
+    /// Live zone maps that no door on another map leads to. A character standing beside one's marker on a region
+    /// board can still walk in — the board is a way in from that node — but a door is the authored shape every
+    /// live zone is expected to have, and the warning says that rather than claiming the zone is unreachable.
+    /// Fixing one is content work: add a <c>ZoneExit</c> on a neighbouring zone map, the shape of
+    /// <c>zone:grevenmire:exit:zone:drowning-pits</c>, and delete its row here. The list may only shrink.
     /// </summary>
     private static readonly string[] SeededZonesWithNoInboundDoor =
     [

@@ -805,16 +805,25 @@ public class MapGraphValidatorIssueCodeTests
             [map],
             liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "zone:lonely" });
 
-        // Assert
-        result.Issues.Should().Contain(issue =>
-            issue.Code == "map_unreachable" && issue.Severity == MapGraphValidationSeverity.Warning);
+        // Assert — the rule measures a door, not reachability, and the message must say that rather than claim
+        // the zone cannot be reached: a character can still walk in from beside a region board marker.
+        var issue = result.Issues.Should()
+            .ContainSingle(i => i.Code == "map_unreachable").Subject;
+
+        issue.Severity.Should().Be(MapGraphValidationSeverity.Warning);
+        issue.Message.Should()
+            .Contain("no exit on another map leads to it")
+            .And.Contain("marker on a region board")
+            .And.NotContain("nobody can reach it");
     }
 
     [Fact]
     public void ValidateWorld_DoesNotCountARegionBoardMarkerAsADoor()
     {
         // Arrange — the region board points its zone marker at the zone map so travelling to the marker enters
-        // it, but no map has a door into the zone: the character has to be standing next to the marker first.
+        // it, but no map has a door into the zone. A character standing beside that marker can walk in; the rule
+        // measures doors, so the zone is still flagged as content debt — and the warning has to say that instead
+        // of overstating it as unreachable. That trade is deliberate: see MapGraphValidator.ValidateWorld.
         var region = Graph(
             [
                 Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "region:test"),
@@ -838,10 +847,14 @@ public class MapGraphValidatorIssueCodeTests
             liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "zone:lonely" });
 
         // Assert
-        result.Issues.Should().Contain(issue =>
-            issue.Code == "map_unreachable" &&
-            issue.Severity == MapGraphValidationSeverity.Warning &&
-            issue.MapId == "zone:lonely");
+        var issue = result.Issues.Should()
+            .ContainSingle(i => i.Code == "map_unreachable").Subject;
+
+        issue.MapId.Should().Be("zone:lonely");
+        issue.Severity.Should().Be(MapGraphValidationSeverity.Warning);
+        issue.Message.Should()
+            .Contain("a character can only walk in through its marker on a region board")
+            .And.Contain("beside a node they can stand on");
     }
 
     [Fact]
@@ -905,6 +918,46 @@ public class MapGraphValidatorIssueCodeTests
 
         // Assert
         Codes(result).Should().NotContain("map_unreachable");
+    }
+
+    [Fact]
+    public void ValidateWorld_NamesTheOwningZonesLocationAsTheDoorADoorlessInteriorNeeds()
+    {
+        // Arrange — a live interior that no node on another map targets. Its door is a Location node on the
+        // zone map that places its owner, not a region-board marker (IsRegionBoardMarker requires a region
+        // map), so the warning must not send its author looking for a marker that cannot exist.
+        var zone = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true),
+                Node("room", MapNodeType.Location, refId: "tavern"),
+            ],
+            [Edge("entry", "room", MapDirection.North)]);
+        var interior = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "interior:cellar"),
+                Node("room", MapNodeType.Location, refId: "cellar-room", mapId: "interior:cellar"),
+            ],
+            [Edge("entry", "room", MapDirection.North, "interior:cellar")],
+            id: "interior:cellar",
+            ownerId: "cellar",
+            mapType: MapType.Interior);
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [zone, interior],
+            liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "interior:cellar" });
+
+        // Assert
+        var issue = result.Issues.Should()
+            .ContainSingle(i => i.Code == "map_unreachable").Subject;
+
+        issue.MapId.Should().Be("interior:cellar");
+        issue.Severity.Should().Be(MapGraphValidationSeverity.Warning);
+        issue.Message.Should()
+            .Contain("nothing on another map leads into it")
+            .And.Contain("Location node on the zone map")
+            .And.Contain("'cellar'")
+            .And.NotContain("region board");
     }
 
     [Fact]
