@@ -47,13 +47,13 @@ The milestone is ordered by that table, not by which feature sounds most excitin
 |---|---|---|
 | Abilities in combat | Six raw slugs, `ability.replaceAll('_', ' ')`, no cost or cooldown | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte:8) |
 | Abilities out of combat | A list of slugs with one `Use` button each | [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte) |
-| The ability payload | `LearnedAbilities: string[]` — slugs only, deliberately | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:406) |
-| Skills | Nothing at plan time: `SkillXpGained` was broadcast and no client subscribed (closed in E2, PR #66) | [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1557) |
+| The ability payload | `LearnedAbilities: string[]` — slugs only, deliberately | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:448) |
+| Skills | Nothing at plan time: `SkillXpGained` was broadcast and no client subscribed (closed in E2, PR #66) | [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1571) |
 | Combat | One enemy, four buttons, log capped at the last 12 lines; party participants invisible | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
 | Quests | `objective.key · 2/5` — the raw key, no prose | [`QuestTracker.svelte`](../web/client/src/lib/game/QuestTracker.svelte) |
-| NPCs | `TalkToNpc` records a `talk:` quest objective and returns nothing | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1411) |
-| Crafting | Flat 50 gold, no recipe lookup, no ingredients, no item produced | [`CraftItemHubCommand.cs`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:43) |
-| Dungeons | Validates the zone is a dungeon and returns its id | [`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:55) |
+| NPCs | `TalkToNpc` records a `talk:` quest objective and returns nothing | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1381) |
+| Crafting | Flat 50 gold, no recipe lookup, no ingredients, no item produced | [`CraftItemHubCommand.cs`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:75) |
+| Dungeons | Validates the zone is a dungeon and returns its id | [`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:50) |
 
 Two structural facts make every phase more expensive than it looks: [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte)
 is 735 lines holding six unrelated overlays, and [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts)
@@ -154,8 +154,10 @@ today. The engine has [`SkillCatalog`](../RealmEngine.Core/Features/SkillCatalog
 [`Progression`](../RealmEngine.Core/Features/Progression/) and the `CharacterSkill` model; the character
 summary (`CharacterDto`) carried no skills at all.
 
-Skill XP now reaches the sheet the other way round: `CraftItemHubCommandHandler` awards it server-side and
-[`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1557) announces the result as `SkillXpGained` with
+Skill XP now reaches the sheet the other way round: crafting dispatches the award
+([`AwardSkillXpHubCommand`](../Veldrath.Server/Features/Characters/AwardSkillXpHubCommand.cs:64), sent from
+[`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:237)) and
+[`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1571) announces the result as `SkillXpGained` with
 the same shape, which [`skills.ts`](../web/client/src/lib/game/skills.ts) folds into the sheet.
 
 **Work.**
@@ -217,7 +219,7 @@ the panel reads (a payload test, not a UI test, for the wire shape).
 **Goal.** Talking to an NPC shows authored prose and real options, and choosing one has a consequence.
 
 **What exists today.** `TalkToNpc` advances a `talk:<npcSlug>` quest objective and returns nothing
-([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1411)). Two gaps closed the phase before it opened:
+([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1381)). Two gaps closed the phase before it opened:
 
 1. **Dialogue is a line pool, not a node graph.** [`Dialogue`](../RealmEngine.Data/Entities/Content/Dialogue.cs:9)
    is a `ContentBase` whose payload is `Stats.Lines` — a `List<string>` — plus trait flags (`Greeting`,
@@ -226,7 +228,7 @@ the panel reads (a payload test, not a UI test, for the wire shape).
    `ChooseDialogueOption` would have nothing to choose from.
 2. **NPCs are not placed anywhere.** [`ActorInstance`](../RealmEngine.Data/Entities/Content/ActorInstance.cs:10)
    is a per-actor stat *override* of an `ActorArchetype`, with no zone or location field, and
-   `LocationEntered` carries only `spawnedEnemies` ([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:2216)).
+   `LocationEntered` carries only `spawnedEnemies` ([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:2551)).
    The client has no NPC to click: `TalkToNpc(npcSlug)` is callable, but nothing ever produces the slug.
 
 **Consequence.** E4 is a content-schema phase with a panel at the end, not a UI phase:
@@ -277,7 +279,7 @@ advancement preserved. Web: the dialogue panel, the disabled-option reason, the 
 recipe is unavailable.
 
 **What exists today — and this is the milestone's sharpest finding.** The hub's crafting is a
-**placeholder**, not a thin view: [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:66)
+**placeholder**, not a thin view: [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:75)
 charges a flat `DefaultCraftingCost = 50` gold, never reads a recipe, never consumes an ingredient, never
 adds anything to the bag, and returns `ItemCrafted = request.RecipeSlug`. Meanwhile the engine has a real
 system that nothing calls: `CraftRecipeCommand/Handler`, `DiscoverRecipe`, `LearnRecipe`,
@@ -321,7 +323,7 @@ disabled reasons, and the post-craft refresh.
 **Goal.** Entering a dungeon is a place you go, with visible progress and a way out.
 
 **What exists today.** `EnterDungeon` validates that the slug names a `ZoneType.Dungeon` zone and returns
-its id, and does nothing else ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:55)).
+its id, and does nothing else ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:50)).
 The `DungeonInstance` model exists but nothing creates one.
 
 **Why it moved.** The decision this phase was blocked on turned out to be much larger than a UI question,
