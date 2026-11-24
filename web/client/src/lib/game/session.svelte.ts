@@ -37,6 +37,7 @@ import type {
 	ChestOpenedPayload,
 	EmotePayload,
 	ExperienceGainedPayload,
+	GoldChangedPayload,
 	GroundItem,
 	InventoryItem,
 	InventoryLoadedPayload,
@@ -1037,7 +1038,7 @@ export class GameSession {
 				this.addSystemMessage(`Level up! You are now level ${payload.leveledUpTo}.`);
 		});
 
-		hub.on('GoldChanged', (payload: { goldAdded: number; newGoldTotal: number }) => {
+		hub.on('GoldChanged', (payload: GoldChangedPayload) => {
 			this.stats = { ...this.stats, gold: payload.newGoldTotal };
 		});
 

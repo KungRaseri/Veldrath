@@ -274,13 +274,15 @@ public class LootChestsTests : IDisposable
         };
 
         var sender = new Mock<ISender>();
-        sender.Returns(new AddGoldHubResult { Success = true, GoldAdded = 5 });
+        sender.Returns(new AddGoldHubResult { Success = true, GoldAdded = 5, NewGoldTotal = 47 });
 
         var result = await Handler(db, new FixedLootTables(table), sender).Handle(
             new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
 
         result.Success.Should().BeTrue();
         result.Gold.Should().Be(5);
+        result.NewGoldTotal.Should().Be(47,
+            "the hub announces the award from the writer's own total, not by re-adding the delta");
         result.Items.Should().ContainSingle()
             .Which.Should().Be(new ChestLootItem("@items/general:health-potion", "Health Potion", 2));
         result.Message.Should().Be("Opened the Mossy Strongbox: Health Potion x2 and 5 gold.");
@@ -294,6 +296,43 @@ public class LootChestsTests : IDisposable
                 It.IsAny<CancellationToken>()),
             Times.Once,
             "gold lives in the attributes blob and has exactly one writer");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_Reports_No_New_Total_When_The_Gold_Award_Failed()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "ashlen-wood", "old-clearing");
+        var table = new LootTableData
+        {
+            Slug = "forest-chest-gold-only",
+            Name = "Forest Chest Loot",
+            Context = "chests",
+            IsChest = true,
+            Entries =
+            [
+                new LootTableEntryData
+                {
+                    ItemDomain = "gold",
+                    ItemSlug = "gold",
+                    DropWeight = 100,
+                    QuantityMin = 5,
+                    QuantityMax = 5,
+                    IsGuaranteed = true,
+                },
+            ],
+        };
+
+        var sender = new Mock<ISender>();
+        sender.Returns(new AddGoldHubResult { Success = false, ErrorMessage = "Character not found" });
+
+        var result = await Handler(db, new FixedLootTables(table), sender).Handle(
+            new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue("the chest itself was claimed and emptied");
+        result.NewGoldTotal.Should().BeNull(
+            "there is no authoritative total to announce when the award failed");
     }
 
     [Fact]

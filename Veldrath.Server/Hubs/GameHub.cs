@@ -1529,6 +1529,20 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("NpcOptionChosen", result);
 
+            // Dialogue gold is paid server-side through the single gold writer, so the new total is announced
+            // from the handler's figures rather than left for the client to infer from the Applied line.
+            if (result.GoldAwarded > 0 && result.NewGoldTotal is int dialogueGoldTotal)
+            {
+                await Clients.Caller.SendAsync("GoldChanged",
+                    new
+                    {
+                        CharacterId = characterId,
+                        GoldAdded = result.GoldAwarded,
+                        NewGoldTotal = dialogueGoldTotal,
+                        Source = $"Dialogue:{result.SpeakerSlug}",
+                    });
+            }
+
             if (result.Applied.Count > 0)
             {
                 await TrySendInventorySnapshotAsync(characterId);
@@ -1793,10 +1807,37 @@ public class GameHub : Hub
             {
                 await TrySendInventorySnapshotAsync(characterId);
 
+                // The zone gets the loot and the emptied list, not the opener's purse: NewGoldTotal stays on
+                // the in-process result and is announced to the opener alone, below.
+                var chestOpened = new
+                {
+                    result.Success,
+                    result.ChestId,
+                    result.DisplayName,
+                    result.Items,
+                    result.Gold,
+                    result.Message,
+                    result.RemainingChests,
+                };
+
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
-                    await Clients.Group(zoneGroup).SendAsync("ChestOpened", result);
+                    await Clients.Group(zoneGroup).SendAsync("ChestOpened", chestOpened);
                 else
-                    await Clients.Caller.SendAsync("ChestOpened", result);
+                    await Clients.Caller.SendAsync("ChestOpened", chestOpened);
+
+                // The award is announced from the server's own total so the client's gold stat cannot drift;
+                // gold is private, so this goes to the opener rather than the zone the loot went to.
+                if (result.Gold > 0 && result.NewGoldTotal is int newGoldTotal)
+                {
+                    await Clients.Caller.SendAsync("GoldChanged",
+                        new
+                        {
+                            CharacterId = characterId,
+                            GoldAdded = result.Gold,
+                            NewGoldTotal = newGoldTotal,
+                            Source = "Chest",
+                        });
+                }
             }
 
             // A failed open can still have moved the list (someone else won), so it is re-sent either way.
@@ -3899,12 +3940,21 @@ public class GameHub : Hub
                     if (goldChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
 
                     var goldAttrs = ParseAttrs(goldChar.Attributes);
+                    var previousGold = goldAttrs.TryGetValue("Gold", out var existingGold) ? existingGold : 0;
                     goldAttrs["Gold"] = goldAmount;
                     goldChar.Attributes = JsonSerializer.Serialize(goldAttrs);
                     await _characterRepo.UpdateAsync(goldChar);
 
+                    // The client's GoldChanged handler reads goldAdded/newGoldTotal; a GM set is a diff rather
+                    // than an award, but the payload has to match that contract or the target's stat goes undefined.
                     await Clients.Client(goldSession.ConnectionId).SendAsync("GoldChanged",
-                        new { CharacterId = goldCharId, Gold = goldAmount, Source = "Admin" });
+                        new
+                        {
+                            CharacterId = goldCharId,
+                            GoldAdded = goldAmount - previousGold,
+                            NewGoldTotal = goldAmount,
+                            Source = "Admin",
+                        });
                     await Clients.Caller.SendAsync("SystemMessage",
                         $"Set gold to {goldAmount} for {goldSession.CharacterName}.");
                     return;

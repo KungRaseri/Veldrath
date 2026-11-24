@@ -651,6 +651,18 @@ export interface CharacterRestedPayload {
 	goldRemaining: number;
 }
 
+/**
+ * A gold change the server made for a character: a chest, a dialogue grant, a purchase, or a GM set.
+ * `newGoldTotal` is the server's own total — the client assigns it rather than adding the delta, so a
+ * missed or duplicated event can never leave the stat drifting.
+ */
+export interface GoldChangedPayload {
+	characterId?: string;
+	goldAdded: number;
+	newGoldTotal: number;
+	source?: string;
+}
+
 export interface AbilityUsedPayload {
 	characterId?: string;
 	abilityId: string;

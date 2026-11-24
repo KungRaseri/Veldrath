@@ -225,11 +225,33 @@ public class DialogueOptionTests : IAsyncDisposable
 
         result.Success.Should().BeTrue(result.ErrorMessage);
         result.Applied.Should().Equal("25 gold");
+        result.GoldAwarded.Should().Be(25, "the hub announces the award so the client's gold stat moves");
+        result.NewGoldTotal.Should().Be(75);
 
         var gold = sender.Sent.OfType<AddGoldHubCommand>().Should().ContainSingle().Subject;
         gold.Amount.Should().Be(25);
         gold.CharacterId.Should().Be(character.Id);
         gold.Source.Should().StartWith("Dialogue:village-blacksmith:");
+    }
+
+    [Fact]
+    public async Task A_gold_grant_the_writer_refuses_is_not_reported_as_paid()
+    {
+        await using var db = _factory.CreateContext();
+        var content = await _content.CreateContextAsync();
+        await PlaceSpeakerAsync(db);
+        await AddDialogueAsync(content, [Option("sell-rumour", grants: "gold:25")]);
+        var character = await SeedCharacterAsync(db);
+        var sender = new RecordingSender { GoldSucceeds = false };
+
+        var result = await Chooser(db, content, sender).Handle(
+            new ChooseNpcOptionHubCommand(character.Id, Speaker, "sell-rumour"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue(result.ErrorMessage);
+        result.Applied.Should().BeEmpty("nothing was paid");
+        result.GoldAwarded.Should().Be(0);
+        result.NewGoldTotal.Should().BeNull("there is no authoritative total to announce");
     }
 
     [Fact]
@@ -504,6 +526,9 @@ public class DialogueOptionTests : IAsyncDisposable
         /// <summary>Gets the commands the handler sent, in order.</summary>
         public List<object> Sent { get; } = [];
 
+        /// <summary>Gets a value indicating whether the simulated gold writer accepts the award.</summary>
+        public bool GoldSucceeds { get; init; } = true;
+
         /// <inheritdoc />
         public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
         {
@@ -512,7 +537,9 @@ public class DialogueOptionTests : IAsyncDisposable
             object? response = request switch
             {
                 AcceptQuestHubCommand => new AcceptQuestHubResult { Success = true },
-                AddGoldHubCommand => new AddGoldHubResult { Success = true },
+                AddGoldHubCommand command => GoldSucceeds
+                    ? new AddGoldHubResult { Success = true, GoldAdded = command.Amount, NewGoldTotal = 75 }
+                    : new AddGoldHubResult { Success = false, ErrorMessage = "Character not found" },
                 _ => null,
             };
 

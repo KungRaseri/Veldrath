@@ -613,6 +613,65 @@ public class GameHubQuestItemTests : IDisposable
         clients.EveryMessage.Should().NotContain(m => m.Method == "QuestLogReceived");
     }
 
+    // ── ChooseNpcOption ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ChooseNpcOption_Announces_Dialogue_Gold_With_The_Server_Total()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new ChooseNpcOptionResult
+        {
+            Success = true,
+            SpeakerSlug = "village-blacksmith",
+            DisplayName = "Mira",
+            Response = "Take it, and mind the edge.",
+            Applied = ["25 gold"],
+            GoldAwarded = 25,
+            NewGoldTotal = 84,
+            Ended = true,
+        });
+        mediator.Returns(new GetInventoryHubResult { Success = false });
+        mediator.Returns(new GetQuestLogHubResult { Success = true });
+
+        await hub.ChooseNpcOption(new NpcOptionHubRequest("village-blacksmith", "sell-rumour"));
+
+        clients.Caller.SentMessages.Single(m => m.Method == "GoldChanged").Args[0]
+            .Should().BeEquivalentTo(new
+            {
+                CharacterId = characterId,
+                GoldAdded = 25,
+                NewGoldTotal = 84,
+                Source = "Dialogue:village-blacksmith",
+            });
+        clients.GroupNamed("zone:crestfall").SentMessages.Should()
+            .BeEmpty("a private conversation is not announced to the zone");
+    }
+
+    [Fact]
+    public async Task ChooseNpcOption_Sends_No_GoldChanged_When_The_Choice_Paid_Nothing()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(Guid.NewGuid());
+        mediator.Returns(new ChooseNpcOptionResult
+        {
+            Success = true,
+            SpeakerSlug = "village-blacksmith",
+            DisplayName = "Mira",
+            Response = "Safe roads.",
+            Ended = true,
+        });
+
+        await hub.ChooseNpcOption(new NpcOptionHubRequest("village-blacksmith", "ask-about-woods"));
+
+        clients.EveryMessage.Should().NotContain(m => m.Method == "GoldChanged");
+    }
+
     // ── CraftItem ────────────────────────────────────────────────────────────
 
     [Fact]
