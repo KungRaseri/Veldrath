@@ -120,6 +120,7 @@ public class HubHandlerCorruptAttributesTests
             repo.Object,
             recipes.Object,
             Mock.Of<IInventoryService>(),
+            Mock.Of<IMediator>(),
             NullLogger<CraftItemHubCommandHandler>.Instance);
 
         var result = await handler.Handle(

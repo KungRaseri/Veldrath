@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Shared.Abstractions;
@@ -72,8 +73,33 @@ public class CraftItemHubCommandHandlerTests : IDisposable
     private CraftItemHubCommandHandler Handler(
         ApplicationDbContext db,
         IRecipeRepository recipes,
-        IInventoryService inventory) =>
-        new(new CharacterRepository(db), recipes, inventory, NullLogger<CraftItemHubCommandHandler>.Instance);
+        IInventoryService inventory)
+    {
+        var characters = new CharacterRepository(db);
+        return new(
+            characters,
+            recipes,
+            inventory,
+            Mediator(AwardHandler(characters)).Object,
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+    }
+
+    private static AwardSkillXpHubCommandHandler AwardHandler(ICharacterRepository characters) =>
+        new(characters, NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+    /// <summary>
+    /// Routes the craft path's award command to the real award handler, so these tests exercise the actual
+    /// rule (key convention, rank size) instead of a stubbed answer.
+    /// </summary>
+    private static Mock<IMediator> Mediator(AwardSkillXpHubCommandHandler awards)
+    {
+        var mediator = new Mock<IMediator>();
+        mediator
+            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
+            .Returns((IRequest<AwardSkillXpHubResult> request, CancellationToken cancellationToken) =>
+                awards.Handle((AwardSkillXpHubCommand)request, cancellationToken));
+        return mediator;
+    }
 
     [Fact]
     public async Task Consumes_the_materials_adds_the_output_and_awards_skill_experience()
@@ -256,5 +282,108 @@ public class CraftItemHubCommandHandlerTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("produces nothing");
+    }
+
+    [Fact]
+    public async Task Dispatches_the_award_and_writes_the_character_once()
+    {
+        // The craft owns the attributes-blob write, so the award must arrive through the command and be folded into
+        // that one save: a second load/save inside the award handler would overwrite the craft it accompanies.
+        var character = new ServerCharacter
+        {
+            Id = Guid.NewGuid(),
+            AccountId = Guid.NewGuid(),
+            Name = $"Smith_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 3,
+            Attributes = """{"Skill_blacksmithing_Rank":0,"Skill_blacksmithing_XP":95}""",
+        };
+
+        var characters = new Mock<ICharacterRepository>();
+        characters.Setup(r => r.GetByIdAsync(character.Id, It.IsAny<CancellationToken>())).ReturnsAsync(character);
+        characters.Setup(r => r.UpdateAsync(character, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var mediator = Mediator(AwardHandler(characters.Object));
+
+        var inventory = new Mock<IInventoryService>();
+        inventory.Setup(i => i.GetItemCountAsync(character.Name, IngotRef)).ReturnsAsync(5);
+        inventory.Setup(i => i.RemoveItemAsync(character.Name, IngotRef, 2)).ReturnsAsync(true);
+        inventory.Setup(i => i.AddItemAsync(character.Name, SwordRef, 1)).ReturnsAsync(true);
+
+        var handler = new CraftItemHubCommandHandler(
+            characters.Object,
+            Recipes(Longsword(requiredSkillLevel: 0)).Object,
+            inventory.Object,
+            mediator.Object,
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new CraftItemHubCommand(character.Id, "iron-longsword"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.SkillId.Should().Be("blacksmithing");
+        result.SkillXp.Should().Be(15);
+        result.SkillTotalXp.Should().Be(110);
+        result.SkillRank.Should().Be(1);
+        result.SkillRankedUp.Should().BeTrue();
+
+        mediator.Verify(
+            m => m.Send(
+                It.Is<AwardSkillXpHubCommand>(command =>
+                    command.CharacterId == character.Id
+                    && command.SkillId == "blacksmithing"
+                    && command.Amount == 15),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        characters.Verify(r => r.UpdateAsync(character, It.IsAny<CancellationToken>()), Times.Once);
+        character.Attributes.Should().Contain("\"Skill_blacksmithing_XP\":110");
+    }
+
+    [Fact]
+    public async Task Does_not_dispatch_an_award_when_the_recipe_trains_nothing()
+    {
+        var character = new ServerCharacter
+        {
+            Id = Guid.NewGuid(),
+            AccountId = Guid.NewGuid(),
+            Name = $"Smith_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 3,
+            Attributes = "{}",
+        };
+
+        var characters = new Mock<ICharacterRepository>();
+        characters.Setup(r => r.GetByIdAsync(character.Id, It.IsAny<CancellationToken>())).ReturnsAsync(character);
+
+        var mediator = Mediator(AwardHandler(characters.Object));
+
+        var inventory = new Mock<IInventoryService>();
+        inventory.Setup(i => i.GetItemCountAsync(character.Name, IngotRef)).ReturnsAsync(5);
+        inventory.Setup(i => i.RemoveItemAsync(character.Name, IngotRef, 2)).ReturnsAsync(true);
+        inventory.Setup(i => i.AddItemAsync(character.Name, SwordRef, 1)).ReturnsAsync(true);
+
+        var recipe = Longsword(requiredSkillLevel: 0, experience: 0);
+
+        var handler = new CraftItemHubCommandHandler(
+            characters.Object,
+            Recipes(recipe).Object,
+            inventory.Object,
+            mediator.Object,
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new CraftItemHubCommand(character.Id, "iron-longsword"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue("the item is still crafted");
+        result.SkillId.Should().BeNull();
+        result.SkillXp.Should().Be(0);
+        mediator.Verify(
+            m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        characters.Verify(r => r.UpdateAsync(It.IsAny<ServerCharacter>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

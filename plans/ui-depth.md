@@ -48,7 +48,7 @@ The milestone is ordered by that table, not by which feature sounds most excitin
 | Abilities in combat | Six raw slugs, `ability.replaceAll('_', ' ')`, no cost or cooldown | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte:8) |
 | Abilities out of combat | A list of slugs with one `Use` button each | [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte) |
 | The ability payload | `LearnedAbilities: string[]` — slugs only, deliberately | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:406) |
-| Skills | Nothing. `SkillXpGained` is broadcast and no client subscribes | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1190) |
+| Skills | Nothing at plan time: `SkillXpGained` was broadcast and no client subscribed (closed in E2, PR #66) | [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1557) |
 | Combat | One enemy, four buttons, log capped at the last 12 lines; party participants invisible | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
 | Quests | `objective.key · 2/5` — the raw key, no prose | [`QuestTracker.svelte`](../web/client/src/lib/game/QuestTracker.svelte) |
 | NPCs | `TalkToNpc` records a `talk:` quest objective and returns nothing | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1411) |
@@ -145,12 +145,18 @@ matrix; payload-contract updated; coverage floors hold.
 
 **Goal.** Skill progression becomes visible: XP moves a bar while you play, and a rank-up is announced.
 
-**What exists today.** `AwardSkillXp` broadcasts `{ CharacterId, SkillId, TotalXp, CurrentRank, RankedUp }`
-([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1190)) and the client does not listen — it is a
-documented `NO_SUBSCRIBER` entry in [`hub-events.test.ts`](../web/client/src/lib/parity/hub-events.test.ts).
-The engine has [`SkillCatalog`](../RealmEngine.Core/Features/SkillCatalog/),
+**What existed before this phase.** A client-callable `AwardSkillXp` bridge broadcast
+`{ CharacterId, SkillId, TotalXp, CurrentRank, RankedUp, XpIntoRank, XpToNextRank }` to the zone group (or
+back to the caller when not in one), and the client did not listen — it was a documented `NO_SUBSCRIBER`
+entry in [`hub-events.test.ts`](../web/client/src/lib/parity/hub-events.test.ts). That bridge was retired in
+PR #269 (any selected character could award itself skill XP), and crafting is the only server-side award path
+today. The engine has [`SkillCatalog`](../RealmEngine.Core/Features/SkillCatalog/),
 [`Progression`](../RealmEngine.Core/Features/Progression/) and the `CharacterSkill` model; the character
-summary (`CharacterDto`) carries no skills at all.
+summary (`CharacterDto`) carried no skills at all.
+
+Skill XP now reaches the sheet the other way round: `CraftItemHubCommandHandler` awards it server-side and
+[`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1557) announces the result as `SkillXpGained` with
+the same shape, which [`skills.ts`](../web/client/src/lib/game/skills.ts) folds into the sheet.
 
 **Work.**
 
