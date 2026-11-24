@@ -130,6 +130,83 @@ public class MapGraphSeederTests
     }
 
     [Fact]
+    public async Task SeedAsync_EveryZoneExitIsWalkableFromArrivalOrWaitsBehindItsNamedDiscovery()
+    {
+        // The two reachability tests above pin locations and zones; neither pins a door. A ZoneExit is only usable
+        // if a character standing at the map's Arrival can walk to it — the door is the edge, and travel only
+        // leaves the map when the selected node carries a TargetMapId, so an exit authored on a node no walk
+        // reaches is a door nobody can open. map_unreachable cannot see that: it only asks whether some node on
+        // another map names the zone as its target, so a door parked off the walkable graph keeps every gate green.
+        // Authored doors behind a hidden location are legitimate (Ashlen Wood's northern track is on the Strangled
+        // Oak, the Droveway's mirror hop is on the Sunken Fields), so each one has to be named with the discovery
+        // that opens it rather than passing because the walk never looked.
+        await using var db = CreateDbContext();
+
+        await MapGraphSeeder.SeedAsync(db);
+
+        var maps = await db.Maps
+            .Include(m => m.Nodes)
+            .Include(m => m.Edges)
+            .AsNoTracking()
+            .Where(m => m.MapType == MapType.Zone)
+            .ToListAsync();
+
+        var doors = maps
+            .SelectMany(map => map.Nodes
+                .Where(node => node.NodeType == MapNodeType.ZoneExit)
+                .Select(node => (Map: map, Door: node)))
+            .ToList();
+
+        doors.Should().HaveCount(23, "the seeder authors 23 ZoneExit nodes across the zone maps");
+
+        var unreachable = new List<string>();
+
+        foreach (var (map, door) in doors)
+        {
+            if (door.IsHidden) continue;
+            if (WalkVisibleGraphFromArrival(map).Contains(door.Id)) continue;
+            if (ZoneExitsWaitingBehindADiscovery.ContainsKey(door.Id)) continue;
+
+            unreachable.Add($"{map.Id} → {door.Id}");
+        }
+
+        unreachable.Should().BeEmpty(
+            "an exit Arrival cannot walk to is a door no player can use, and no validator rule reports it: " +
+            $"unreachable exits: {string.Join(", ", unreachable)}. Move the exit's origin edge onto a visible " +
+            "location, or add the exit to ZoneExitsWaitingBehindADiscovery with the hidden location that opens it");
+
+        // The named gates have to be true: each one sufficient on its own, each one necessary.
+        foreach (var (doorId, gateId) in ZoneExitsWaitingBehindADiscovery)
+        {
+            var (map, _) = doors.Single(entry => entry.Door.Id == doorId);
+
+            var gate = map.Nodes.SingleOrDefault(node => node.Id == gateId);
+            gate.Should().NotBeNull($"{doorId} names {gateId} as the discovery that opens it, so it has to exist");
+            gate!.NodeType.Should().Be(MapNodeType.Location, "only a hidden location can be discovered and unlocked");
+            gate.IsHidden.Should().BeTrue($"a visible node is not a discovery, so {gateId} would not gate anything");
+            gate.UnlockType.Should().NotBeNullOrWhiteSpace(
+                $"nothing can ever unlock {gateId}, so {doorId} behind it would be content no player reaches");
+
+            WalkVisibleGraphFromArrival(map)
+                .Should().NotContain(doorId, $"{doorId} is listed as waiting for {gateId}");
+
+            WalkVisibleGraphFromArrival(map, new HashSet<string>([gateId], StringComparer.Ordinal))
+                .Should().Contain(doorId,
+                    $"unlocking {gateId} is the authored way through, so it has to put {doorId} in reach");
+
+            var everyOtherHiddenNode = map.Nodes
+                .Where(node => node.IsHidden && node.Id != gateId)
+                .Select(node => node.Id)
+                .ToHashSet(StringComparer.Ordinal);
+
+            WalkVisibleGraphFromArrival(map, everyOtherHiddenNode)
+                .Should().NotContain(doorId,
+                    $"{gateId} is named as the only discovery in front of {doorId}; unlocking every other hidden " +
+                    "node must leave it out of reach, or the name is the wrong one");
+        }
+    }
+
+    [Fact]
     public async Task SeedAsync_AddsBidirectionalBypassWalksAroundHiddenLocations()
     {
         await using var db = CreateDbContext();
@@ -279,6 +356,35 @@ public class MapGraphSeederTests
     }
 
     /// <summary>
+    /// Zone exits that no walk from Arrival can reach until a hidden location is discovered, with the hidden
+    /// location that opens each one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every other visible <c>ZoneExit</c> has to sit in <c>WalkVisibleGraphFromArrival</c>. A door behind a
+    /// hidden location is authored content — the player finds the place and the track past it opens — but it is
+    /// only acceptable when it is named here, because the alternative is a door parked on a hidden span by an
+    /// authoring slip, which reads identically from the graph and cannot be told apart by any validator rule.
+    /// </para>
+    /// <para>
+    /// <c>SeedAsync_EveryZoneExitIsWalkableFromArrivalOrWaitsBehindItsNamedDiscovery</c> proves each entry from the
+    /// seeded data: the gate exists, is a hidden location, carries an unlock type, is sufficient on its own, and is
+    /// necessary — unlocking every other hidden node on the map still does not reach the door. Delete a row when
+    /// the door moves onto a visible node, or when the hidden node it waits on stops being hidden.
+    /// </para>
+    /// </remarks>
+    private static readonly IReadOnlyDictionary<string, string> ZoneExitsWaitingBehindADiscovery =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            // The wood's northern track is authored on the Strangled Oak, which a passive skill check reveals;
+            // no visible link reaches it, so the oak is the way through.
+            ["zone:ashlen-wood:exit:zone:the-droveway"] = "zone:ashlen-wood:location:strangled-oak",
+            // The mirror hop. The Droveway's path back is authored on the Sunken Fields, which shares the oak's
+            // unlock type; the Drove Road bypass does not reach it.
+            ["zone:the-droveway:exit:zone:ashlen-wood"] = "zone:the-droveway:location:sunken-fields",
+        };
+
+    /// <summary>
     /// Live zone maps that no door on another map leads to. A character standing beside one's marker on a region
     /// board can still walk in — the board is a way in from that node — but a door is the authored shape every
     /// live zone is expected to have, and the warning says that rather than claiming the zone is unreachable.
@@ -339,10 +445,20 @@ public class MapGraphSeederTests
     /// than a corridor inside this one; expanding it here would report a location as reachable when the
     /// only path to it leaves the map. The walk answers the same question on a zone map (which locations
     /// Arrival reaches) and on a region board (which zone markers Arrival is adjacent to).
+    /// <para>
+    /// <paramref name="unlockedHiddenNodeIds"/> is the discovery case: a hidden location the player has
+    /// unlocked is walkable like any other, while every hidden node not named here still stops the walk.
+    /// Exits stay non-expanded either way, so "reachable once this is discovered" still means reachable on
+    /// this map.
+    /// </para>
     /// </remarks>
     /// <param name="map">Persisted map with its nodes and edges.</param>
+    /// <param name="unlockedHiddenNodeIds">Hidden nodes to treat as passable, or <see langword="null"/> for a
+    /// character who has discovered nothing.</param>
     /// <returns>Every visible node id Arrival can walk to, including Arrival itself.</returns>
-    private static HashSet<string> WalkVisibleGraphFromArrival(RealmEngine.Data.Entities.Map map)
+    private static HashSet<string> WalkVisibleGraphFromArrival(
+        RealmEngine.Data.Entities.Map map,
+        IReadOnlySet<string>? unlockedHiddenNodeIds = null)
     {
         var nodes = map.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
         var outgoing = map.Edges
@@ -366,7 +482,7 @@ public class MapGraphSeederTests
             foreach (var edge in outgoing[current.Id])
             {
                 if (!nodes.TryGetValue(edge.ToNodeId, out var next)) continue;
-                if (next.IsHidden) continue;
+                if (next.IsHidden && !(unlockedHiddenNodeIds?.Contains(next.Id) ?? false)) continue;
                 if (reachable.Add(next.Id)) queue.Enqueue(next);
             }
         }
