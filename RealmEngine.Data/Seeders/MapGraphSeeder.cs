@@ -282,6 +282,12 @@ public static class MapGraphSeeder
             Edges =
             [
                 new MapEdge { Id = new Guid("b3cd2f00-d1f6-7012-dfb6-92677d07b7e9"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:entry", ToNodeId = "region:cinderplain:exit:greymoor", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
+                // Arrival's only edge used to lead west to the Greymoor portal. A portal carries a TargetMapId, so
+                // travelling to it loads the region map instead of letting the character pass over it: every zone on
+                // this board was two hops away across a map change and none could be entered on foot. Skarhold is the
+                // marker the board's door chain starts from, and East is the free slot beside Arrival (West is the
+                // portal). Greymoor and Varenmark have carried this hop all along; this board and Saltcliff had not.
+                new MapEdge { Id = new Guid("9fe48038-d744-4052-959e-91fb32adc5c9"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:entry", ToNodeId = "region:cinderplain:zone:skarhold", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("1ad207ad-0970-f82b-ce19-9a1e92dfea3d"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:exit:greymoor", ToNodeId = "region:cinderplain:zone:skarhold", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToRegion, Label = "skarhold-greymoor", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("4c22f343-cd20-7c58-99bf-20006abcc1ce"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:zone:ashfields", ToNodeId = "region:cinderplain:zone:smoldering-reach", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = "ashfields-smoldering-reach", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("1d1cf32b-6480-a9a0-7cfe-abea02312102"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:zone:ashfields", ToNodeId = "region:cinderplain:zone:skarhold", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = "skarhold-ashfields", IsTraversable = true, IsHidden = false },
@@ -358,6 +364,11 @@ public static class MapGraphSeeder
             Edges =
             [
                 new MapEdge { Id = new Guid("456c4916-2ef9-d3df-bfdd-cb12e7c90dcf"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:entry", ToNodeId = "region:saltcliff:exit:greymoor", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
+                // Same repair as Cinderplain's Arrival: the one authored edge led north to the Greymoor portal, and
+                // crossing a portal leaves the board, so the Heights marker — where this board's door chain starts —
+                // was never adjacent to the node a character stands on. South and East are free beside Arrival; the
+                // Heights sit below and to the right of it, and South leaves East free for a future hop.
+                new MapEdge { Id = new Guid("66e2b0f4-f9c7-4697-9430-046667d651cb"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:entry", ToNodeId = "region:saltcliff:zone:saltcliff-heights", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("47b2eafb-2616-4f78-d8b4-700ef6863116"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:exit:cinderplain", ToNodeId = "region:saltcliff:exit:greymoor", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("b108d3f4-7b85-c95b-b9b2-7b1d36379d1d"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:exit:greymoor", ToNodeId = "region:saltcliff:zone:saltcliff-heights", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToRegion, Label = "saltcliff-heights-greymoor", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("31a6a9bf-126b-b21a-c682-6b791af668ca"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:exit:greymoor", ToNodeId = "region:saltcliff:exit:cinderplain", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },

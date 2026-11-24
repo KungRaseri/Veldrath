@@ -22,14 +22,20 @@ plus one `ExitToZone` walk pair (`origin → exit`, `exit → origin`), the shap
   door display names and descriptions add no geography: the name is `Road to X` / `Track to X` / `Descent into X` and the
   description is the destination zone's own description, verbatim, as every existing `ZoneExit` does. No canon proposal
   was needed.
-- **Where each region is entered on foot is what set the chains.** The region entry node is adjacent to one zone marker
-  each — `aldenmere` in Greymoor, `saltcliff-heights` in Saltcliff, `skarhold` in Cinderplain — so those three are the
-  bootstrap zones, and the doors run outward from them: Aldenmere → Barrow Deeps and Pale Moor, Pale Moor → Soddenfen;
-  Tolvaren (the port, adjacent to all three coast zones on the board) → heights, Sunken Name, Tidewrack Flats;
-  Skarhold → Ashfields → Smoldering Reach → the Maw.
+- **Where each region is entered on foot is what set the chains — and only two boards had that hop.** Measured at
+  this PR's head, Greymoor (`entry → aldenmere`) and Varenmark (`entry → crestfall`) were the only region boards whose
+  Arrival is adjacent to a zone marker; Saltcliff's and Cinderplain's Arrival each carried one edge, to the Greymoor
+  portal, and a node with a `TargetMapId` loads another map instead of letting the character pass over it, so no zone on
+  either board was enterable on foot. This PR authored its doors against the intended bootstrap zones (`aldenmere` in
+  Greymoor, `saltcliff-heights` in Saltcliff, `skarhold` in Cinderplain) and left the boards untouched; **t_2da56ec3**
+  added the two missing hops (`entry → saltcliff-heights` South, `entry → skarhold` East) plus a seeder test that walks
+  every board's Arrival for a zone marker. The chains run outward from those bootstrap zones: Aldenmere → Barrow Deeps
+  and Pale Moor, Pale Moor → Soddenfen; Saltcliff Heights → Tolvaren → Sunken Name and Tidewrack Flats; Skarhold →
+  Ashfields → Smoldering Reach → the Maw.
 - **The seed's generated edges did not move.** Nodes 136 → 148 and edges 306 → 330 is exactly +12 and +2 per door:
   `Walk` stays 246, `ExitToRegion` stays 35, `ExitToZone` goes 25 → 49, `ZoneExit` nodes 11 → 23. The two test count
-  assertions carry the new totals.
+  assertions carry the new totals. (Those figures are this PR's diff, not today's seeded world: t_2da56ec3 later added
+  the two region-board Arrival hops, so the seed is now 332 edges and `Walk` 248.)
 - **Direction slots are the constraint, and the seeder's own chain is the reason a door hangs off a location.** Adding an
   authored edge to a node annexes one cardinal direction before `ConnectZoneEntriesToLocations` runs; if that leaves a
   chain hop nowhere to go, the hop is silently dropped and every later location falls off Arrival's walk. Each of the
