@@ -133,13 +133,13 @@ public class MapGraphSeederTests
     public async Task SeedAsync_EveryZoneExitIsWalkableFromArrivalOrWaitsBehindItsNamedDiscovery()
     {
         // The two reachability tests above pin locations and zones; neither pins a door. A ZoneExit is only usable
-        // if a character standing at the map's Arrival can walk to it — the door is the edge, and travel only
-        // leaves the map when the selected node carries a TargetMapId, so an exit authored on a node no walk
-        // reaches is a door nobody can open. map_unreachable cannot see that: it only asks whether some node on
-        // another map names the zone as its target, so a door parked off the walkable graph keeps every gate green.
-        // Authored doors behind a hidden location are legitimate (Ashlen Wood's northern track is on the Strangled
-        // Oak, the Droveway's mirror hop is on the Sunken Fields), so each one has to be named with the discovery
-        // that opens it rather than passing because the walk never looked.
+        // if a character standing at the map's Arrival can walk to it: travel only changes maps when the selected
+        // node carries a TargetMapId, so an exit authored on a node no walk reaches is a door nobody can open.
+        // map_unreachable cannot see that — it only asks whether some node on another map names the zone as its
+        // target — so a door parked off the walkable graph keeps every gate green. Authored doors behind a hidden
+        // location are legitimate (Ashlen Wood's northern track is on the Strangled Oak, the Droveway's mirror hop
+        // is on the Sunken Fields), so each one has to be named with the discovery that opens it rather than
+        // passing because the walk never looked.
         await using var db = CreateDbContext();
 
         await MapGraphSeeder.SeedAsync(db);
