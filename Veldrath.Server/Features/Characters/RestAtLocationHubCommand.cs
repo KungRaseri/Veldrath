@@ -116,6 +116,12 @@ public class RestAtLocationHubCommandHandler
             }
         }
 
+        // Death is a stored state, not a health floor: resting a dead character would heal them above 0 while the
+        // client still shows the death banner, and `RespawnHubCommand` only respawns a character at 0 HP. A
+        // missing key is not a death — blobs written before the vitals were tracked have no CurrentHealth entry.
+        if (attrs.ContainsKey(KeyCurrentHealth) && attrs[KeyCurrentHealth] <= 0)
+            return Fail("You cannot rest while dead.");
+
         // Derive max pools from level when not explicitly stored (10 HP and 5 MP per level)
         var maxHealth = attrs.TryGetValue(KeyMaxHealth, out var mh) ? mh : character.Level * 10;
         var maxMana = attrs.TryGetValue(KeyMaxMana, out var mm) ? mm : character.Level * 5;

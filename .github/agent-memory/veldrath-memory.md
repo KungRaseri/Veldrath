@@ -147,20 +147,20 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 
 > **See [`.github/instructions/hub-development.md`](../../.github/instructions/hub-development.md#the-single-dto-parameter-rule-critical) for the single-DTO parameter rule and binding failure explanation.**
 
-Hub methods that the client calls **must** use a single request DTO (record) as their parameter — NOT multiple separate primitives. Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamage` hub methods to accept `GainExperienceHubRequest`, `AddGoldHubRequest`, `TakeDamageHubRequest` DTOs.
+Hub methods that the client calls **must** use a single request DTO (record) as their parameter — NOT multiple separate primitives. Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamage` hub methods to accept `GainExperienceHubRequest`, `AddGoldHubRequest`, `TakeDamageHubRequest` DTOs. `GainExperience` and `TakeDamage` were later retired from the hub entirely (2026-11-23): progression and damage are server-side commands now.
 
 ## Wired Hub→MediatR Bridges
 
 | Hub Method | HubCommand | Session |
 |---|---|---|
-| `GainExperience` | `GainExperienceHubCommand` | 2026-03-16 |
+| `GainExperience` | `GainExperienceHubCommand` | retired from the hub 2026-11-23 — dispatched by the quest turn-in and by `POST /api/dev/experience` (Development/Test only) |
 | `RestAtLocation` | `RestAtLocationHubCommand` | 2026-03-19 session-2 |
 | `AllocateAttributePoints` | `AllocateAttributePointsHubCommand` | 2026-03-19 session-3 |
 | `UseAbility` | `UseAbilityHubCommand` | 2026-03-19 session-4 |
 | `AwardSkillXp` | `AwardSkillXpHubCommand` | 2026-03-19 session-5 |
 | `EquipItem` | `EquipItemHubCommand` | 2026-03-20 session-8 |
 | `AddGold` | `AddGoldHubCommand` | 2026-03-20 session-9 |
-| `TakeDamage` | `TakeDamageHubCommand` | 2026-03-20 session-10 |
+| `TakeDamage` | `TakeDamageHubCommand` | retired 2026-11-23 — hub method and command removed; combat handlers apply damage |
 | `CraftItem` | `CraftItemHubCommand` | 2026-03-20 session-13 |
 | `EnterDungeon` | `EnterDungeonHubCommand` | 2026-03-20 session-13 |
 | `VisitShop` | `VisitShopHubCommand` | 2026-03-21 session-17 |
@@ -2647,8 +2647,9 @@ and lint clean, `npm run build` clean.
 
 **Call sites added:**
 - `craft:` — `CraftItem` advances with `CraftItemHubResult.ItemCrafted` after a successful craft.
-- `reach_level:` — `GainExperience` advances **both** `NewLevel` and `LeveledUpTo` on a level-up, so content naming
-  either value completes.
+- `reach_level:` — the quest turn-in's `GainExperienceHubCommand` award advances **both** `NewLevel` and
+  `LeveledUpTo` on a level-up, so content naming either value completes. (The client-callable hub method that used to
+  do this was retired 2026-11-23; the turn-in carries the advance now.)
 - `talk:` — new hub method `TalkToNpc(string npcSlug)` (validates the slug is non-empty, then advances
   `talk:<npcSlug>`). There was no dialogue interaction surface at all; this is the one call site, and the client will
   use it once NPC dialogue lands.
@@ -4800,6 +4801,40 @@ projection) kept the flat 50 HP / 25 XP / 10 gold forever: nothing in production
 - Tests: `Veldrath.Server.Tests/Features/EnemyInstanceStatsReconciliationTests.cs` (8 facts, one of them the real seeded
   catalog through the real projection). Seven of them fail on the old store; the eighth pins that a missing archetype
   leaves the row alone.
+
+### Session-D5-t_d97538ea (2026-11-23) — Progression is server-side; a level-up moves the health bar
+
+`GameHub.GainExperience` was an ordinary hub method, so any authenticated connection that had selected a character
+could award itself any amount of experience; `GameHub.TakeDamage` did the same for damage. Neither had a web caller
+(the parity allow-list recorded that), and neither had death handling — `TakeDamage` could zero HP with no
+`CombatEnded` and no penalty. Both methods (and their request DTOs) are gone. The server-shape test
+`GameHubTests.GameHub_DoesNotExpose_ClientCallableProgression_Or_Damage_Methods` pins the absence.
+
+- **The sanctioned preparation path is `POST /api/dev/experience`.** It dispatches `GainExperienceHubCommand` — the
+  same command the quest turn-in uses — behind the same `Development`/`Test` gate as `/api/dev/teleport`. The A1
+  Grevenmire and Drowning Pits specs prepare their character through it (`prepareJourneyCharacter`), so the journey
+  still runs the real handler.
+- **`GainExperienceHubCommandHandler` now recomputes the derived pools.** `CharacterProgression.AwardExperience`
+  applies the rolling `Level × 100` formula and, when a level is crossed, rewrites `MaxHealth`/`MaxMana` in the
+  attributes blob with the engine formulas (`Constitution × 10 + level × 5`, `Wisdom × 5 + level × 3`). Current pools
+  are clamped, not refilled: a level gained mid-fight raises the ceiling without healing the character. Previously a
+  level-6 character kept the level-1 120 HP bar.
+- **The quest turn-in carries the event and the objective.** It broadcasts `ExperienceGained` (level, XP, and the
+  re-derived pools) to the caller and advances `reach_level:` on a level-up, which is what the removed hub method
+  used to do. The client's handler takes `newExperience` (not the old mismatched `newXP`) and applies the pools.
+- **The dead-state class is closed at the other two doors.** `UseAbilityHubCommand` (a `heal` ability) and
+  `RestAtLocationHubCommand` now refuse a character whose blob stores `CurrentHealth <= 0` — the pattern
+  `UseItemHubCommand` settled on — while a missing key stays allowed for pre-vitals blobs. The admin `/sethealth`
+  payload now matches the client's `DamageTaken` contract (`damage`/`currentHP`/`maxHP`/`isDead`), and the session
+  sets `dead = payload.isDead`, so a GM heal clears the banner instead of leaving it stuck until a reload.
+- **Known gap, filed separately:** combat rewards still write `character.Experience += share.Xp` in
+  `CombatHelpers.DistributeRewardsAsync` without applying a level, so a kill can never level a character (the XP
+  column grows, the level does not). That path needs the same `CharacterProgression` call plus the level/pool fields
+  in the combat payload before it can be switched over without leaving the sheet stale.
+- Tests: `GainExperienceHubCommandHandlerTests` (three new level-up/blob facts),
+  `DevEndpointTests.Experience_*`, `HubHandlerGuardTests.UseAbility_RefusesADeadCharacter`/`Rest_RefusesADeadCharacter`,
+  `session.test.ts` (re-derived pools), `session-events.test.ts` (death banner clears), and
+  `hub-methods.test.ts` (allow-list no longer names the retired methods).
 
 ### Session-D4-t_990e7186 (2026-11-23) — Respawn moves the map node, so a reload wakes where the player did
 

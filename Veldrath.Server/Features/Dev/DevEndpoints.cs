@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using RealmEngine.Shared.Abstractions;
@@ -7,6 +8,7 @@ using Veldrath.Contracts.Zones;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.LevelUp;
 
 namespace Veldrath.Server.Features.Dev;
 
@@ -121,6 +123,31 @@ public static class DevEndpoints
             return Results.Ok(new TeleportResult(character.Id, zone.Id, zone.Name, character.CurrentZoneLocationSlug));
         });
 
+        // Awards experience through the same command a quest turn-in pays through. This exists so a journey spec
+        // can prepare a level-appropriate character without a client-callable progression bypass: the game hub
+        // deliberately exposes no gain-experience method, and this endpoint is unreachable outside Development/Test.
+        group.MapPost("/experience", async (
+            ExperienceRequest request,
+            ISender mediator,
+            IWebHostEnvironment env) =>
+        {
+            if (!IsDevEnvironment(env))
+                return Results.Problem(
+                    title: "Dev endpoints are not available.",
+                    statusCode: StatusCodes.Status403Forbidden);
+
+            var result = await mediator.Send(new GainExperienceHubCommand
+            {
+                CharacterId = request.CharacterId,
+                Amount = request.Amount,
+                Source = request.Source ?? "Dev",
+            });
+
+            return result.Success
+                ? Results.Ok(result)
+                : Results.BadRequest(new { error = result.ErrorMessage });
+        });
+
         return app;
     }
 
@@ -136,6 +163,12 @@ public static class DevEndpoints
 /// <param name="ZoneId">The slug of the destination zone.</param>
 /// <param name="LocationSlug">Optional slug of a specific location within the zone to land on.</param>
 public record TeleportRequest(Guid CharacterId, string ZoneId, string? LocationSlug = null);
+
+/// <summary>Request body for the <c>POST /api/dev/experience</c> endpoint.</summary>
+/// <param name="CharacterId">The unique identifier of the character to advance.</param>
+/// <param name="Amount">Experience to award. Must be positive.</param>
+/// <param name="Source">Optional label recorded with the award; defaults to <c>"Dev"</c>.</param>
+public record ExperienceRequest(Guid CharacterId, int Amount, string? Source = null);
 
 /// <summary>Response body returned by the <c>POST /api/dev/teleport</c> endpoint.</summary>
 /// <param name="CharacterId">The character that was teleported.</param>

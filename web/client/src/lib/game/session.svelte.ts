@@ -1016,11 +1016,26 @@ export class GameSession {
 
 		hub.on(
 			'ExperienceGained',
-			(payload: { newLevel: number; newXP: number; leveledUp: boolean; leveledUpTo: number }) => {
+			(payload: {
+				newLevel: number;
+				newExperience: number;
+				leveledUp: boolean;
+				leveledUpTo: number;
+				maxHealth?: number;
+				currentHealth?: number;
+				maxMana?: number;
+				currentMana?: number;
+			}) => {
+				// A level-up rewrites the derived pools on the server, so the payload carries them: without this the
+				// sheet would keep drawing the old bar next to the new level until the next character load.
 				this.stats = {
 					...this.stats,
 					level: payload.newLevel,
-					experience: payload.newXP
+					experience: payload.newExperience,
+					...(payload.maxHealth ? { maxHealth: payload.maxHealth } : {}),
+					...(payload.currentHealth !== undefined ? { currentHealth: payload.currentHealth } : {}),
+					...(payload.maxMana ? { maxMana: payload.maxMana } : {}),
+					...(payload.currentMana !== undefined ? { currentMana: payload.currentMana } : {})
 				};
 				if (payload.leveledUp)
 					this.addSystemMessage(`Level up! You are now level ${payload.leveledUpTo}.`);
@@ -1035,7 +1050,9 @@ export class GameSession {
 			'DamageTaken',
 			(payload: { damage: number; currentHP: number; maxHP: number; isDead: boolean }) => {
 				this.stats = applyDamageToStats(this.stats, payload);
-				if (payload.isDead) this.dead = true;
+				// The flag follows the server on both edges: a GM heal through /sethealth sends isDead false with the
+				// restored pool, and without this the death banner would stay up until a reload.
+				this.dead = payload.isDead;
 			}
 		);
 

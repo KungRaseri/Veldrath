@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Veldrath.Server.Data.Entities;
@@ -13,7 +14,7 @@ namespace Veldrath.Server.Tests.Features;
 public class GainExperienceHubCommandHandlerTests
 {
     private static (GainExperienceHubCommandHandler Handler, Mock<ICharacterRepository> Repo, Character Character)
-        Arrange(long experience = 0, int level = 1)
+        Arrange(long experience = 0, int level = 1, string? attributes = null)
     {
         var character = new Character
         {
@@ -24,6 +25,7 @@ public class GainExperienceHubCommandHandlerTests
             SlotIndex = 1,
             Level = level,
             Experience = experience,
+            Attributes = attributes ?? string.Empty,
         };
 
         var repo = new Mock<ICharacterRepository>();
@@ -122,6 +124,76 @@ public class GainExperienceHubCommandHandlerTests
         result.NewExperience.Should().Be(250);
         result.LeveledUp.Should().BeTrue();
         result.LeveledUpTo.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_RecomputesTheDerivedPoolsInTheAttributesBlob()
+    {
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+        {
+            ["Constitution"] = 12,
+            ["Wisdom"] = 10,
+            ["CurrentHealth"] = 100,
+            ["MaxHealth"] = 120,
+            ["CurrentMana"] = 20,
+            ["MaxMana"] = 50,
+        });
+        var (handler, _, character) = Arrange(experience: 90, level: 1, attributes: attributes);
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LeveledUp.Should().BeTrue();
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        // The engine formulas the creation wizard uses: Constitution × 10 + level × 5, Wisdom × 5 + level × 3.
+        stored["MaxHealth"].Should().Be(130);
+        stored["MaxMana"].Should().Be(56);
+
+        // A bigger bar is a ceiling, not a heal: the current pools keep the value the fight left them at.
+        stored["CurrentHealth"].Should().Be(100);
+        stored["CurrentMana"].Should().Be(20);
+
+        result.MaxHealth.Should().Be(130);
+        result.CurrentHealth.Should().Be(100);
+        result.MaxMana.Should().Be(56);
+        result.CurrentMana.Should().Be(20);
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_RebuildsACorruptAttributesBlobFromTheLevel()
+    {
+        var (handler, _, character) = Arrange(experience: 90, level: 1, attributes: "{not json");
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LeveledUp.Should().BeTrue();
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        // No Constitution/Wisdom in the blob, so the engine defaults of 10 apply at the new level.
+        stored["MaxHealth"].Should().Be(110);
+        stored["MaxMana"].Should().Be(56);
+    }
+
+    [Fact]
+    public async Task Handle_AwardInsideTheLevel_DoesNotRewriteTheAttributesBlob()
+    {
+        const string attributes = "{not json";
+        var (handler, repo, character) = Arrange(experience: 30, level: 2, attributes: attributes);
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 40 },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LeveledUp.Should().BeFalse();
+        character.Attributes.Should().Be(attributes, "only a level-up changes the derived pools");
+        repo.Verify(r => r.UpdateAsync(character, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

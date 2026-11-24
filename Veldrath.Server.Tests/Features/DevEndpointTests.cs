@@ -1,8 +1,13 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Veldrath.Contracts.Content;
+using Veldrath.Server.Data;
 using Veldrath.Server.Features.Dev;
+using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -143,6 +148,56 @@ public class DevEndpointTests(WebAppFactory factory)
         var characters = await _client.GetFromJsonAsync<CharacterDto[]>("/api/characters");
         var character = characters!.Single(c => c.Id == characterId);
         character.CurrentZoneId.Should().Be("playground");
+    }
+
+    // ─── POST /api/dev/experience ────────────────────────────────────────────
+
+    [Fact]
+    public async Task Experience_WithoutAuth_Returns401()
+    {
+        using var anonClient = factory.CreateClient();
+        var response = await anonClient.PostAsJsonAsync("/api/dev/experience",
+            new { CharacterId = Guid.NewGuid(), Amount = 100 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Experience_NonPositiveAward_Returns400()
+    {
+        var (token, characterId) = await RegisterWithCharacterAsync("DevExperience_Zero");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.PostAsJsonAsync("/api/dev/experience",
+            new { CharacterId = characterId, Amount = 0 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Experience_AwardsLevel_AndRecomputesTheDerivedPools()
+    {
+        var (token, characterId) = await RegisterWithCharacterAsync("DevExperience_Happy");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.PostAsJsonAsync("/api/dev/experience",
+            new { CharacterId = characterId, Amount = 100, Source = "Test" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<GainExperienceHubResult>();
+        result!.Success.Should().BeTrue();
+        result.NewLevel.Should().Be(2);
+        result.LeveledUp.Should().BeTrue();
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var stored = await db.Characters.AsNoTracking().SingleAsync(c => c.Id == characterId);
+
+        stored.Level.Should().Be(2);
+        var attributes = JsonSerializer.Deserialize<Dictionary<string, int>>(stored.Attributes)!;
+        // The level-up rewrote the derived pool, and the response reports the same value the row now carries.
+        attributes["MaxHealth"].Should().BeGreaterThan(0);
+        attributes["MaxHealth"].Should().Be(result.MaxHealth);
     }
 
     // ─── GET /api/dev/zones/{id} ─────────────────────────────────────────────

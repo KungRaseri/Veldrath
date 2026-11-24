@@ -256,6 +256,20 @@ describe('GameSession combat and stat events', () => {
 		expect(session.stats.currentHealth).toBe(12);
 	});
 
+	it('clears the death banner when the server restores health', async () => {
+		const session = await connected();
+
+		hub.emit('DamageTaken', { damage: 90, currentHP: 0, maxHP: 100, isDead: true });
+		expect(session.dead).toBe(true);
+
+		// `/sethealth` sends the same event with the restored pool and isDead false; the flag has to follow both
+		// edges, or a GM heal leaves the banner up until a reload.
+		hub.emit('DamageTaken', { damage: 0, currentHP: 40, maxHP: 100, isDead: false });
+
+		expect(session.dead).toBe(false);
+		expect(session.stats.currentHealth).toBe(40);
+	});
+
 	it('keeps every attribute when the server sends an empty map', async () => {
 		const session = await connected();
 		session.attributes = {

@@ -122,6 +122,13 @@ public class UseAbilityHubCommandHandler
             }
         }
 
+        // Death is a stored state (`CombatHelpers` writes CurrentHealth 0), not a health floor. Only
+        // `CharacterRespawned` clears the client's death banner and `RespawnHubCommand` refuses a character above
+        // 0 HP, so a heal here would strand the player behind a disabled map until a reload. A missing key is not
+        // a death — blobs written before the vitals were tracked have no CurrentHealth entry.
+        if (attrs.ContainsKey(KeyCurrentHealth) && attrs[KeyCurrentHealth] <= 0)
+            return Fail("You cannot use abilities while dead.");
+
         // Derive mana pool from level when not explicitly stored (5 MP per level)
         var maxMana = attrs.TryGetValue(KeyMaxMana, out var mm) ? mm : character.Level * 5;
         var currentMana = attrs.TryGetValue(KeyCurrentMana, out var cm) ? cm : maxMana;

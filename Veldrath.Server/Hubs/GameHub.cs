@@ -1096,70 +1096,6 @@ public class GameHub : Hub
         }
     }
 
-    /// <summary>
-    /// Award experience points to the caller's active character.
-    /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
-    /// the command to the MediatR pipeline. Broadcasts the outcome to the character's current
-    /// zone group; falls back to the caller only when the character is not in a zone.
-    /// </summary>
-    /// <param name="amount">Positive number of experience points to award.</param>
-    /// <param name="source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
-    public async Task GainExperience(GainExperienceHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GainExperience");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new GainExperienceHubCommand
-            {
-                CharacterId = characterId,
-                Amount = request.Amount,
-                Source = request.Source,
-            });
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to gain experience");
-                return;
-            }
-
-            var payload = new
-            {
-                CharacterId = characterId,
-                result.NewLevel,
-                result.NewExperience,
-                result.LeveledUp,
-                result.LeveledUpTo,
-                Source = request.Source,
-            };
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("ExperienceGained", payload);
-            else
-                await Clients.Caller.SendAsync("ExperienceGained", payload);
-
-            if (result.LeveledUp)
-            {
-                // Both level values are advanced so a reach_level objective completes whichever one content names.
-                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, result.NewLevel.ToString());
-                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, result.LeveledUpTo.ToString());
-            }
-
-            _logger.LogInformation(
-                "Character {CharacterId} gained {Amount} XP from {Source}; now level {Level}",
-                characterId, request.Amount, request.Source ?? "Unknown", result.NewLevel);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in GainExperience for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to process experience gain");
-        }
-    }
-
     // Character progression
     /// <summary>
     /// Spend a character's unallocated attribute points.
@@ -1525,61 +1461,6 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in AddGold for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to modify gold");
-        }
-    }
-
-    /// <summary>
-    /// Apply damage to the caller's active character, reducing current health (clamped to zero).
-    /// Broadcasts <c>DamageTaken</c> to the zone group (or back to the caller when not in a zone).
-    /// </summary>
-    /// <param name="damageAmount">Positive number of hit points to remove.</param>
-    /// <param name="source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
-    public async Task TakeDamage(TakeDamageHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TakeDamage");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new TakeDamageHubCommand
-            {
-                CharacterId = characterId,
-                DamageAmount = request.DamageAmount,
-                Source = request.Source,
-            });
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to apply damage");
-                return;
-            }
-
-            var payload = new
-            {
-                CharacterId = characterId,
-                DamageAmount = request.DamageAmount,
-                result.CurrentHealth,
-                result.MaxHealth,
-                result.IsDead,
-                Source = request.Source,
-            };
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("DamageTaken", payload);
-            else
-                await Clients.Caller.SendAsync("DamageTaken", payload);
-
-            _logger.LogInformation(
-                "Character {CharacterId} took {Damage} damage from {Source}; HP {Hp}/{Max} IsDead={Dead}",
-                characterId, request.DamageAmount, request.Source ?? "Unknown", result.CurrentHealth, result.MaxHealth, result.IsDead);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in TakeDamage for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to apply damage");
         }
     }
 
@@ -2546,12 +2427,39 @@ public class GameHub : Hub
 
         if (result.XpReward > 0)
         {
-            await _mediator.Send(new GainExperienceHubCommand
+            var xpResult = await _mediator.Send(new GainExperienceHubCommand
             {
                 CharacterId = characterId,
                 Amount = result.XpReward,
                 Source = "Quest",
             });
+
+            if (xpResult.Success)
+            {
+                // The award is server-side only now, so the turn-in is what tells the client what it paid. The
+                // payload carries the re-derived pools too: a level-up raises MaxHealth/MaxMana, and without them
+                // the sheet would keep drawing the old bar until the next character load.
+                await Clients.Caller.SendAsync("ExperienceGained", new
+                {
+                    CharacterId = characterId,
+                    xpResult.NewLevel,
+                    xpResult.NewExperience,
+                    xpResult.LeveledUp,
+                    xpResult.LeveledUpTo,
+                    xpResult.MaxHealth,
+                    xpResult.CurrentHealth,
+                    xpResult.MaxMana,
+                    xpResult.CurrentMana,
+                    Source = "Quest",
+                });
+
+                if (xpResult.LeveledUp)
+                {
+                    // Both level values are advanced so a reach_level objective completes whichever one content names.
+                    await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, xpResult.NewLevel.ToString());
+                    await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, xpResult.LeveledUpTo.ToString());
+                }
+            }
         }
 
         await Clients.Caller.SendAsync("QuestTurnedIn", new
@@ -4077,8 +3985,11 @@ public class GameHub : Hub
                     hpChar.Attributes = JsonSerializer.Serialize(hpAttrs);
                     await _characterRepo.UpdateAsync(hpChar);
 
+                    // The client's DamageTaken handler reads damage/currentHP/maxHP/isDead; this is the only
+                    // remaining sender of the event, so its payload has to match that contract exactly. IsDead is
+                    // what lets a GM heal clear the death banner instead of leaving it stuck until a reload.
                     await Clients.Client(hpSession.ConnectionId).SendAsync("DamageTaken",
-                        new { CharacterId = hpCharId, DamageAmount = 0, CurrentHealth = clamped, MaxHealth = maxHealth, IsDead = clamped == 0, Source = "Admin" });
+                        new { CharacterId = hpCharId, damage = 0, currentHP = clamped, maxHP = maxHealth, isDead = clamped == 0, Source = "Admin" });
                     await Clients.Caller.SendAsync("SystemMessage",
                         $"Set health to {clamped}/{maxHealth} for {hpSession.CharacterName}.");
                     return;
@@ -4391,20 +4302,10 @@ public record AwardSkillXpHubRequest(string SkillId, int Amount);
 /// <param name="ItemRef">Item-reference slug to equip, or <see langword="null"/> to clear the slot.</param>
 public record EquipItemHubRequest(string? Slot, string? ItemRef);
 
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.GainExperience"/>.</summary>
-/// <param name="Amount">Positive number of experience points to award.</param>
-/// <param name="Source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
-public record GainExperienceHubRequest(int Amount, string? Source = null);
-
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.AddGold"/>.</summary>
 /// <param name="Amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
 /// <param name="Source">Optional label for the gold source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
 public record AddGoldHubRequest(int Amount, string? Source = null);
-
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.TakeDamage"/>.</summary>
-/// <param name="DamageAmount">Positive number of hit points to remove.</param>
-/// <param name="Source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
-public record TakeDamageHubRequest(int DamageAmount, string? Source = null);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.VisitShop"/>.</summary>
 /// <param name="ZoneId">ID of the zone whose merchant to visit.</param>

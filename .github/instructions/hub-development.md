@@ -110,6 +110,10 @@ public async Task TakeDamage(TakeDamageHubRequest request) { }
 
 ### DTO Location
 
+> The `GainExperience`/`TakeDamage` names above illustrate the shape only. The live hub deliberately exposes neither
+> (2026-11-23): both were client-callable progression/damage bypasses and are now server-side commands. Do not
+> re-create them as hub methods.
+
 Hub request DTOs can live in one of two places:
 
 1. **Bottom of [`GameHub.cs`](../../Veldrath.Server/Hubs/GameHub.cs)** — For DTOs that are strictly internal to the hub method signature (not shared with client code):

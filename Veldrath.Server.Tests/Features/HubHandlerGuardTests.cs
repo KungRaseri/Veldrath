@@ -123,6 +123,41 @@ public class HubHandlerGuardTests
     // ── UseAbility ────────────────────────────────────────────────────────────
 
     [Fact]
+    public async Task UseAbility_RefusesADeadCharacter()
+    {
+        var character = Character(attributes: """{"CurrentHealth":0,"MaxHealth":100,"CurrentMana":50,"MaxMana":50}""");
+        var handler = new UseAbilityHubCommandHandler(
+            CharacterRepo(character).Object,
+            NullLogger<UseAbilityHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UseAbilityHubCommand { CharacterId = character.Id, AbilityId = "mend" },
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("You cannot use abilities while dead.");
+        character.Attributes.Should().Contain("\"CurrentHealth\":0", "a refused heal must not touch the blob");
+    }
+
+    [Fact]
+    public async Task Rest_RefusesADeadCharacter()
+    {
+        var character = Character(
+            attributes: """{"CurrentHealth":0,"MaxHealth":100,"CurrentMana":0,"MaxMana":50,"Gold":10}""");
+        var handler = new RestAtLocationHubCommandHandler(
+            CharacterRepo(character).Object,
+            NullLogger<RestAtLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new RestAtLocationHubCommand { CharacterId = character.Id, LocationId = "inn", CostInGold = 5 },
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("You cannot rest while dead.");
+        character.Attributes.Should().Contain("\"CurrentHealth\":0", "a refused rest must not heal the character");
+    }
+
+    [Fact]
     public async Task UseAbility_TreatsACorruptAttributesBlobAsEmpty()
     {
         var character = Character(attributes: "{not json");

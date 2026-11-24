@@ -327,7 +327,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 > Full details in [veldrath-memory.md](veldrath-memory.md). Summary:
 
 - Server hub commands follow the **blob pattern**: read `Character.Attributes` JSON, mutate, save. Never call Core handlers (type mismatch).
-- Wired bridges: `GainExperience`, `RestAtLocation`, `AllocateAttributePoints`, `UseAbility`
+- Wired bridges: `RestAtLocation`, `AllocateAttributePoints`, `UseAbility` (`GainExperience` and `TakeDamage` were retired from the hub 2026-11-23; their commands are dispatched server-side only)
 - **P3 stubs: closed.** `CharacterSelectViewModel.ServerUrl` is no longer hardcoded — the desktop client
   reads `Server:BaseUrl` and the old `ScopedSession`/`TravelToNode` stubs were wired to real hub commands.
 - **P4 XML docs: closed** (re-audited 2026-10-24). `IPlayerAccountRepository`, `IZoneRepository`, and
