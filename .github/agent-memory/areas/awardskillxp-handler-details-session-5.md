@@ -22,10 +22,12 @@ title: "AwardSkillXp Handler Details (session-5)"
 - **The craft handler owns the character-row write.** Crafting passes the character it already loaded through
   `internal Character? LoadedCharacter`, so the award handler applies the award to that instance in memory and
   skips both its own load and its own `UpdateAsync`. `CraftItemHubCommandHandler.Handle` then makes the one
-  character-row `UpdateAsync` after the dispatch, which persists the award in the attributes blob (and
-  `LastPlayedAt`) — not the craft: the materials and the output go through `IInventoryService`
-  (`EfCoreInventoryService` → `GameDbContext.InventoryRecords`), which saves them itself before the award is
-  dispatched. The two writes are ordered, not atomic — different `DbContext`s, with no transaction spanning them
+  character-row `UpdateAsync` after the dispatch, which writes that row once: `InventoryBlob` (materials taken,
+  output added — the bag the client reads) and `Attributes` (the award), plus `LastPlayedAt` when an award was
+  made. It is one row in one save, and there is no transaction spanning anything else. The craft does not go
+  through `IInventoryService`: `EfCoreInventoryService` writes `GameDbContext.InventoryRecords`, a table no
+  server path populates, so the old craft path demanded materials the player was carrying and put its output
+  where no client could see it (fixed 2026-11-24, t_fd868f7e)
 - A supplied `LoadedCharacter` whose `Id` is not the command's `CharacterId` is refused
 - Without `LoadedCharacter` the handler loads the character and saves it itself, so the command still works
   standalone — but nothing in production dispatches it that way (the server tests call the handler directly)

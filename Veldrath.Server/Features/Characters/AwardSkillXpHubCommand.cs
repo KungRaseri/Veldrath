@@ -27,9 +27,10 @@ public record AwardSkillXpHubCommand : IRequest<AwardSkillXpHubResult>
     /// Gets the character to award the experience to when the caller already holds it and owns the write.
     /// </summary>
     /// <remarks>
-    /// Crafting persists the craft and the award in one attributes-blob save, so it hands over the character it
-    /// already loaded. The handler then applies the award to that instance in memory and does not persist it: a
-    /// second load/save here would write the blob back over the craft it was meant to accompany.
+    /// Crafting owns the character-row write, so it hands over the character it already loaded. The handler then
+    /// applies the award to that instance's attributes blob in memory and does not persist it; the craft writes
+    /// the row once, with both the crafted bag (<c>InventoryBlob</c>) and the award (<c>Attributes</c>). The engine's
+    /// inventory service is not on the craft path, so there is no second store to overwrite.
     /// </remarks>
     internal Character? LoadedCharacter { get; init; }
 }
