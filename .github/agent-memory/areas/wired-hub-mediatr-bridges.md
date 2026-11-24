@@ -15,7 +15,7 @@ title: "Wired Hub→MediatR Bridges"
 | `UseAbility` | `UseAbilityHubCommand` | 2026-03-19 session-4 |
 | `AwardSkillXp` | `AwardSkillXpHubCommand` | hub method retired 2026-11-24 (#269) — dispatched by `CraftItemHubCommandHandler`, which passes the character it loaded so the craft and the award share one blob write |
 | `EquipItem` | `EquipItemHubCommand` | 2026-03-20 session-8 |
-| `AddGold` | `AddGoldHubCommand` | 2026-03-20 session-9 |
+| `AddGold` | `AddGoldHubCommand` | hub method retired 2026-11-24 (#269) — dispatched by `GameHub.TurnInQuest`, `ChestHubCommands` (reached through `GameHub.OpenChest`) and `DialogueHubCommands` (reached through `GameHub.ChooseNpcOption`) |
 | `TakeDamage` | `TakeDamageHubCommand` | retired 2026-11-23 — hub method and command removed; combat handlers apply damage |
 | `CraftItem` | `CraftItemHubCommand` | 2026-03-20 session-13 |
 | `EnterDungeon` | `EnterDungeonHubCommand` | 2026-03-20 session-13 |
@@ -23,7 +23,7 @@ title: "Wired Hub→MediatR Bridges"
 | `NavigateToLocation` | `NavigateToLocationHubCommand` | 2026-03-24 session-18 |
 | `UnlockZoneLocation` | `UnlockZoneLocationHubCommand` | 2026-03-24 session-18 |
 | `SearchArea` | `SearchAreaHubCommand` | 2026-03-24 session-18 |
-| `TraverseConnection` | `TraverseConnectionHubCommand` | 2026-03-24 session-18 |
+| `TraverseConnection` | `TraverseConnectionHubCommand` | retired 2026-04-08 — hub method and command removed (`72024d32`); map movement goes through `GameHub.TravelToNode` and `GameHub.EnterLocation` |
 | `EngageEnemy` | `EngageEnemyHubCommand` | 2026-03-30 session-27 |
 | `AttackEnemy` | `AttackEnemyHubCommand` | 2026-03-30 session-27 |
 | `DefendAction` | `DefendActionHubCommand` | 2026-03-30 session-27 |
@@ -33,7 +33,7 @@ title: "Wired Hub→MediatR Bridges"
 | `GetNpcDialogue` | `GetNpcDialogueHubCommand` | 2026-11-20 (dialogue depth) |
 | `ChooseNpcOption` | `ChooseNpcOptionHubCommand` | 2026-11-20 (dialogue depth) |
 
-> **Note**: All 15 bridges above are server-side complete and fully wired end-to-end.
+> **Note**: A row that names a live hub method is server-side complete and fully wired end-to-end. A row marked retired has no client-callable hub method; where its command still exists it is dispatch-only, sent by server-side handlers (`TakeDamage` and `TraverseConnection` lost the command too).
 >
 > **Note**: Sessions 32-39 added no new Hub→MediatR bridges. Moderation commands (`/ignore`, `/warn`, `/mute`, `/ban`) are processed via the existing SignalR chat infrastructure. Dev endpoints (`DevEndpoints.cs`) use minimal API endpoints, not the hub bridge pattern.
 >
