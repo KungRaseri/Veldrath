@@ -96,12 +96,38 @@ public class CraftItemHubCommandHandlerTests : IDisposable
         result.ConsumedMaterials.Should().Equal(new ConsumedMaterialDto(IngotRef, 2));
         result.SkillId.Should().Be("blacksmithing");
         result.SkillXp.Should().Be(15);
+        result.SkillTotalXp.Should().Be(115);
+        result.SkillRank.Should().Be(1);
+        result.SkillRankedUp.Should().BeFalse("the character was already rank 1 before this craft");
 
         inventory.Verify(i => i.RemoveItemAsync(character.Name, IngotRef, 2), Times.Once);
         inventory.Verify(i => i.AddItemAsync(character.Name, SwordRef, 1), Times.Once);
 
         var updated = await db.Characters.FindAsync(character.Id);
         updated!.Attributes.Should().Contain("\"Skill_blacksmithing_XP\":115");
+    }
+
+    [Fact]
+    public async Task Reports_the_rank_up_when_the_award_crosses_the_threshold()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(
+            db,
+            attributes: """{"CurrentHealth":20,"MaxHealth":30,"Skill_blacksmithing_Rank":0,"Skill_blacksmithing_XP":95}""");
+        var inventory = new Mock<IInventoryService>();
+        inventory.Setup(i => i.GetItemCountAsync(character.Name, IngotRef)).ReturnsAsync(5);
+        inventory.Setup(i => i.RemoveItemAsync(character.Name, IngotRef, 2)).ReturnsAsync(true);
+        inventory.Setup(i => i.AddItemAsync(character.Name, SwordRef, 1)).ReturnsAsync(true);
+
+        var result = await Handler(db, Recipes(Longsword(requiredSkillLevel: 0)).Object, inventory.Object).Handle(
+            new CraftItemHubCommand(character.Id, "iron-longsword"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.SkillXp.Should().Be(15);
+        result.SkillTotalXp.Should().Be(110);
+        result.SkillRank.Should().Be(1);
+        result.SkillRankedUp.Should().BeTrue("95 + 15 crosses the first rank at 100 experience");
     }
 
     [Fact]

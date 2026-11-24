@@ -50,6 +50,15 @@ public record CraftItemHubResult
 
     /// <summary>Gets the skill experience the craft awarded.</summary>
     public int SkillXp { get; init; }
+
+    /// <summary>Gets the skill's experience total after the award, or zero when the recipe trains nothing.</summary>
+    public int SkillTotalXp { get; init; }
+
+    /// <summary>Gets the skill's rank after the award.</summary>
+    public int SkillRank { get; init; }
+
+    /// <summary>Gets a value indicating whether this award crossed a rank boundary.</summary>
+    public bool SkillRankedUp { get; init; }
 }
 
 /// <summary>
@@ -214,8 +223,8 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             return Fail(request.RecipeSlug, "There was no room for the result, so nothing was crafted.", recipe.Name);
         }
 
-        var skillXp = AwardSkillExperience(attributes, skillId, recipe.ExperienceGained);
-        if (skillXp > 0)
+        var skillAward = AwardSkillExperience(attributes, skillId, recipe.ExperienceGained);
+        if (skillAward.Awarded > 0)
         {
             character.Attributes = JsonSerializer.Serialize(attributes);
             character.LastPlayedAt = DateTimeOffset.UtcNow;
@@ -235,7 +244,10 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             OutputQuantity = outputQuantity,
             ConsumedMaterials = consumed,
             SkillId = skillId,
-            SkillXp = skillXp,
+            SkillXp = skillAward.Awarded,
+            SkillTotalXp = skillAward.TotalXp,
+            SkillRank = skillAward.Rank,
+            SkillRankedUp = skillAward.RankedUp,
         };
     }
 
@@ -252,24 +264,37 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
     /// Adds the recipe's experience to the named skill, using the same key convention and rank size
     /// as <see cref="AwardSkillXpHubCommandHandler"/> so the two cannot drift.
     /// </summary>
-    /// <returns>The experience awarded, or zero when the recipe trains no skill.</returns>
-    private static int AwardSkillExperience(
+    /// <returns>The award, or <see langword="default"/> when the recipe trains no skill.</returns>
+    private static SkillAward AwardSkillExperience(
         Dictionary<string, int> attributes,
         string? skillId,
         int experienceGained)
     {
         if (skillId is null || experienceGained <= 0)
-            return 0;
+            return default;
 
         var xpKey = $"{SkillKeyPrefix}{skillId}{SkillXpSuffix}";
         var rankKey = $"{SkillKeyPrefix}{skillId}{SkillRankSuffix}";
 
-        var total = (attributes.TryGetValue(xpKey, out var current) ? current : 0) + experienceGained;
-        attributes[xpKey] = total;
-        attributes[rankKey] = total / AwardSkillXpHubCommandHandler.XpPerRank;
+        // The rank is derived from the experience, so both the previous and the new rank come from
+        // the same rule instead of trusting a rank key that content edits can leave behind.
+        var storedXp = attributes.TryGetValue(xpKey, out var current) ? current : 0;
+        var total = storedXp + experienceGained;
+        var previousRank = storedXp / AwardSkillXpHubCommandHandler.XpPerRank;
+        var rank = total / AwardSkillXpHubCommandHandler.XpPerRank;
 
-        return experienceGained;
+        attributes[xpKey] = total;
+        attributes[rankKey] = rank;
+
+        return new SkillAward(experienceGained, total, rank, rank > previousRank);
     }
+
+    /// <summary>The outcome of one skill-experience award.</summary>
+    /// <param name="Awarded">The experience this award added.</param>
+    /// <param name="TotalXp">The skill's experience total after the award.</param>
+    /// <param name="Rank">The skill's rank after the award.</param>
+    /// <param name="RankedUp">Whether the award crossed a rank boundary.</param>
+    private readonly record struct SkillAward(int Awarded, int TotalXp, int Rank, bool RankedUp);
 
     private Dictionary<string, int> ReadAttributes(string? attributesJson, Guid characterId)
     {

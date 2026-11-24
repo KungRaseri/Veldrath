@@ -1287,63 +1287,6 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Awards skill XP to the caller's active character for the specified skill.
-    /// Broadcasts <c>SkillXpGained</c> to the zone group (or back to the caller when not in a zone).
-    /// </summary>
-    /// <param name="request">Skill identifier and XP amount to award.</param>
-    public async Task AwardSkillXp(AwardSkillXpHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AwardSkillXp");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new AwardSkillXpHubCommand
-            {
-                CharacterId = characterId,
-                SkillId = request.SkillId,
-                Amount = request.Amount,
-            });
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to award skill XP");
-                return;
-            }
-
-            var payload = new
-            {
-                CharacterId = characterId,
-                result.SkillId,
-                result.TotalXp,
-                result.CurrentRank,
-                result.RankedUp,
-                // The progression rule belongs to the server, so the progress figures travel with
-                // the award instead of the client dividing by a constant it guessed.
-                XpIntoRank = result.TotalXp % AwardSkillXpHubCommandHandler.XpPerRank,
-                XpToNextRank = AwardSkillXpHubCommandHandler.XpPerRank,
-            };
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("SkillXpGained", payload);
-            else
-                await Clients.Caller.SendAsync("SkillXpGained", payload);
-
-            _logger.LogInformation(
-                "Character {CharacterId} earned {Amount} XP in skill {SkillId}; total {Total}, rank {Rank}",
-                characterId, request.Amount, request.SkillId, result.TotalXp, result.CurrentRank);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in AwardSkillXp for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to award skill XP");
-        }
-    }
-
-    /// <summary>
     /// Equips or unequips an item in a named slot for the caller's active character.
     /// Broadcasts <c>ItemEquipped</c> to the zone group (or back to the caller when not in a zone).
     /// Pass <see langword="null"/> as <paramref name="itemRef"/> to clear the slot.
@@ -1423,60 +1366,6 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in EquipItem for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to equip item");
-        }
-    }
-
-    /// <summary>
-    /// Add or remove gold from the caller's active character.
-    /// Broadcasts <c>GoldChanged</c> to the zone group (or back to the caller when not in a zone).
-    /// Pass a negative <paramref name="amount"/> to spend gold (e.g. making a purchase).
-    /// </summary>
-    /// <param name="amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
-    /// <param name="source">Optional label for the source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
-    public async Task AddGold(AddGoldHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AddGold");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new AddGoldHubCommand
-            {
-                CharacterId = characterId,
-                Amount = request.Amount,
-                Source = request.Source,
-            });
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to modify gold");
-                return;
-            }
-
-            var payload = new
-            {
-                CharacterId = characterId,
-                result.GoldAdded,
-                result.NewGoldTotal,
-                Source = request.Source,
-            };
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("GoldChanged", payload);
-            else
-                await Clients.Caller.SendAsync("GoldChanged", payload);
-
-            _logger.LogInformation(
-                "Character {CharacterId} gold changed by {Amount} ({Source}); total now {Total}",
-                characterId, request.Amount, request.Source ?? "Unknown", result.NewGoldTotal);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in AddGold for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to modify gold");
         }
     }
 
@@ -1702,6 +1591,27 @@ public class GameHub : Hub
                 await Clients.Group(zoneGroup).SendAsync("ItemCrafted", payload);
             else
                 await Clients.Caller.SendAsync("ItemCrafted", payload);
+
+            // Crafting is the server-side skill-experience path, so the award is announced here rather than
+            // left for the client to infer from the delta: the progress figures are the server's own.
+            if (result.SkillXp > 0 && !string.IsNullOrEmpty(result.SkillId))
+            {
+                var skillPayload = new
+                {
+                    CharacterId = characterId,
+                    SkillId = result.SkillId,
+                    TotalXp = result.SkillTotalXp,
+                    CurrentRank = result.SkillRank,
+                    RankedUp = result.SkillRankedUp,
+                    XpIntoRank = result.SkillTotalXp % AwardSkillXpHubCommandHandler.XpPerRank,
+                    XpToNextRank = AwardSkillXpHubCommandHandler.XpPerRank,
+                };
+
+                if (TryGetCurrentZoneGroup(out var skillZoneGroup))
+                    await Clients.Group(skillZoneGroup).SendAsync("SkillXpGained", skillPayload);
+                else
+                    await Clients.Caller.SendAsync("SkillXpGained", skillPayload);
+            }
 
             // The bag and the recipe list both changed, so the caller re-reads what it can now make.
             await SendCraftableRecipesAsync(characterId);
@@ -4327,11 +4237,6 @@ public class GameHub : Hub
 /// <param name="CostInGold">Gold deducted for the rest (default: 10).</param>
 public record RestAtLocationHubRequest(string LocationId, int CostInGold = 10);
 
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.AwardSkillXp"/>.</summary>
-/// <param name="SkillId">Skill identifier (e.g. <c>"swordsmanship"</c>, <c>"herbalism"</c>).</param>
-/// <param name="Amount">XP amount to award. Must be positive.</param>
-public record AwardSkillXpHubRequest(string SkillId, int Amount);
-
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.EquipItem"/>.</summary>
 /// <param name="Slot">
 /// Slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>). Optional: when omitted or empty the server
@@ -4340,11 +4245,6 @@ public record AwardSkillXpHubRequest(string SkillId, int Amount);
 /// </param>
 /// <param name="ItemRef">Item-reference slug to equip, or <see langword="null"/> to clear the slot.</param>
 public record EquipItemHubRequest(string? Slot, string? ItemRef);
-
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.AddGold"/>.</summary>
-/// <param name="Amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
-/// <param name="Source">Optional label for the gold source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
-public record AddGoldHubRequest(int Amount, string? Source = null);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.VisitShop"/>.</summary>
 /// <param name="ZoneId">ID of the zone whose merchant to visit.</param>
