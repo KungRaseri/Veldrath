@@ -1,0 +1,67 @@
+name: CI - Memory index
+
+# The memory hub (`.github/agent-memory/veldrath-memory.md`) is generated **whole**: its prose
+# comes from `scripts/memory/veldrath-memory.template.md` and its table is built from the YAML
+# front matter of `.github/agent-memory/work-items/*.md` and `.github/agent-memory/areas/*.md` by
+# `node scripts/memory/memory-index.mjs`. This workflow is what keeps it generated — `--check`
+# renders the complete file in memory and fails unless the committed file is byte-for-byte what
+# the generator produces. Nothing in the hub is read as input, so a hand edit anywhere — the
+# preamble, a table cell, or a `### Session-*` block appended below the table — fails, while the
+# normal pull request ("add a note, run --write, commit both") passes.
+#
+# Why a byte-for-byte check rather than "fail any pull request whose diff touches the hub":
+# a pull request that adds a work-item note **must** regenerate the index, so touching the hub
+# is the normal case. What must fail is a hand edit, and a hand edit is precisely a file the
+# generator would not produce. (Before the split the hub was a 4,895-line log appended to by
+# every session; #240 and #244 both conflicted there. The table it holds now is 124 rows, so
+# two branches that regenerate it conflict in a handful of rows and settle it by re-running
+# `--write` instead of merging a whole session log.)
+#
+# There is deliberately no "regenerate and commit after merge" job: `development` refuses
+# every direct push (`enable_push: false`; docs/ci-forgejo.md, "Branch protection: what can
+# block a merge"), including the per-job token's. Currency is enforced at the pull request
+# instead, which is the only place a commit can be added.
+#
+# `pull_request.branches` filters on the base branch, so `development` here means "a pull
+# request into development" (docs/ci-forgejo.md, "What runs where"). The `development → main`
+# release PR has base `main` and is therefore not triggered — it legitimately carries the whole
+# file and needs no check.
+
+concurrency:
+  group: ci-memory-index-${{ github.ref }}
+  # Cancel only a superseded pull-request head. A cancelled run is recorded as a failing
+  # status on the commit it was started for; cancelling a base-branch run would leave the
+  # merged commit red (docs/ci-forgejo.md, "What runs where").
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    branches: [ development ]
+    paths: &memory-paths
+      - '.github/agent-memory/**'
+      - 'scripts/memory/**'
+      - '.github/workflows/memory-index.yml'
+  pull_request:
+    branches: [ development ]
+    paths: *memory-paths
+  workflow_dispatch:
+
+jobs:
+  index:
+    name: Memory index is generated and current
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Check the generated index
+        run: node scripts/memory/memory-index.mjs --check

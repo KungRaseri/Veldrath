@@ -21,7 +21,7 @@ Everything below was checked in the working tree, not assumed:
 |---|---|
 | The SvelteKit app is the only client and the only editing surface; every Avalonia project (desktop client, `RealmForge`, `RealmUI.Fonts`) is deleted | `AGENTS.md`, `plans/content-pipeline.md` §Scope shift |
 | Movement is a **DB map graph** (nodes + edges), rendered as panels — **no tilemap, no sprites, no TMX** | [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md): "panel-driven client UI (no tilemap/sprite rendering)"; `GetMapGraph`, `TravelToNode`, `EnterZone`, `LeaveZone`, `NavigateToLocation` in `GameHub` |
-| Login resumes the saved node (Session-72), and that seam is the intended hook for onboarding | `veldrath-memory.md` §Session-72 |
+| Login resumes the saved node (Session-72), and that seam is the intended hook for onboarding | [`work-items/2026-10-25-login-resumes-the-last-known-node.md`](../.github/agent-memory/work-items/2026-10-25-login-resumes-the-last-known-node.md) |
 | Quests are real: journal blob, objectives, accept/abandon/turn-in, and a client quest dialog | `QuestJournal`, `AcceptQuest`/`AbandonQuest`/`TurnInQuest`; [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:92) |
 | No guild, trade, duel or PvP code exists anywhere | repo-wide search: zero `Guild`/`TradeSession`/`Duel`/`Pvp` types |
 | Auth is Better Auth → JWT → JIT Identity provisioning; Identity owns RBAC only | `JwtClaimsEnrichment`, `AccountProvisioningService`, plan §W12 |
