@@ -574,7 +574,10 @@ public class ChooseNpcOptionHubCommandHandler(
     /// <param name="NewGoldTotal">The character's gold total after the last successful grant, or null when none paid.</param>
     private sealed record DialogueGrants(IReadOnlyList<string> Applied, int GoldAwarded, int? NewGoldTotal);
 
-    /// <summary>Applies what the option grants, in the order that keeps the single writers authoritative.</summary>
+    /// <summary>
+    /// Applies what the option grants: quest and item changes are saved in memory first, then gold is awarded last
+    /// through its command, which reloads and rewrites the character row.
+    /// </summary>
     private async Task<DialogueGrants> ApplyGrantsAsync(
         Character character,
         string speakerSlug,
@@ -653,7 +656,8 @@ public class ChooseNpcOptionHubCommandHandler(
             await characterRepo.UpdateAsync(character, cancellationToken);
         }
 
-        // Gold last and through its single writer, which owns the attributes key and the clamp.
+        // Gold last and through its award command, which reloads and rewrites the character row — so the grants
+        // above have to be saved first — and which owns the attributes key and the over-spend refusal.
         foreach (var effect in effects.Where(effect => effect.Kind == DialogueEffectKind.Gold))
         {
             var gold = await sender.Send(

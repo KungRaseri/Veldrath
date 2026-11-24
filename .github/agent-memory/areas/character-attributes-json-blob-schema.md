@@ -24,8 +24,9 @@ which refuses a debit larger than the purse). It has three server-side dispatche
 `GameHub.ChooseNpcOption`). `GameHubTests.GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods`
 pins the absence of the `AddGold` hub method (retired 2026-11-24, #269).
 
-The handler is **not** the only writer of the key, and the "exactly one writer" / "single writer" comments in
-`ChestHubCommands` and `DialogueHubCommands` are wrong. As of `development@8b22ef11` the others are:
+The handler is **not** the only writer of the key. The "exactly one writer" / "single writer" wording that
+`ChestHubCommands`, `DialogueHubCommands`, `GameHub` and `LootChestsTests` carried was corrected on 2026-11-24
+(comment-only) to call it the award path and the owner of its own write. As of `development@8b22ef11` the others are:
 
 - `RestAtLocationHubCommand` — deducts the rest cost (`attrs[KeyGold] = gold - request.CostInGold`; `CostInGold`
   defaults to 10) and refuses when the purse is short.
