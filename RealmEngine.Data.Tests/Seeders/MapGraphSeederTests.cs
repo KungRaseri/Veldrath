@@ -28,8 +28,8 @@ public class MapGraphSeederTests
             .ToListAsync();
 
         maps.Should().HaveCount(23);
-        maps.SelectMany(m => m.Nodes).Should().HaveCount(136);
-        maps.SelectMany(m => m.Edges).Should().HaveCount(306);
+        maps.SelectMany(m => m.Nodes).Should().HaveCount(148);
+        maps.SelectMany(m => m.Edges).Should().HaveCount(330);
 
         foreach (var map in maps)
         {
@@ -54,8 +54,8 @@ public class MapGraphSeederTests
         await MapGraphSeeder.SeedAsync(db);
 
         (await db.Maps.CountAsync()).Should().Be(23);
-        (await db.MapNodes.CountAsync()).Should().Be(136);
-        (await db.MapEdges.CountAsync()).Should().Be(306);
+        (await db.MapNodes.CountAsync()).Should().Be(148);
+        (await db.MapEdges.CountAsync()).Should().Be(330);
     }
 
     [Fact]
@@ -247,20 +247,8 @@ public class MapGraphSeederTests
     /// </summary>
     private static readonly string[] SeededZonesWithNoInboundDoor =
     [
-        "zone:aldenmere",
-        "zone:ashfields",
-        "zone:barrow-deeps",
-        "zone:kaldrek-maw",
-        "zone:pale-moor",
         // The dev sandbox is entered by the test harness, not on foot, and is invisible to players.
         "zone:playground",
-        "zone:saltcliff-heights",
-        "zone:skarhold",
-        "zone:smoldering-reach",
-        "zone:soddenfen",
-        "zone:sunken-name",
-        "zone:tidewrack-flats",
-        "zone:tolvaren",
     ];
 
     /// <summary>
