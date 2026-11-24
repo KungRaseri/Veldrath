@@ -42,7 +42,7 @@ Read from code, with the line that says so. Every row shaped a decision below.
 | Clearing a room unlocks hidden locations **in the same zone** whose `UnlockKey` equals the cleared room's slug | `EfCoreZoneInstanceService.cs:274-291` | The "you cleared the last room and the floor gave way" pattern is expressible — with the next two rows' caveat. |
 | …but that path only runs when the kill carries a `ZoneInstanceId` | `AttackEnemyHubCommand.cs:254-261` | It fires only for an **instanced** location. |
 | **No seeded location is instanced.** `IsInstanced` is nullable, read at two places, and set by no seeder — every dungeon room is public world state | `RealmEngine.Data/Entities/Content/ZoneLocation.cs:90`; `EfCoreZoneLocationRepository.cs:96`; `TravelToNodeHubCommand.cs:551`; (no `IsInstanced` assignment in `ZoneLocationsSeeder.cs`) | The clear→unlock path is **dead in shipped content**. Setting the flag on the Maw's dungeon rooms is a content change, not an engine change — and it is what makes the entry condition an *act* rather than a number. |
-| **The unlock hub method trusts the client**: `UnlockZoneLocation(LocationSlug, UnlockSource)` writes an unlock with no verification that the character holds the item or finished the quest | `GameHub.cs:2695-2705`; `UnlockZoneLocationHubCommand.cs:69-113` | Any content gate is spoofable until a server-side source check exists. §2 says so plainly instead of promising a wall it cannot build. |
+| **The unlock hub method trusts the client**: `UnlockZoneLocation(LocationSlug, UnlockSource)` writes an unlock with no verification that the character holds the item or finished the quest | `GameHub.cs:2568-2607`; `UnlockZoneLocationHubCommand.cs:69-113` | Any content gate is spoofable until a server-side source check exists. §2 says so plainly instead of promising a wall it cannot build. |
 | The one **non-spoofable** unlock is the passive discovery check: it compares the character's real level against `DiscoverThreshold` server-side and writes the unlock itself | `TravelToNodeHubCommand.cs:474-516` | A level wall is the only enforceable gate today. Use it as the backstop under the act-gate. |
 | Spawn level is the archetype's `MinLevel` and nothing else | `EfCoreEnemyRepository.cs` — *MapToModel*, `Level = e.MinLevel` | Within band `b23-26` only levels **23** (`ArchetypeSeeder.cs:1341`, pyreling) and **26** (`:1611`, fire-ancient) can spawn. Zones recommended at 24–25 have nothing to populate them today. |
 | The approved roster covers **1–20** and says so; levels 21–30 and the Wound are named as out of scope | `docs/design/content/archetypes.md`, §"What this roster does not cover" | The Wound's cast does not exist. That is a dependency (§7), not something this card may invent. |
@@ -112,7 +112,7 @@ Stated honestly, because the code does not make it true by itself:
   (`ZoneLocationsSeeder.cs`, the `fire-ancients-chamber` pool entry), and the threshold location is
   invisible to any character below level 23 by a server-side comparison.
 - **Not true against a modified client**: `UnlockZoneLocation` accepts a location slug and an unlock
-  source from the caller (`GameHub.cs:2695-2705`) and writes the unlock with no proof. Nothing in this
+  source from the caller (`GameHub.cs:2568-2607`) and writes the unlock with no proof. Nothing in this
   spine can fix that. It is listed as a dependency in §7 and it is the same class of hole as the
   advisory level gate in §1.
 - **Not true of the region row itself**: `Region.MinLevel = 23` gates nothing (`Zone.cs` *MinLevel*,
@@ -300,7 +300,7 @@ the dependency is listed in §7 instead.
 |---|---|---|---|
 | 1 | **A 21–30 archetype roster** (the approved roster stops at 20 and says so) | This card may not author archetypes | The five zones are authorable with empty pools and nothing placed (`ActorPoolResolver.cs:86-92` — an empty roster, not an error) and unplayable as combat content. Zones 2–4 want levels 24–25, where **nothing** spawns today (§1). |
 | 2 | **`IsInstanced = true` on the cleared `fire-ancients-chamber` room** | No seeder sets it, so the clear→unlock path never fires; the flag does nothing on the hidden gate node, which has no `ZoneInstanceId` to report | Without it the entry condition degrades to the level wall alone: a number, not an act. |
-| 3 | **A server-side unlock source check** | `UnlockZoneLocation` trusts the client (`GameHub.cs:2695-2705`) | "Not reachable at level 1" holds only against an honest client (§2.2). |
+| 3 | **A server-side unlock source check** | `UnlockZoneLocation` trusts the client (`GameHub.cs:2568-2607`) | "Not reachable at level 1" holds only against an honest client (§2.2). |
 | 4 | **`RegionType` gains a member** | Named entity decision, not a zone decision; free of migrations (`ApplicationDbContext.cs:130`) | The region row cannot be seeded correctly. |
 | 5 | **The map graph for region 5** (a later card) | Out of scope by this card's rules | Nothing is reachable; the spine stays a spine. |
 | 6 | **Open lore item 4** (what came back from the Pits) | Must not be resolved (§6 O4) | If it resolves toward a connection, §2.3 is superseded and the Wound acquires a second door — which would break the "one way in" shape §5 depends on. |
