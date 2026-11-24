@@ -368,7 +368,7 @@ file the repository can diff, so it is recorded here and applied by
 | `push_whitelist_usernames` | `[]` | `["kungraseri"]` | The bypass is one named account — see below |
 | `push_whitelist_teams` | `[]` | `[]` | Account-only: no team inherits the push path |
 | `push_whitelist_deploy_keys` | `false` | `false` | A deploy key is not a second break-glass path |
-| `required_approvals` | `0` | `0` | The instance has one account, and an author cannot approve their own PR |
+| `required_approvals` | `1` | `1` | One approving review, from an account that is not the author's — each Zoo identity profile signs in as its own Forgejo account, so `dev-reviewer` can approve a coder's pull request. Read back from `GET /repos/Veldrath/Veldrath/branch_protections` (2026-11-24); `scripts/apply-branch-protection.sh` still sends `0` |
 | `apply_to_admins` | `false` | `false` | The administrator exemption was removed on request — see below |
 | `block_on_outdated_branch` | `false` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
 | `require_signed_commits` | `false` | `false` | Commits here are not signed |
@@ -581,10 +581,6 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### What it deliberately does not protect
 
-- **Reviews.** `required_approvals` is `0` because the instance has exactly one account
-  (`GET /admin/users` returns only `kungraseri`) and Forgejo does not let an author approve
-  their own pull request, so any non-zero value would block every merge instead of adding a
-  reviewer. Raise it the day a second account exists.
 - **The administrator.** `CheckPullMergeable` (`services/pull/check.go`) clears the
   protection error when `force_merge` is set and the doer is an instance admin, and because
   `apply_to_admins` is now `false` a *repository* admin gets the same override. That is the
