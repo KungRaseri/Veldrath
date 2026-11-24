@@ -1,21 +1,22 @@
 name: CI - Memory index
 
-# The memory hub (`.github/agent-memory/veldrath-memory.md`) is generated **whole**: its prose
-# comes from `scripts/memory/veldrath-memory.template.md` and its table is built from the YAML
-# front matter of `.github/agent-memory/work-items/*.md` and `.github/agent-memory/areas/*.md` by
-# `node scripts/memory/memory-index.mjs`. This workflow is what keeps it generated — `--check`
-# renders the complete file in memory and fails unless the committed file is byte-for-byte what
-# the generator produces. Nothing in the hub is read as input, so a hand edit anywhere — the
-# preamble, a table cell, or a `### Session-*` block appended below the table — fails, while the
-# normal pull request ("add a note, run --write, commit both") passes.
+# The memory hub (`.github/agent-memory/veldrath-memory.md`) is generated **whole** from
+# `scripts/memory/veldrath-memory.template.md`: the hub is that template verbatim, and
+# `node scripts/memory/memory-index.mjs --check` fails unless the two are byte-for-byte equal. A hand
+# edit to the hub — a preamble change, a `### Session-*` block appended at the end — fails, while a
+# pull request that adds a note passes with no regeneration step at all.
 #
-# Why a byte-for-byte check rather than "fail any pull request whose diff touches the hub":
-# a pull request that adds a work-item note **must** regenerate the index, so touching the hub
-# is the normal case. What must fail is a hand edit, and a hand edit is precisely a file the
-# generator would not produce. (Before the split the hub was a 4,895-line log appended to by
-# every session; #240 and #244 both conflicted there. The table it holds now is 124 rows, so
-# two branches that regenerate it conflict in a handful of rows and settle it by re-running
-# `--write` instead of merging a whole session log.)
+# The same check validates every note in `.github/agent-memory/work-items/` and
+# `.github/agent-memory/areas/`: required front matter (`kind`, `date`, `area`, `title`; `card` and
+# `pr` optional), a `yyyy-mm-dd`-or-`undated` date, an `area` from the fixed enum, and a file name
+# that agrees with them. It exits 1 naming the file and the field.
+#
+# Why validation rather than "the index must be regenerated": the notes are one file per work item
+# and the hub no longer carries a table of them, so adding a note touches exactly one new path and
+# two branches that add notes cannot conflict. (Before the split the hub was a 4,895-line log
+# appended to by every session; #240 and #244 both conflicted there. The split gave it a generated
+# table, and two branches regenerating that table conflicted in a handful of rows — #291 took four
+# review rounds to land one note. Neither shape is possible now.)
 #
 # There is deliberately no "regenerate and commit after merge" job: `development` refuses
 # every direct push (`enable_push: false`; docs/ci-forgejo.md, "Branch protection: what can
@@ -48,7 +49,7 @@ on:
 
 jobs:
   index:
-    name: Memory index is generated and current
+    name: Memory notes are valid and the hub matches its template
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -63,5 +64,5 @@ jobs:
         with:
           node-version: 22
 
-      - name: Check the generated index
+      - name: Check the hub and every note
         run: node scripts/memory/memory-index.mjs --check
