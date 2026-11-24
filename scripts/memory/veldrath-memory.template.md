@@ -1,9 +1,9 @@
 # Veldrath Server + Web Client — Memory Notes
 
-> **Status**: this file is the **index** of the memory store, not a log. Every note lives in
-> `work-items/` (one file per work item) or `areas/` (one file per stable topic). The table at
-> the foot is generated from their YAML front matter, and this whole file is generated from
-> `scripts/memory/veldrath-memory.template.md` — a hand edit is a failed build.
+> **Status**: this file is the **index** of the memory store, not a log. Every note is its own
+> file — one per work item in `work-items/`, one per stable topic in `areas/` — so those two
+> folders are the index itself. This file is generated from
+> `scripts/memory/veldrath-memory.template.md`, and a hand edit to it is a failed build.
 
 The Avalonia desktop client is gone — Veldrath is web-first, and the SvelteKit app in `web/` is the
 only client. Notes written before that pivot mention `Veldrath.Client`, `GameClient.Core`,
@@ -18,7 +18,8 @@ One file per work item, and only your own file — a new path cannot conflict wi
    `t_xxxxxxxx` id and is omitted when the work has none; the date is the day the work landed.
 2. Start it with the front matter below and write the note underneath. The date in the file name
    and `date:` agree, or both say `undated`.
-3. Regenerate the index with `node scripts/memory/memory-index.mjs --write` and commit both files.
+3. Commit only your note file. There is no regeneration step: this hub does not change when a note
+   is added, so two branches adding notes never touch the same path.
 
 ```yaml
 ---
@@ -38,9 +39,9 @@ A stable topic that outgrows a session log becomes `areas/<topic>.md` with `kind
 
 - **One file per work item.** Never append to another card's file, and never append a
   `### Session-*` block to this one — the generator would erase it.
-- **This file is generated.** `node scripts/memory/memory-index.mjs --check` compares the whole
-  file byte-for-byte with what the template and the notes produce, so any hand edit — a preamble
-  change, a table cell, or a note appended below the table — fails.
+- **This file is generated.** The hub is this template verbatim, so `node
+  scripts/memory/memory-index.mjs --check` fails on any hand edit to it, and separately on a note
+  whose front matter is invalid, naming the file and the field.
 - **Counters have one source.** Where a number is asserted by a test, the note points at the test
   and does not restate the number — the seeded map graph is the worked example, and
   `RealmEngine.Data.Tests/Seeders/MapGraphSeederTests.cs` owns both the map/node/edge totals and the
@@ -52,7 +53,9 @@ A stable topic that outgrows a session log becomes `areas/<topic>.md` with `kind
 
 ## Index
 
-Newest first. `—` in the Date column means the note carries no date of its own.
+The index is the folders: every `.md` file in `work-items/` and `areas/` is a note. Print them
+newest first, with the column set this file used to carry as a committed table:
 
-<!-- memory-index:begin -->
-<!-- memory-index:end -->
+```bash
+node scripts/memory/memory-index.mjs --list
+```
