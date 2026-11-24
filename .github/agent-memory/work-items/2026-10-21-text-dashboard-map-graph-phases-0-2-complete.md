@@ -56,7 +56,8 @@ source of truth. Counts below re-derived from the seeders and the seeded graph a
   graph holds exactly two pairs:
   `zone:grevenmire` `entry ↔ location:mire-crossing` (South / North) and `zone:ashlen-wood`
   `location:old-clearing ↔ location:wood-road` (North / West). That is 4 edges, so 94 generated edges in total,
-  and only those two maps grow (14 → 16 each). It is additive: nothing is removed, and no `SortOrder`, `IsHidden`,
+  and they land on exactly two maps: counted after the chain, `zone:ashlen-wood` moves 14 → 16 edges and
+  `zone:grevenmire` 16 → 18. It is additive: nothing is removed, and no `SortOrder`, `IsHidden`,
   unlock metadata or authored edge changes. The authored edges it reasons over are uniform today — none of the
   306 edges is hidden or non-traversable.
 - `LinkRegionZonesToZoneMaps` (`:47-66`) sets `TargetMapId = zone:<RefId>` on every region `Zone` node, because
