@@ -38,7 +38,7 @@ features with design work, not test work, so they get their own plans after the 
 | Crafting UI | `CraftItem` and `ItemCrafted` exist; needs a recipe book design plus recipe content |
 | NPC dialogue | `TalkToNpc` exists; needs dialogue trees, NPC presentation, and quest-giver flow |
 | Dungeon entry | `EnterDungeon` exists; needs descent UI and dungeon content |
-| Skills UI | `AwardSkillXp` / `SkillXpGained` exist; needs a skill sheet and rank display |
+| Skills UI | **Shipped** in milestone E (PR #66) — [`SkillsOverlay.svelte`](../web/client/src/lib/game/SkillsOverlay.svelte) over [`skills.ts`](../web/client/src/lib/game/skills.ts), with the session folding `SkillXpGained`; the client-callable `AwardSkillXp` bridge was retired in PR #269 |
 | Harvesting, enchanting, salvaging, socketing, upgrading | Engine-only. No server endpoint, no hub method |
 | Reputation, achievement listing, New Game Plus | Engine-only. Achievements are evaluated but never surfaced |
 | Persisted game settings, responsive game shell | Product/UI pass. [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:613) is diagnostics-only; [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:1) has no breakpoints |
@@ -111,7 +111,7 @@ proves the technique already works for one of them.
 
 | Check | Source of truth | Compared against | Allow-list rule |
 |---|---|---|---|
-| Hub methods | `public` methods in [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:210) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `AddGold`, `AwardSkillXp`, `GetActiveCharacters`) |
+| Hub methods | `public` methods in [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:210) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `GetActiveCharacters`, `Ping`, `NavigateToLocation`) |
 | Hub events | `SendAsync("<Event>"` in `GameHub.cs` | `hub.on('<Event>'` in [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:560) | Each ignored event listed with a reason. An entry with no reason fails the test |
 | REST routes | `group.MapGet/Post/Put/Delete` in `Veldrath.Server/Features/**/*Endpoints.cs` | Functions in `web/client/src/lib/server/*-api.ts` | Dev, internal bridge, Foundry, and Discord-only endpoints listed with a reason |
 | Content schema | Keys in `ContentSchemaRegistry` | Foundry editor type list and `web/shared` contracts | Every key must appear in both, or the test names the missing side |
@@ -158,7 +158,7 @@ Gathered by inspection on 2026-11-02. PR 1 replaces this with measured results.
 | Crafting | [`CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1430), `ItemCrafted`, `GET /api/content/recipes` | Deferred |
 | NPC dialogue | [`TalkToNpc`](../Veldrath.Server/Hubs/GameHub.cs:1407), `GET /api/content/dialogues` | Deferred |
 | Dungeons | [`EnterDungeon`](../Veldrath.Server/Hubs/GameHub.cs:1480), `DungeonEntered` | Deferred |
-| Skills | [`AwardSkillXp`](../Veldrath.Server/Hubs/GameHub.cs:1163), `SkillXpGained` | Deferred |
+| Skills | `SkillXpGained`, broadcast from [`CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1557); no client-callable award method — the old `AwardSkillXp` bridge was retired in PR #269 | Closed — skill sheet shipped in milestone E |
 | Harvesting, enchanting, salvaging, socketing, upgrading, reputation, achievements, NG+ | `RealmEngine.Core/Features/` only; no folder under `Veldrath.Server/Features/` | Deferred |
 | Unused client-facing calls | `GetActiveCharacters` | Deferred, evaluate when multi-character is designed |
 
