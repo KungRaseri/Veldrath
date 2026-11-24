@@ -351,7 +351,9 @@ When you discover something new about the codebase that future sessions should k
 
 **A note that belongs to one work item goes in its own file.** Create
 `.github/agent-memory/work-items/<yyyy-mm-dd>-<card>-<slug>.md` and write only that file; front matter is
-`kind: work-item`, `date`, `area`, `card`, `pr`, `title`. Never edit another work item's file, and never
+`kind: work-item`, `date`, `area`, `card`, `pr`, `title`. `area` is one of `content`, `engine`, `web`,
+`map`, `auth` or `infra`; `card` (`t_xxxxxxxx`) and `pr` are optional; the date in the file name and in
+`date:` agree, or both say `undated`. Never edit another work item's file, and never
 edit [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) — it is generated
 from that front matter by `node scripts/memory/memory-index.mjs`, and CI fails a change the generator did
 not produce.
