@@ -290,6 +290,25 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             .Select(enemy => new { enemy.Id, enemy.ZoneGroup, enemy.LocationSlug })
             .ToListAsync(cancellationToken);
 
+        // A slug the map does not hold cannot be judged: it may be a location the content rollback removed, or one the
+        // caller filtered out for being deactivated. Deleting on that absence would destroy live state, so the rows
+        // stay — but they are named here, because a roster nobody reports stays invisible forever.
+        var unjudged = rows
+            .Where(row => !zonesByLocationSlug.ContainsKey(row.LocationSlug))
+            .ToList();
+
+        if (unjudged.Count > 0)
+        {
+            _logger.LogWarning(
+                "Left {UnjudgedCount} enemy row(s) alone: their location is not in the active content catalogue (absent or deactivated), so their zone group cannot be judged: {Locations}",
+                unjudged.Count,
+                string.Join(
+                    ", ",
+                    unjudged
+                        .Select(row => $"{row.ZoneGroup}/{row.LocationSlug}")
+                        .Distinct(StringComparer.Ordinal)));
+        }
+
         var foreign = rows
             .Where(row => zonesByLocationSlug.TryGetValue(row.LocationSlug, out var zones)
                           && !NamesAnyZone(row.ZoneGroup, zones))

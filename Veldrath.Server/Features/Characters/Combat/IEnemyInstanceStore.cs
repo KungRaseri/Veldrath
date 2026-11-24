@@ -100,9 +100,11 @@ public interface IEnemyInstanceStore
     /// </summary>
     /// <remarks>
     /// The caller supplies the zones per location slug because that mapping is content, and this store only sees the
-    /// application database. A row whose slug is absent from the map is reported-and-left, never deleted: a slug the
-    /// catalog no longer holds cannot be judged, and deleting on absence is how live state gets destroyed by a
-    /// content rollback.
+    /// application database. A row whose slug is absent from the map is reported and left in place, never deleted: a
+    /// slug the catalog no longer holds — or one whose location has been deactivated, since the map is built from the
+    /// active locations — cannot be judged, and deleting on absence is how live state gets destroyed by a content
+    /// rollback. The store logs a warning naming each distinct group/slug pair it left behind, so the rows it could
+    /// not judge do not go unreported.
     /// </remarks>
     /// <param name="zonesByLocationSlug">Zones that own each location slug, keyed by slug.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

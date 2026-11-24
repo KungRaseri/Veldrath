@@ -30,7 +30,9 @@ and let `EfCoreEnemyInstanceStore.GetAliveOrSpawnAsync` store the destination ro
   border case that stays the handler's job is the exit node: its `TargetMapId` is not in the request.
 - **Existing rows are swept once at startup.** `IEnemyInstanceStore.RemoveForeignZoneGroupRowsAsync` deletes rows
   whose group names no zone that owns their location, called from `Program.cs` beside `WorldCanonSweep`. It never
-  deletes on absence: a slug the content catalog no longer holds cannot be judged and is left alone (logged). The
+  deletes on absence: a slug the content catalog no longer holds cannot be judged, so the row is left alone but
+  **reported** — one `LogWarning` naming each distinct `{group}/{slug}` pair it could not judge. A deactivated
+  location lands in the same bucket, because the map is built from active locations only. The
   zone-per-slug map comes from `IZoneLocationRepository`, because the location → zone mapping is content and the
   store only sees the application DB. Instance-scoped rows survive, since `zone:{zoneId}_{mode}#i1:{run}` still
   names its zone.
