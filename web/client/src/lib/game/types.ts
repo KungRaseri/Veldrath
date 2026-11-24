@@ -781,6 +781,26 @@ export interface PartyInvitesChangedPayload {
 	partyId?: string | null;
 }
 
+/**
+ * Broadcast after an experience award; a quest turn-in pays through the same command, so it is what
+ * tells the client what it earned. The pools are the post-award values (a level-up rewrites them),
+ * and `unspentAttributePoints` is the balance the allocation panel budgets from — a level-up banks
+ * points, so it has to arrive with the level instead of waiting for the next character select.
+ */
+export interface ExperienceGainedPayload {
+	characterId?: string;
+	newLevel: number;
+	newExperience: number;
+	leveledUp: boolean;
+	leveledUpTo?: number | null;
+	maxHealth?: number;
+	currentHealth?: number;
+	maxMana?: number;
+	currentMana?: number;
+	unspentAttributePoints?: number;
+	source?: string;
+}
+
 export interface CharacterStats {
 	currentHealth: number;
 	maxHealth: number;

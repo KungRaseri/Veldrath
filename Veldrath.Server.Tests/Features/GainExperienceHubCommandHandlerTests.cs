@@ -318,6 +318,56 @@ public class GainExperienceHubCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_AwardInsideTheLevel_ReportsTheBankedPointsWithoutRewritingTheBlob()
+    {
+        const string attributes = "{\"UnspentAttributePoints\":4}";
+        var (handler, _, character) = Arrange(experience: 30, level: 2, attributes: attributes);
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 40 },
+            CancellationToken.None);
+
+        result.LeveledUp.Should().BeFalse();
+        result.UnspentAttributePoints.Should().Be(4, "the result reports the balance the turn-in leaves banked");
+        character.Attributes.Should().Be(attributes, "an award inside the level does not touch the blob");
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_ReportsTheBankedPointsThePersistedBlobCarries()
+    {
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+        {
+            ["UnspentAttributePoints"] = 4,
+        });
+        var (handler, _, character) = Arrange(experience: 90, level: 1, attributes: attributes);
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        result.LeveledUp.Should().BeTrue();
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored.Should().ContainKey("UnspentAttributePoints");
+        // The client budgets the allocation panel from this number, so it has to be the post-award balance the
+        // blob actually holds — a pre-award snapshot would leave a level's banked points invisible.
+        result.UnspentAttributePoints.Should().Be(stored["UnspentAttributePoints"]);
+    }
+
+    [Fact]
+    public async Task Handle_CorruptAttributesBlob_ReportsNoBankedPoints()
+    {
+        var (handler, _, character) = Arrange(experience: 30, level: 2, attributes: "{not json");
+        character.Attributes.Should().Be("{not json");
+
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 40 },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.UnspentAttributePoints.Should().Be(0, "an unreadable blob carries no balance");
+    }
+
+    [Fact]
     public async Task Handle_StampsTheLastPlayedTime()
     {
         var (handler, _, character) = Arrange(experience: 0, level: 3);

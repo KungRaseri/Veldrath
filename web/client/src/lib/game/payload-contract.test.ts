@@ -185,6 +185,7 @@ describe('hub payload contract', () => {
 		const interfaces = readTypescriptInterfaces();
 		const expected = [
 			'CharacterSelectedPayload',
+			'ExperienceGainedPayload',
 			'ZoneEnteredPayload',
 			'MapGraphReceivedPayload',
 			'NodeTraveledPayload',

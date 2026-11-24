@@ -52,6 +52,17 @@ public record GainExperienceHubResult
     public int? LeveledUpTo { get; init; }
 
     /// <summary>
+    /// Gets the attribute points the character has banked but not yet allocated after the award, or 0 when the
+    /// attributes blob carries no balance.
+    /// </summary>
+    /// <remarks>
+    /// This is the value <c>AllocateAttributePointsHubCommandHandler</c> spends from, read back from the blob the
+    /// award persisted. A client has to learn it here: a level-up banks points, and without this the allocation
+    /// panel keeps budgeting from the snapshot it got at character select until the player re-selects.
+    /// </remarks>
+    public int UnspentAttributePoints { get; init; }
+
+    /// <summary>
     /// Gets the character's maximum health after the award, or 0 when the attributes blob does not carry a
     /// <c>MaxHealth</c> entry. A level-up rewrites it; an award inside the level reports the stored value.
     /// </summary>
@@ -83,6 +94,17 @@ public class GainExperienceHubCommandHandler : IRequestHandler<GainExperienceHub
     {
         PropertyNameCaseInsensitive = true,
     };
+
+    /// <summary>
+    /// The attributes-blob key that holds the points a level-up banks and
+    /// <see cref="Veldrath.Server.Features.Characters.AllocateAttributePointsHubCommandHandler"/> spends from.
+    /// </summary>
+    /// <remarks>
+    /// The same literal <see cref="Veldrath.Server.Features.Characters.AllocateAttributePointsHubCommandHandler"/>
+    /// writes back, and it must match the blob key exactly; the award that increases it is
+    /// <see cref="CharacterProgression"/>.
+    /// </remarks>
+    private const string UnspentAttributePointsKey = "UnspentAttributePoints";
 
     private readonly ICharacterRepository _characterRepo;
     private readonly ICharacterClassRepository _classRepo;
@@ -148,6 +170,7 @@ public class GainExperienceHubCommandHandler : IRequestHandler<GainExperienceHub
             NewExperience = progress.RemainingExperience,
             LeveledUp = progress.LevelledUp,
             LeveledUpTo = progress.LevelledUp ? progress.NewLevel : null,
+            UnspentAttributePoints = attributes.GetValueOrDefault(UnspentAttributePointsKey),
             MaxHealth = attributes.GetValueOrDefault(CharacterProgression.KeyMaxHealth),
             CurrentHealth = attributes.GetValueOrDefault(
                 CharacterProgression.KeyCurrentHealth,

@@ -36,6 +36,7 @@ import type {
 	CraftableRecipesPayload,
 	ChestOpenedPayload,
 	EmotePayload,
+	ExperienceGainedPayload,
 	GroundItem,
 	InventoryItem,
 	InventoryLoadedPayload,
@@ -1014,33 +1015,27 @@ export class GameSession {
 			);
 		});
 
-		hub.on(
-			'ExperienceGained',
-			(payload: {
-				newLevel: number;
-				newExperience: number;
-				leveledUp: boolean;
-				leveledUpTo: number;
-				maxHealth?: number;
-				currentHealth?: number;
-				maxMana?: number;
-				currentMana?: number;
-			}) => {
-				// A level-up rewrites the derived pools on the server, so the payload carries them: without this the
-				// sheet would keep drawing the old bar next to the new level until the next character load.
-				this.stats = {
-					...this.stats,
-					level: payload.newLevel,
-					experience: payload.newExperience,
-					...(payload.maxHealth ? { maxHealth: payload.maxHealth } : {}),
-					...(payload.currentHealth !== undefined ? { currentHealth: payload.currentHealth } : {}),
-					...(payload.maxMana ? { maxMana: payload.maxMana } : {}),
-					...(payload.currentMana !== undefined ? { currentMana: payload.currentMana } : {})
-				};
-				if (payload.leveledUp)
-					this.addSystemMessage(`Level up! You are now level ${payload.leveledUpTo}.`);
-			}
-		);
+		hub.on('ExperienceGained', (payload: ExperienceGainedPayload) => {
+			// A level-up rewrites the derived pools on the server, so the payload carries them: without this the
+			// sheet would keep drawing the old bar next to the new level until the next character load. The banked
+			// attribute points come along for the same reason — the allocation panel budgets from them, so a level
+			// that banks points must enable it without a re-select. A payload without the field (an older server)
+			// leaves the balance alone; 0 is a real balance, so the check is undefined, not truthiness.
+			this.stats = {
+				...this.stats,
+				level: payload.newLevel,
+				experience: payload.newExperience,
+				...(payload.maxHealth ? { maxHealth: payload.maxHealth } : {}),
+				...(payload.currentHealth !== undefined ? { currentHealth: payload.currentHealth } : {}),
+				...(payload.maxMana ? { maxMana: payload.maxMana } : {}),
+				...(payload.currentMana !== undefined ? { currentMana: payload.currentMana } : {}),
+				...(payload.unspentAttributePoints !== undefined
+					? { unspentAttributePoints: payload.unspentAttributePoints }
+					: {})
+			};
+			if (payload.leveledUp)
+				this.addSystemMessage(`Level up! You are now level ${payload.leveledUpTo}.`);
+		});
 
 		hub.on('GoldChanged', (payload: { goldAdded: number; newGoldTotal: number }) => {
 			this.stats = { ...this.stats, gold: payload.newGoldTotal };

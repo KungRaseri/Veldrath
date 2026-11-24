@@ -440,7 +440,13 @@ public class GameHubQuestItemTests : IDisposable
             Quests = [],
         });
         mediator.Returns(new AddGoldHubResult { Success = true, GoldAdded = 25, NewGoldTotal = 125 });
-        mediator.Returns(new GainExperienceHubResult { Success = true, NewLevel = 2, NewExperience = 60 });
+        mediator.Returns(new GainExperienceHubResult
+        {
+            Success = true,
+            NewLevel = 2,
+            NewExperience = 60,
+            UnspentAttributePoints = 7,
+        });
 
         await hub.TurnInQuest("rats");
 
@@ -449,6 +455,25 @@ public class GameHubQuestItemTests : IDisposable
         var xp = mediator.Invocations.Select(i => i.Arguments[0]).OfType<GainExperienceHubCommand>().Single();
         xp.Amount.Should().Be(60);
         xp.Source.Should().Be("Quest");
+
+        // The turn-in is the only thing that tells the client what the award paid: the level, the pools a
+        // level-up re-derives, and the attribute points it banked — the allocation panel budgets from that last
+        // number, so a missing field leaves the panel disabled until the player re-selects.
+        var experience = clients.Caller.SentMessages.Single(m => m.Method == "ExperienceGained").Args[0];
+        experience.Should().BeEquivalentTo(new
+        {
+            CharacterId = characterId,
+            NewLevel = 2,
+            NewExperience = 60L,
+            LeveledUp = false,
+            LeveledUpTo = (int?)null,
+            MaxHealth = 0,
+            CurrentHealth = 0,
+            MaxMana = 0,
+            CurrentMana = 0,
+            UnspentAttributePoints = 7,
+            Source = "Quest",
+        });
 
         var payload = clients.Caller.SentMessages.Single(m => m.Method == "QuestTurnedIn").Args[0];
         payload.Should().BeEquivalentTo(new { CharacterId = characterId, Slug = "rats", GoldReward = 25, XpReward = 60 });
