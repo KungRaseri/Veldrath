@@ -38,11 +38,11 @@ covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
   (ZoneLocationsSeeder.cs: the ashfields, smoldering-reach and kaldrek-maw zone
-  headers) and hostile archetypes to MinLevel 26 (ArchetypeSeeder.cs:662). 1-26
+  headers) and hostile archetypes to MinLevel 26 (ArchetypeSeeder.cs:1615). 1-26
   covers 1-20 with no gap, so it is the 1-20 table plus the three zones that would
   otherwise be stranded. See decision 1. Extended to 1-30 on 2026-11-20 by C4,
   because the seeded content already reaches level 30 on its own: fire-ancient is
-  seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
+  seeded 26-30 (:1615-1616) and all three kaldrek-maw rooms run to L30
   (ZoneLocationsSeeder.cs: the maw-descent, fire-ancients-chamber and kaldreks-heart
   room blocks — 26-30, 26-30 and 28-30), so with 1-26 the top band stops four levels
   short of the rooms it has to describe. Levels 27-30 are the four the ladder was
@@ -150,7 +150,7 @@ bands:
       - "gold: both ends take the +5/+15 step b19-22's [25, 60] -> b23-26's [30, 75] took; fire-ancient's 150-300 is inside band x bosses.gold_multiplier [2, 4] = [70, 360]."
       - "drop_chance continues the -0.02/-0.05 step (b23-26's 0.08-0.30 from b19-22's 0.10-0.35); the floor is a range, not a trend to zero."
     note: >-
-      One seeded archetype and it is a boss: fire-ancient (26-30, 900 HP, ArchetypeSeeder.cs:669),
+      One seeded archetype and it is a boss: fire-ancient (26-30, 900 HP, ArchetypeSeeder.cs:1622),
       which D0 holds out of every pool (bosses.placement). The band's non-boss rows are authored,
       not seeded — ash-eater (26-30) and maw-serpent (28-30), D6/L6, archetypes.md. No boss is
       authored for this band: boss placement stays held for a uniqueness mechanism.
@@ -192,7 +192,7 @@ wiring:
       Stats.ExperienceReward lands on Enemy.XP (ActorTemplateProjection.cs:133-136 — the archetype value,
       or a named instance's override composed over it, ActorInstancesSeeder.cs:115, :142), and the spawn
       copies it into BaseXp (ActorPoolResolver.cs:188). The seeded archetypes author it
-      (ArchetypeSeeder.cs:98, 143, 187, 232 …), so a kill is worth the authored reward; 25 (Enemy.cs:147)
+      (ArchetypeSeeder.cs:142, 187, 322, 367 …), so a kill is worth the authored reward; 25 (Enemy.cs:147)
       is only the unauthored default.
   gold:
     live: true
@@ -299,7 +299,7 @@ bosses:
   gold_multiplier: [2, 4]
   multiplier_basis: >-
     measured, not assumed: bandit-captain 220 HP vs moor-wight 90 in the same band (2.4x,
-    ArchetypeSeeder.cs:268 vs :312); fire-ancient 900 vs pyreling 320 (2.8x, :669 vs :624). The
+    ArchetypeSeeder.cs:493 vs :538); fire-ancient 900 vs pyreling 320 (2.8x, :1622 vs :1352). The
     card's 4-6 placeholder would put a b15-18 boss at 1120-1680 HP.
   placement: >-
     one per dungeon zone, on its deepest location — only a dungeon has a lobby, an instance
@@ -396,7 +396,7 @@ merchants:
     gold: >-
       Live — as the merchant's purse, not as a per-kill reward. ActorArchetype.Stats.TradeGold is defined
       (RealmEngine.Data/Entities/Content/ActorArchetype.cs:91), seeded at 250 on village-blacksmith, 200 on
-      tavern-keeper and 0 on wayfarer-elder (RealmEngine.Data/Seeders/ArchetypeSeeder.cs:734, :767, :800), and
+      tavern-keeper and 0 on wayfarer-elder (RealmEngine.Data/Seeders/ArchetypeSeeder.cs:1687, :1720, :1753), and
       offered to the Foundry editor as an integer field (Veldrath.Contracts/Content/ContentSchema.cs:279). The shop
       resolver copies it onto the merchant it hands the handler (ShopMerchantResolver.cs:104-110), and a buyback
       larger than it is refused as ShopRefusal.MerchantCannotAfford, with the purse in the message

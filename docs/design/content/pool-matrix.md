@@ -457,7 +457,7 @@ still D6's to close or D5's to accept.
 things that existed at that height:
 
 - **`fire-ancient` was the only seeded archetype there when the band was published** — 900 HP, 42 damage,
-  1200 XP, 150–300 gold, seeded 26–30 (`ArchetypeSeeder.cs:662-669`). It is a boss and stays out of every
+  1200 XP, 150–300 gold, seeded 26–30 (`ArchetypeSeeder.cs:1611-1633`). It is a boss and stays out of every
   pool, so it set the band's *ceiling* rather than its population: `hp.max` is 450 exactly because 900 / 2
   is the floor of D0's approved `bosses.hp_multiplier`, and `xp` and `gold` check out against the same
   multipliers.
