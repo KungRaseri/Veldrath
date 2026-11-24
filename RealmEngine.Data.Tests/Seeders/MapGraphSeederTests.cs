@@ -202,6 +202,68 @@ public class MapGraphSeederTests
             n.TargetNodeId == "region:varenmark:entry");
     }
 
+    [Fact]
+    public async Task SeedAsync_EveryLiveZoneCanBeEnteredThroughADoorRatherThanItsRegionNode()
+    {
+        // The seeder links every region Zone node to its zone map, so a reachability rule that counts any
+        // target sees every zone as reachable and cannot tell a zone with a door from one a player can only
+        // reach by standing on the region board next to its marker. A zone authored without a door has to be
+        // visible here: the Drowning Pits sat live and unenterable while every per-map rule passed.
+        await using var db = CreateDbContext();
+
+        await MapGraphSeeder.SeedAsync(db);
+
+        var maps = await db.Maps
+            .Include(m => m.Nodes)
+            .Include(m => m.Edges)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var result = MapGraphValidator.ValidateWorld(
+            maps.Select(ToGraph).ToList(),
+            liveMapIds: maps
+                .Where(m => m.IsActive && m.MapType == MapType.Zone)
+                .Select(m => m.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase));
+
+        var reachableOnlyFromARegionNode = result.Issues
+            .Where(issue => issue.Code == "map_unreachable")
+            .Select(issue => issue.MapId!)
+            .OrderBy(mapId => mapId, StringComparer.Ordinal)
+            .ToList();
+
+        reachableOnlyFromARegionNode.Should().NotContain("zone:drowning-pits",
+            "the descent from Grevenmire is the repair every zone below needs, and this journey proved it works");
+        reachableOnlyFromARegionNode.Should().BeSubsetOf(SeededZonesWithNoInboundDoor,
+            "a zone that is not on the debt list and has no door on another map was authored without one: add the " +
+            "ZoneExit a neighbouring zone map needs rather than adding it here");
+    }
+
+    /// <summary>
+    /// Live zone maps that no door on another map leads to, so the only way in is the marker on their region
+    /// board and a character can reach them only by being next to that marker. Fixing one is content work: add a
+    /// <c>ZoneExit</c> on a neighbouring zone map, the shape of <c>zone:grevenmire:exit:zone:drowning-pits</c>,
+    /// and delete its row here. The list may only shrink.
+    /// </summary>
+    private static readonly string[] SeededZonesWithNoInboundDoor =
+    [
+        "zone:aldenmere",
+        "zone:ashfields",
+        "zone:barrow-deeps",
+        "zone:kaldrek-maw",
+        "zone:pale-moor",
+        // The dev sandbox is entered by the test harness, not on foot, and is invisible to players.
+        "zone:playground",
+        "zone:saltcliff-heights",
+        "zone:skarhold",
+        "zone:smoldering-reach",
+        "zone:soddenfen",
+        "zone:sunken-name",
+        "zone:the-halrow",
+        "zone:tidewrack-flats",
+        "zone:tolvaren",
+    ];
+
     /// <summary>
     /// Asserts that one bypass walk exists in both directions and is an ordinary visible walk.
     /// </summary>

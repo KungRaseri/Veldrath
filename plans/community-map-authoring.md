@@ -92,7 +92,9 @@ flowchart TD
 ### J3 — Validator rules
 
 - `map_unreachable` (**warning**): a map that no other map's exit targets and that is not the world/region
-  entry. The world root is still reserved, so this starts as a warning and becomes an error once a root exists.
+  entry. A region board's `Zone` node does not count: it names where a board marker leads, and the board is not
+  a through-route, so counting it hid every zone that has no actual door. The world root is still reserved, so
+  this starts as a warning and becomes an error once a root exists.
 - `location_missing_node` (**warning**): on a Zone map, a `ZoneLocation` whose zone is this map's owner but
   which no node references.
 - `node_reference_zone_mismatch` (**error**): a `Location` node whose slug belongs to a different zone.

@@ -811,6 +811,103 @@ public class MapGraphValidatorIssueCodeTests
     }
 
     [Fact]
+    public void ValidateWorld_DoesNotCountARegionBoardMarkerAsADoor()
+    {
+        // Arrange — the region board points its zone marker at the zone map so travelling to the marker enters
+        // it, but no map has a door into the zone: the character has to be standing next to the marker first.
+        var region = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "region:test"),
+                Node(
+                    "marker",
+                    MapNodeType.Zone,
+                    refId: "lonely",
+                    mapId: "region:test",
+                    targetMapId: "zone:lonely"),
+            ],
+            [Edge("entry", "marker", MapDirection.North, "region:test")],
+            id: "region:test",
+            ownerId: "test",
+            mapType: MapType.Region);
+        var zone = Graph(MinimalGraph(), MinimalEdges(), id: "zone:lonely", ownerId: "lonely");
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [region, zone],
+            knownZoneSlugs: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "lonely", "other" },
+            liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "zone:lonely" });
+
+        // Assert
+        result.Issues.Should().Contain(issue =>
+            issue.Code == "map_unreachable" &&
+            issue.Severity == MapGraphValidationSeverity.Warning &&
+            issue.MapId == "zone:lonely");
+    }
+
+    [Fact]
+    public void ValidateWorld_CountsAZoneExitOnAnotherZoneAsADoor()
+    {
+        // Arrange — the neighbouring zone offers a ZoneExit into the lonely zone, which is a door a character
+        // standing on that zone map can use.
+        var neighbour = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "zone:other"),
+                Node(
+                    "door",
+                    MapNodeType.ZoneExit,
+                    isExit: true,
+                    mapId: "zone:other",
+                    targetMapId: "zone:lonely",
+                    targetNodeId: "entry"),
+            ],
+            [Edge("entry", "door", MapDirection.North, "zone:other")],
+            id: "zone:other",
+            ownerId: "other");
+        var zone = Graph(MinimalGraph(), MinimalEdges(), id: "zone:lonely", ownerId: "lonely");
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [neighbour, zone],
+            liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "zone:lonely" });
+
+        // Assert
+        Codes(result).Should().NotContain("map_unreachable");
+    }
+
+    [Fact]
+    public void ValidateWorld_DoesNotWarnAboutAnInteriorItsOwningLocationOpensInto()
+    {
+        // Arrange — an interior is entered from the location that owns it rather than from a door on another
+        // map, so the location's own target is the proof that the rooms can be reached.
+        var zone = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true),
+                Node(
+                    "cellar-door",
+                    MapNodeType.Location,
+                    refId: "cellar",
+                    targetMapId: "interior:cellar",
+                    targetNodeId: "entry"),
+            ],
+            [Edge("entry", "cellar-door", MapDirection.North)]);
+        var interior = Graph(
+            MinimalGraph("interior:cellar"),
+            MinimalEdges("interior:cellar"),
+            id: "interior:cellar",
+            ownerId: "cellar",
+            mapType: MapType.Interior);
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [zone, interior],
+            knownLocationSlugs: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "cellar" },
+            liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "interior:cellar" });
+
+        // Assert
+        Codes(result).Should().NotContain("map_unreachable");
+    }
+
+    [Fact]
     public void ValidateWorld_DoesNotWarnAboutADraftNobodyLinksTo()
     {
         // Arrange
