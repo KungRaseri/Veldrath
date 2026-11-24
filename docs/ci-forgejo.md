@@ -390,9 +390,11 @@ branch main`); enabling push for one account is a separate switch.
 What each exception costs, stated plainly:
 
 - `apply_to_admins: false` hands *repository* admins the `force_merge` override that
-  `CheckPullMergeable` already gives an instance admin. The instance has one account, so
-  today this changes nothing for the person operating it; it matters the day a second admin
-  exists.
+  `CheckPullMergeable` already gives an instance admin. The instance has exactly one *admin*
+  account, `kungraseri`; every other account — `dev-designer`, `dev-developer`, `dev-reviewer`
+  and the `hermes` service account at the 2026-11-24 read-back of `GET /api/v1/admin/users` —
+  is not an admin, so the exemption changes nothing for them. It is a one-admin switch, and it
+  matters the day a second admin exists.
 - `main` accepts pushes from exactly one account, `kungraseri`. Every other identity, and
   every push to `development`, is still refused by the pre-receive hook. A direct push to
   `main` skips the status checks, so it is for repairing a broken deployment, never for
@@ -585,10 +587,11 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
   protection error when `force_merge` is set and the doer is an instance admin, and because
   `apply_to_admins` is now `false` a *repository* admin gets the same override. That is the
   break-glass path — a stuck `pending` status must never lock the only operator out — and
-  it is why this rule is a review contract, not a lock. Every worker here authenticates as that
-  account, so the override is available to an agent, not only to the human at the keyboard: the
-  gate is enforced by discipline, and a worker that runs `force_merge` is self-certifying. Use it
-  to unblock, never to land a red change.
+  it is why this rule is a review contract, not a lock. The override follows the token, not the
+  person at the keyboard: whoever runs a job under `kungraseri` can set `force_merge`, and today
+  that includes worker profiles still using the shared admin token, so the override is reachable
+  by an agent and not only by the human. The gate is enforced by discipline, and a worker that
+  runs `force_merge` is self-certifying. Use it to unblock, never to land a red change.
 - **Direct pushes to `main`.** Exactly one account, `kungraseri`, may push there; `development`
   refuses every push, and that refusal was exercised: `git push` to it answers
   `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The
