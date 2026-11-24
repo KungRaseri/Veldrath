@@ -16,10 +16,6 @@ Historical note: DbContext separation was established in session-6 when `GameDbC
 - `ActorClassDto` ctor gained `HitDie` (int), `PrimaryStat` (string), `RarityWeight` (int)
 - All `new ActorClassDto(slug, name, typeKey)` calls must be updated to include all 6 params
 
-### AvailableClasses Test
-- `CharacterSelectViewModel.LoadAsync` fires-and-forgets on construction; completes synchronously if `FakeContentService` returns `Task.FromResult`
-- Fallback test: use `new FakeContentService { Classes = [] }` + `await Task.Delay(50)` before asserting
-- Catalog-populated test: pass non-empty classes + same delay
-
-### FakeServerConnectionService
-- Tracks sent commands in `SentCommands` list (added session-3)
+### Available Classes — the client test this covered is gone
+- The `CharacterSelectViewModel.LoadAsync` / `FakeContentService` fire-and-forget gotcha (`Task.Delay(50)` after construction) went with the Avalonia client in session-68 (2026-10-25): neither type exists, and `FakeServerConnectionService` — the other client test fixture noted here — went with it.
+- The path those tests exercised lives in the engine: `BeginCreationSessionHandler` asks `GetAvailableClassesQuery`, and both answers are pinned without any delay in `RealmEngine.Core.Tests/Features/CharacterCreation/` — `Queries/NewCharacterClassQueryHandlerTests.cs` (`Handle_ReturnsFailure_WhenNoClassesExist`) and `Commands/BeginCreationSessionHandlerTests.cs` (`Handle_ReturnsAvailableClasses_FromMediator`).

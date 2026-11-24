@@ -10,7 +10,7 @@
 ## Decisions Made
 
 - **CC-P3-1 Starting location:** Static hardcode — all new characters start at `"fenwick-market"` (implemented as `private const string DefaultStartingLocationSlug` in `CharacterCreationSessionEndpoints.cs`)
-- **P1-4 Token refresh failure:** Auto-disconnect + redirect to main menu; existing offline/disconnected UX handles recovery from there
+- **P1-4 Token refresh failure:** Auto-disconnect + back to the character roster (`/characters`, the `returnToCharacters` handler in `web/client/src/routes/play/[id]/+page.svelte`); the player re-enters the world from the roster
 
 ---
 
@@ -29,7 +29,7 @@ File: `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`
 ## Phase 1: Structural Gap Fixes — ✅ DONE
 
 - Static starting location (`fenwick-market`) implemented in `CharacterCreationSessionEndpoints.cs`
-- Auto-disconnect on token refresh failure implemented (`ConnectionLost` event on `IServerConnectionService`, wired in `GameViewModel` and `CharacterSelectViewModel`)
+- Auto-disconnect on token refresh failure: the Avalonia `ConnectionLost` event on `IServerConnectionService`, and both view models it was wired into, went with that client (session-68). The web hub takes its token from `accessTokenFactory` → `/api/game-token` ([`web/client/src/lib/hub.ts`](../../web/client/src/lib/hub.ts)), so a token that cannot be minted fails the connect; SignalR's automatic reconnect moves `session.phase` to `reconnecting`, a closed connection sets `failed`, and a kick sets `disconnected`, which `GameScreen.svelte` renders as the Disconnected panel with Back to characters (both in `web/client/src/lib/game/`).
 - All associated tests pass
 
 ## Phase 2: P1 Test Coverage + Auth Hardening Pass 2 — ✅ DONE
