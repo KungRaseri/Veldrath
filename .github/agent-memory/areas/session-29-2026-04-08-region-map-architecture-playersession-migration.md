@@ -34,8 +34,15 @@ Replaces `ZoneSession`. New properties vs old:
 
 **Fields today** (read from the entity): `Id`, `CharacterId`, `CharacterName`, `ConnectionId`, `RegionId`,
 `ZoneId`, `CurrentMapId`, `CurrentNodeId`, `ZoneInstanceId`, `EnteredAt`. Position on the map graph is the
-`CurrentMapId` / `CurrentNodeId` pair; `ZoneInstanceId` is the instance-run membership pointer a reconnect
-resumes into. `ZoneSession` exists nowhere.
+`CurrentMapId` / `CurrentNodeId` pair. `ZoneInstanceId` is the run pointer for the zone instance the character is
+inside, `null` in the shared zone: `GameHub.ApplyArrivalGroupAsync` writes it when a travel resolves into a run and
+clears it on a shared-zone arrival, the run's chests, floor loot and enemy rows are scoped by it
+(`ChestHubCommands`, `GroundItemHubCommands`, `EfCoreZoneInstanceService`), `LeaveCurrentZoneAsync` closes the
+character's participation from it, and admin counts occupants by it. A reconnect does **not** carry it: the client's
+`onreconnected` calls `restoreSession()`, which calls `SelectCharacter`, and that removes the stale session and
+inserts a fresh one with `ZoneId = null` and no run pointer, landing the character on the region map at
+`ResolveResumeNodeId`. Two doc comments still promise otherwise — the `ZoneInstanceId` summary in `PlayerSession.cs`
+and the summary above `ApplyArrivalGroupAsync` — and the bodies do not. `ZoneSession` exists nowhere.
 
 ### IPlayerSessionRepository (in `IZoneRepository.cs`)
 Replaces `IZoneSessionRepository`. Same core methods plus new:
@@ -47,7 +54,9 @@ Replaces `IZoneSessionRepository`. Same core methods plus new:
 **The interface today**: `GetByZoneIdAsync`, `GetByRegionIdAsync`, `GetOnRegionMapAsync`, `GetByConnectionIdAsync`,
 `GetByCharacterIdAsync`, `GetByCharacterNameAsync`, `AddAsync`, `RemoveAsync`, `RemoveByConnectionIdAsync`,
 `UpdateMapPositionAsync(characterId, mapId, nodeId, zoneId, regionId)` and `SetZoneInstanceAsync(characterId, instanceId)`.
-The position write is the map-graph pair; the instance pointer is what a reconnect resumes into.
+The position write is the map-graph pair; `SetZoneInstanceAsync` writes the run pointer, which scopes the run's
+chests, floor loot and enemies — a reconnect does not restore it, because `SelectCharacter` builds the new session
+without it.
 
 ### Repository (`PlayerSessionRepository` in `ZoneRepository.cs`)
 Replaces `ZoneSessionRepository`. Implements all 11 interface methods.

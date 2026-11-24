@@ -15,7 +15,9 @@ title: "P3 Stubs Status"
 > Two pointers into live code: item 5's server half (`VisitShopHubCommand`, its handler and `GameHub.VisitShop`)
 > still ships, with the web overlay in `web/client/src/lib/game/GameOverlays.svelte` as its client; the
 > announcements half of item 6 survives as `Veldrath.Server/Features/Announcements`.
-> [`engine-codebase.md`](../engine-codebase.md) points here for the full P3 status, so the list stays; the
+> The list stays as the closed record. `engine-codebase.md`'s P3 section points at
+> [`veldrath-memory.md`](../veldrath-memory.md) and keeps only a one-line summary; nothing links here, and since the
+> hub stopped committing a table (#301) there is nothing to link from — the `areas/` folder is the index. The
 > per-session dates are in [`session-log.md`](session-log.md).
 
 1. ~~`MainMenuViewModel.SettingsCommand`~~ — FIXED session-3: navigates to `SettingsViewModel`

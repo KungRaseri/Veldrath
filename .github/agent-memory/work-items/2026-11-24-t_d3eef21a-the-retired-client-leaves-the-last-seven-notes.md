@@ -9,15 +9,17 @@ title: "The retired client leaves the last seven notes"
 ### Session t_d3eef21a (2026-11-24) — The retired client leaves the last seven notes
 
 Seven notes still named the Avalonia client's view models as current wiring. Six were scoped to a flagged line
-each; `p3-stubs-status.md` was judged as a whole. Every replacement claim was read out of the source at
-`development@dabc40aa` (the merge of #293), not inferred.
+each; `p3-stubs-status.md` was judged as a whole. Every replacement claim was read out of the source, not inferred:
+round 1 at `development@dabc40aa` (the merge of #293), round 2 at `development@b47d654d`.
 
-- `areas/p3-stubs-status.md` was **kept and given a banner rather than deleted**: `engine-codebase.md:323` points
-  here for the full P3 status, so deletion would have broken a live cross-reference. The banner says the six items
-  are closed Avalonia-client fixes, and names the two halves that survive — item 5's `VisitShopHubCommand` /
-  `GameHub.VisitShop` (client half: the shop dialog in `web/client/src/lib/game/GameOverlays.svelte`) and item 6's
-  `Veldrath.Server/Features/Announcements` endpoints. `session-log.md` already carries the session-3/5/9/17 dates,
-  and item 6's "(see below)" is gone because there was nothing below it.
+- `areas/p3-stubs-status.md` was **kept and given a banner rather than deleted**: it is the itemised record of the
+  six stubs. Nothing links to it — `engine-codebase.md:323` points at `veldrath-memory.md`, and since #301 the hub
+  commits no table, because the `areas/` folder is the index — so it is found by path, not by reference. The banner
+  says the six items are closed Avalonia-client fixes, and names the two halves that survive — item 5's
+  `VisitShopHubCommand` / `GameHub.VisitShop` (client half: the shop dialog in
+  `web/client/src/lib/game/GameOverlays.svelte`) and item 6's `Veldrath.Server/Features/Announcements` endpoints.
+  `session-log.md` already carries the session-3/5/9/17 dates, and item 6's "(see below)" is gone because there was
+  nothing below it.
 - `areas/clientsettings-new-session-5.md` got a retirement banner plus the mechanism that replaced it: no settings
   singleton and no runtime server picker; `PUBLIC_API_URL`/`PUBLIC_HUB_URL` declared in `web/client/src/env.ts` and
   inlined at build time; the hub built in `lib/hub.ts` (throws on an empty variable, refuses an `http:` hub from an
@@ -41,7 +43,12 @@ each; `p3-stubs-status.md` was judged as a whole. Every replacement claim was re
   region map, removed 2026-10-22 in session-46). `PlayerSession`'s current fields and the eleven-method
   `IPlayerSessionRepository` are recorded; phases 3–8 are marked never built, and the "Phase 7: Client hub wiring in
   `CharacterSelectViewModel` + `GameViewModel`" item is replaced by what travel actually uses — `GameHub.GetMapGraph`
-  / `TravelToNode`, called from `session.svelte.ts` and drawn by `CardinalMap.svelte`.
+  / `TravelToNode`, called from `session.svelte.ts` and drawn by `CardinalMap.svelte`. Round 2 corrected the run
+  pointer: `PlayerSession.ZoneInstanceId` does **not** survive a reconnect. `SelectCharacter` — the call
+  `restoreSession()` makes after `onreconnected` — deletes the stale session and inserts a fresh one with
+  `ZoneId = null` and no run pointer, so the character comes back to the region map at `ResolveResumeNodeId`. The
+  pointer is written by `ApplyArrivalGroupAsync` on arrival into a run, and read to scope that run's chests, floor
+  loot and enemy rows and to close participation on leave.
 - `auth-and-character-creation-plan.md`: the `ConnectionLost` fix now describes the web path (per-connection token
   from `/api/game-token`, SignalR automatic reconnect, `failed` and `disconnected` phases, the Disconnected panel in
   `GameScreen.svelte`), and the P1-4 decision returns the player to `/characters` rather than a "main menu".
