@@ -155,10 +155,19 @@ Two rows have one: `gull-rider-skirmisher` and `gull-rider-brute`. Their mark is
 harpoon crossing the top-right break, plus up-draught tension at 12 o'clock** (rope and hair pulled
 upward). That is the whole faction vocabulary.
 
-The other 25 hostile rows are `none recorded` — 23 of them explicitly "no organisation". The roster
-states that as a finding, not an omission (`archetypes.md`, "Only two rows tie to a real faction").
-**No badge, crest, colour or motif is invented for a factionless row**, because a badge asserts
-canon the roster withheld pending proposals 6–7.
+Every other hostile row carries no mark, because the roster gives it no faction: `none recorded`, or
+a parenthetical that says the same thing in longer words (`unaffiliated banditry (no organisation)`,
+`independent vent-claimants — no organisation`). The roster states that as a finding, not an
+omission (`archetypes.md`, "Only two rows tie to a real faction"). **No badge, crest, colour or motif
+is invented for a factionless row**, because a badge asserts canon the roster withheld pending
+proposals 6–7.
+
+R4 deliberately counts no rows. A hostile-row tally is a fact about how big the roster is, and the
+roster grows with every content wave — a number written here rots; the rule is what has to hold, and
+the two tied rows named above are the whole of the check. **If a third tie is taken up**, R4 needs a
+third mark or a written exemption before a portrait is drawn. The candidate the roster records is
+`goblin-scout` → `goblin-warband` (`archetypes.md`, *Faction proposals the roster would use once
+approved*); no third mark exists today, and adding one is a portrait decision.
 
 ### 2.5 The gate, and the proof it gates
 
