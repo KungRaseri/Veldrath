@@ -326,6 +326,43 @@ describe('GameSession combat and stat events', () => {
 		expect(session.attributes.dexterity).toBe(11);
 		expect(session.stats.unspentAttributePoints).toBe(1);
 	});
+
+	it('adopts the banked attribute points a level-up reports', async () => {
+		const session = await connected();
+		// The state after selecting the character: level 2, no points banked yet, allocation disabled.
+		session.stats = { ...session.stats, level: 2, experience: 90, unspentAttributePoints: 0 };
+
+		hub.emit('ExperienceGained', {
+			characterId: 'char-1',
+			newLevel: 3,
+			newExperience: 0,
+			leveledUp: true,
+			leveledUpTo: 3,
+			unspentAttributePoints: 3,
+			source: 'Quest'
+		});
+
+		// No re-select: the panel's budget is the value the turn-in just banked.
+		expect(session.stats.unspentAttributePoints).toBe(3);
+		expect(session.stats).toMatchObject({ level: 3, experience: 0 });
+		expect(session.chat.at(-1)?.message).toBe('Level up! You are now level 3.');
+	});
+
+	it('keeps the current balance when the experience event carries none', async () => {
+		const session = await connected();
+		session.stats = { ...session.stats, unspentAttributePoints: 2 };
+
+		hub.emit('ExperienceGained', {
+			newLevel: 2,
+			newExperience: 10,
+			leveledUp: false,
+			leveledUpTo: 0
+		});
+
+		// An award inside the level carries no balance change; an older server omits the field entirely.
+		expect(session.stats.unspentAttributePoints).toBe(2);
+		expect(session.stats).toMatchObject({ level: 2, experience: 10 });
+	});
 });
 
 describe('GameSession map and location events', () => {

@@ -2438,7 +2438,9 @@ public class GameHub : Hub
             {
                 // The award is server-side only now, so the turn-in is what tells the client what it paid. The
                 // payload carries the re-derived pools too: a level-up raises MaxHealth/MaxMana, and without them
-                // the sheet would keep drawing the old bar until the next character load.
+                // the sheet would keep drawing the old bar until the next character load. The banked attribute
+                // points ride along for the same reason — the allocation panel budgets from them, so a level that
+                // banks points has to enable it without a re-select.
                 await Clients.Caller.SendAsync("ExperienceGained", new
                 {
                     CharacterId = characterId,
@@ -2450,6 +2452,7 @@ public class GameHub : Hub
                     xpResult.CurrentHealth,
                     xpResult.MaxMana,
                     xpResult.CurrentMana,
+                    xpResult.UnspentAttributePoints,
                     Source = "Quest",
                 });
 
