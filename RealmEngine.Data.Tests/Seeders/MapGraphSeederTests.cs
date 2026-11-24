@@ -158,12 +158,16 @@ public class MapGraphSeederTests
             .ToList();
 
         doors.Should().HaveCount(23, "the seeder authors 23 ZoneExit nodes across the zone maps");
+        doors.Should().OnlyContain(
+            entry => !entry.Door.IsHidden,
+            "a hidden exit is not drawn on the map and this walk never enters a hidden node, so hiding a door takes " +
+            "it out of reach while the walk still reports the map as walkable; if a hidden door is ever wanted, " +
+            "the walk and the named-discovery list both have to learn about it first");
 
         var unreachable = new List<string>();
 
         foreach (var (map, door) in doors)
         {
-            if (door.IsHidden) continue;
             if (WalkVisibleGraphFromArrival(map).Contains(door.Id)) continue;
             if (ZoneExitsWaitingBehindADiscovery.ContainsKey(door.Id)) continue;
 
