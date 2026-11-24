@@ -28,6 +28,7 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
     private UseAbilityInCombatHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
             new CharacterRepository(db),
+            Mock.Of<ICharacterClassRepository>(),
             Mock.Of<IPowerRepository>(),
             _enemies,
             _sessions,

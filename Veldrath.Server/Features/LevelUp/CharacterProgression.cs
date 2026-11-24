@@ -9,10 +9,9 @@ namespace Veldrath.Server.Features.LevelUp;
 /// pools a level-up has to rewrite in the attributes blob.
 /// </summary>
 /// <remarks>
-/// <see cref="GainExperienceHubCommandHandler"/> is its only caller today. The combat reward path
-/// (<c>CombatHelpers.DistributeRewardsAsync</c>) still writes <c>Experience</c> directly and never applies a level;
-/// that gap is tracked separately, and this helper is the shape that path should adopt once the combat payload can
-/// carry the level and the pools.
+/// <see cref="GainExperienceHubCommandHandler"/> (quest turn-in and the dev experience endpoint) and the combat
+/// reward path (<c>CombatHelpers.DistributeRewardsAsync</c>) are its callers: every stored award goes through here,
+/// so a kill and a quest pay a level the same way.
 /// The engine's own <see cref="RealmEngine.Shared.Models.Character.GainExperience(int)"/> recomputes health and mana
 /// on a level-up; the server blob carries the authoritative numbers, and when only <c>Level</c>/<c>Experience</c>
 /// were written every level-up was cosmetic — a level-6 character kept the level-1 120 HP bar.

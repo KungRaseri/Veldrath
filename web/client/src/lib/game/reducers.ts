@@ -83,6 +83,7 @@ export function describeCombatTurn(turn: CombatTurnPayload): string {
 		);
 	}
 	if (turn.xpEarned) parts.push(`+${turn.xpEarned} XP.`);
+	if (turn.leveledUp) parts.push(`Level up! You are now level ${turn.newLevel}.`);
 	if (turn.goldEarned) parts.push(`+${turn.goldEarned} gold.`);
 
 	// Loot is the one reward the player cannot infer from the numbers, so it is named.
@@ -100,11 +101,24 @@ export function applyCombatTurnToStats(
 	stats: CharacterStats,
 	turn: CombatTurnPayload
 ): CharacterStats {
+	// A kill that levels is banked server-side: `newExperience` is the remainder toward the next level, not the
+	// old total plus the award. Adding `xpEarned` would double-count the crossing and leave `level` behind, which
+	// is exactly the stale sheet this payload exists to prevent. Older servers omit the field, so the arithmetic
+	// stays the fallback for a turn that carries no progression.
+	const newLevel = turn.newLevel ?? null;
+	const levelled = newLevel !== null;
+
 	return {
 		...stats,
-		currentHealth: turn.playerRemainingHealth ?? stats.currentHealth,
-		currentMana: turn.playerRemainingMana ?? stats.currentMana,
-		experience: stats.experience + (turn.xpEarned ?? 0),
+		currentHealth: turn.playerRemainingHealth ?? turn.currentHealth ?? stats.currentHealth,
+		currentMana: turn.playerRemainingMana ?? turn.currentMana ?? stats.currentMana,
+		maxHealth: turn.maxHealth ?? stats.maxHealth,
+		maxMana: turn.maxMana ?? stats.maxMana,
+		level: levelled ? newLevel : stats.level,
+		experience: levelled
+			? (turn.newExperience ?? stats.experience)
+			: stats.experience + (turn.xpEarned ?? 0),
+		unspentAttributePoints: turn.unspentAttributePoints ?? stats.unspentAttributePoints,
 		gold: stats.gold + (turn.goldEarned ?? 0)
 	};
 }

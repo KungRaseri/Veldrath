@@ -80,6 +80,12 @@ public record UseAbilityInCombatHubResult
 
     /// <summary>Gets the gold awarded to this player when the enemy was defeated.</summary>
     public int GoldEarned { get; init; }
+
+    /// <summary>
+    /// Gets the level and pool state this player's share of the kill left them at, or <see langword="null"/> when
+    /// the turn paid no experience (or the caller was not credited with the kill).
+    /// </summary>
+    public CombatProgression? Progression { get; init; }
 }
 
 /// <summary>
@@ -94,6 +100,7 @@ public class UseAbilityInCombatHubCommandHandler
     private const int FallbackHealingAmount = 20;
 
     private readonly ICharacterRepository _characterRepo;
+    private readonly ICharacterClassRepository _classRepo;
     private readonly IPowerRepository _powerRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
@@ -103,6 +110,9 @@ public class UseAbilityInCombatHubCommandHandler
 
     /// <summary>Initializes a new instance of <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="classRepo">
+    /// Catalogue repository used to resolve the caster's class curve when a reward crosses a level.
+    /// </param>
     /// <param name="powerRepo">Repository for resolving ability costs and effects from the content database.</param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
@@ -111,6 +121,7 @@ public class UseAbilityInCombatHubCommandHandler
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public UseAbilityInCombatHubCommandHandler(
         ICharacterRepository characterRepo,
+        ICharacterClassRepository classRepo,
         IPowerRepository powerRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
@@ -119,6 +130,7 @@ public class UseAbilityInCombatHubCommandHandler
         IRandomSource? randomSource = null)
     {
         _characterRepo = characterRepo;
+        _classRepo = classRepo;
         _powerRepo = powerRepo;
         _enemies = enemies;
         _sessions = sessions;
@@ -244,12 +256,13 @@ public class UseAbilityInCombatHubCommandHandler
             entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
             await _characterRepo.UpdateAsync(entity, cancellationToken);
 
-            (Guid CharacterId, int Xp, int Gold) myReward = default;
+            CombatRewardShare? myReward = null;
 
             // Only the caller that wins the death transition distributes rewards.
             if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
             {
-                var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
+                var rewardList = await CombatHelpers.DistributeRewardsAsync(
+                    enemy, _characterRepo, _classRepo, _sessions, cancellationToken, _logger);
                 myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
             }
 
@@ -264,8 +277,9 @@ public class UseAbilityInCombatHubCommandHandler
                 EnemyDefeated = true,
                 EnemyName = enemy.Name,
                 PlayerRemainingHealth = player.Health,
-                XpEarned = myReward.Xp,
-                GoldEarned = myReward.Gold,
+                XpEarned = myReward?.Xp ?? 0,
+                GoldEarned = myReward?.Gold ?? 0,
+                Progression = myReward?.Progression,
             };
         }
 

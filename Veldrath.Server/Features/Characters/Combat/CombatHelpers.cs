@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Settings;
 using ServerCharacter = Veldrath.Server.Data.Entities.Character;
@@ -117,12 +118,14 @@ internal static class CombatHelpers
 
     // Splits the enemy's XP and gold across its contributors, awards each share and releases their combat
     // sessions. The shares always add up to the enemy's configured rewards — see CombatRewards.Split.
-    // Returns a list of (CharacterId, Xp, Gold) for broadcasting.
-    internal static async Task<List<(Guid CharacterId, int Xp, int Gold)>> DistributeRewardsAsync(
+    // Returns one CombatRewardShare per participant, carrying what the award left them at, for broadcasting.
+    internal static async Task<List<CombatRewardShare>> DistributeRewardsAsync(
         SpawnedEnemy enemy,
         ICharacterRepository repo,
+        ICharacterClassRepository classes,
         ICombatSessionStore sessions,
-        CancellationToken ct)
+        CancellationToken ct,
+        ILogger? logger = null)
     {
         // Atomic guard: only distribute once even under concurrent kills.
         bool alreadyRewarded;
@@ -145,21 +148,35 @@ internal static class CombatHelpers
         if (contributions.Count == 0 || contributions.Sum(contribution => contribution.Damage) <= 0)
             return [];
 
-        var rewards = new List<(Guid, int, int)>(contributions.Count);
+        var rewards = new List<CombatRewardShare>(contributions.Count);
 
         foreach (var share in CombatRewards.Split(enemy.BaseXp, enemy.GoldReward, contributions))
         {
+            CombatProgression? progression = null;
+
             var character = await repo.GetByIdAsync(share.CharacterId, ct);
             if (character is not null)
             {
                 var attrs = ParseAttrs(character.Attributes);
                 attrs["Gold"] = attrs.GetValueOrDefault("Gold") + share.Gold;
-                character.Experience += share.Xp;
+
+                // Combat XP goes through the same helper the quest turn-in and the dev endpoint use, so a kill
+                // that crosses a threshold moves Level and rewrites the derived pools exactly as they do.
+                // Writing Experience directly (what this did) left a career killer pinned at level 1 while the
+                // bar filled past every threshold. The class row keeps the new pools on the creation curve.
+                var progress = CharacterProgression.AwardExperience(
+                    character,
+                    share.Xp,
+                    attrs,
+                    ResolveCharacterClass(classes, character.ClassName, logger));
+
                 character.Attributes = SerializeAttrs(attrs);
                 await repo.UpdateAsync(character, ct);
+
+                progression = ToProgression(progress, attrs);
             }
 
-            rewards.Add((share.CharacterId, share.Xp, share.Gold));
+            rewards.Add(new CombatRewardShare(share.CharacterId, share.Xp, share.Gold, progression));
         }
 
         // Release every engaged player; the enemy row stays behind as a dead row with a respawn time, so the
@@ -168,6 +185,50 @@ internal static class CombatHelpers
 
         return rewards;
     }
+
+    // Resolves the catalogue row the character was created from so a combat level-up extends the class's own
+    // pool curve. A miss leaves CharacterProgression's engine formulas as the fallback.
+    private static CharacterClass? ResolveCharacterClass(
+        ICharacterClassRepository classes,
+        string? className,
+        ILogger? logger)
+    {
+        if (string.IsNullOrWhiteSpace(className))
+            return null;
+
+        try
+        {
+            return classes.GetByName(className);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A content read must never swallow a kill's reward; the award still lands, on the engine curve.
+            logger?.LogWarning(
+                ex,
+                "Could not resolve character class {ClassName}; deriving combat level-up pools from the engine formulas instead.",
+                className);
+            return null;
+        }
+    }
+
+    // Projects what the award left in the blob, mirroring the fields GainExperienceHubResult reports.
+    private static CombatProgression ToProgression(
+        CharacterProgression.Progress progress,
+        Dictionary<string, int> attrs) =>
+        new(
+            progress.OldLevel,
+            progress.NewLevel,
+            progress.RemainingExperience,
+            progress.LevelledUp,
+            attrs.GetValueOrDefault(CharacterProgression.KeyMaxHealth),
+            attrs.GetValueOrDefault(
+                CharacterProgression.KeyCurrentHealth,
+                attrs.GetValueOrDefault(CharacterProgression.KeyMaxHealth)),
+            attrs.GetValueOrDefault(CharacterProgression.KeyMaxMana),
+            attrs.GetValueOrDefault(
+                CharacterProgression.KeyCurrentMana,
+                attrs.GetValueOrDefault(CharacterProgression.KeyMaxMana)),
+            attrs.GetValueOrDefault(CharacterProgression.KeyUnspentAttributePoints));
 
     // Handles player death: HC → soft-delete; normal → the configured gold-or-XP penalty plus the death state.
     // Returns a DeathOutcome carrying whether the character died and what the death cost.
@@ -234,3 +295,12 @@ internal static class CombatHelpers
         return new DeathOutcome(true, false, applied);
     }
 }
+
+/// <summary>What one contributor's share of a kill paid, and the level state the award left them at.</summary>
+/// <param name="CharacterId">The credited character.</param>
+/// <param name="Xp">The experience share.</param>
+/// <param name="Gold">The gold share.</param>
+/// <param name="Progression">
+/// The level and pools after the award, or <see langword="null"/> when the character row could not be loaded.
+/// </param>
+internal sealed record CombatRewardShare(Guid CharacterId, int Xp, int Gold, CombatProgression? Progression);
