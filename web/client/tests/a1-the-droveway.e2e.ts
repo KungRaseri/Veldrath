@@ -55,8 +55,9 @@ import { makeAccount, register, stackEnabled, stackSkipReason } from './support/
  *  - **A specific archetype at the Drove Road.** A location's roster is one weighted roll per zone scope, created
  *    once and revived — not re-rolled — by the respawn sweeper (`EfCoreEnemyInstanceStore.GetAliveOrSpawnAsync`
  *    spawns only when the location has no rows at all, and `SweepExpiredRespawnsAsync` flips `IsAlive` back on the
- *    same rows). The zone scope is shared by every character in the zone (`zone:the-droveway`, `ZoneGroupName`), so
- *    demanding "a drove-cur appears" would either be a coin flip or a fight with whatever else is standing here.
+ *    same rows). The zone scope is shared by the characters of one difficulty mode (`zone:the-droveway_normal`,
+ *    `ZoneGroupName`), so demanding "a drove-cur appears" would either be a coin flip or a fight with whatever else
+ *    is standing here.
  *    What the spec demands instead is that *every* draw is a member of the imported pool, and it prefers a
  *    `drove-cur`/`peat-adder` when the roll produced one — the two the seeder's interim pool never named.
  *  - **The Sunken Fields on foot.** It is pooled by the pack (checked from the stored row), but it is hidden behind a

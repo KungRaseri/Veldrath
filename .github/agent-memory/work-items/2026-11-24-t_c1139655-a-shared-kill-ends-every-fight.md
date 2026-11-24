@@ -54,14 +54,15 @@ rows, and two consecutive full-suite runs lost the death journey this way while 
   least two living rows, and a pool draw there rolls 2–4 rows (`ActorPoolResolver.MinCount`/`MaxCount`) — so when it
   rolls 2, one kill in the shared `zone:the-droveway_normal` roster drops it to one until the 2 s respawn, and a1 read
   that window (measured: pair run on a fresh stack, a1 red
-  at `roster.length` 1 while encounters passed; a1 alone green). A wilderness scope is `zone:{zoneId}_{mode}`, so the
-  two encounters specs that kill now create **hardcore** characters: their roster is `zone:the-droveway_hardcore`,
-  which no other spec touches, and the `_normal` roster a1 reads is never depleted. The death journey stays `normal`
-  (hardcore never respawns, and it is the respawn test) and removes no row, so sharing costs it nothing. Verified in
-  the database after a pair run: `_hardcore` holds the killed rows, `_normal` still its two. One disclosure: a1's
-  `readRoster` query filters by location only, not zone group, so the hardcore rows count towards its `>= 2` — they
-  are ordinary pool draws (the assertion's own archetype and no-placement checks still apply) and a1 still has to
-  fight and kill a row it can see, so the coverage is intact, not vacuous.
+  at a roster count of 1 (`roster.length` then, `ownGroup.length` now) while encounters passed; a1 alone green). A
+  wilderness scope is `zone:{zoneId}_{mode}`, so the two encounters specs that kill now create **hardcore**
+  characters: their roster is `zone:the-droveway_hardcore`, which no other spec touches, and the `_normal` roster a1
+  reads is never depleted. The death journey stays `normal` (hardcore never respawns, and it is the respawn test) and
+  removes no row, so sharing costs it nothing. Verified in the database after a pair run: `_hardcore` holds the
+  killed rows, `_normal` still its two. One disclosure, since closed: a1's `readRoster` then filtered by location
+  only, not zone group, so the hardcore rows counted towards its `>= 2`. It now counts `zone:the-droveway_normal` —
+  the group its character joins — while the archetype and no-placement checks still run over the location-wide
+  union, because what a row may be does not depend on the group that wrote it.
 - **Negative control.** Commenting out only the `EndReleasedFightsAsync` call in `AttackEnemy` reddens exactly
   `AttackEnemy_On_A_Shared_Kill_Ends_The_Other_Fighters_Fight` (`Sequence contains no matching element` at the
   `CombatEnded` lookup) and leaves the other three shared-kill facts green.
