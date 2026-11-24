@@ -10,7 +10,8 @@ title: "The retired client leaves the last seven notes"
 
 Seven notes still named the Avalonia client's view models as current wiring. Six were scoped to a flagged line
 each; `p3-stubs-status.md` was judged as a whole. Every replacement claim was read out of the source, not inferred:
-round 1 at `development@dabc40aa` (the merge of #293), round 2 at `development@b47d654d`.
+round 1 at `development@dabc40aa` (the merge of #293), round 2 at `development@b47d654d`, round 3 at
+`development@a92ff353`.
 
 - `areas/p3-stubs-status.md` was **kept and given a banner rather than deleted**: it is the itemised record of the
   six stubs. Nothing links to it — `engine-codebase.md:323` points at `veldrath-memory.md`, and since #301 the hub
@@ -46,9 +47,12 @@ round 1 at `development@dabc40aa` (the merge of #293), round 2 at `development@b
   / `TravelToNode`, called from `session.svelte.ts` and drawn by `CardinalMap.svelte`. Round 2 corrected the run
   pointer: `PlayerSession.ZoneInstanceId` does **not** survive a reconnect. `SelectCharacter` — the call
   `restoreSession()` makes after `onreconnected` — deletes the stale session and inserts a fresh one with
-  `ZoneId = null` and no run pointer, so the character comes back to the region map at `ResolveResumeNodeId`. The
-  pointer is written by `ApplyArrivalGroupAsync` on arrival into a run, and read to scope that run's chests, floor
-  loot and enemy rows and to close participation on leave.
+  `ZoneId = null` and no run pointer at `ResolveResumeNodeId`; the `CharacterSelected` reply then carries
+  `CurrentZoneId`, and the shell answers it with `enterZone` (`session.svelte.ts:1404`), which builds a session
+  with `ZoneId` set, the saved location node and still no run pointer. So a player who dropped inside a zone
+  returns inside that zone in its shared scope with the run pointer gone; only a character on the region map stays
+  there. The pointer is written by `ApplyArrivalGroupAsync` on arrival into a run, and read to scope that run's
+  chests and floor loot and to close participation on leave.
 - `auth-and-character-creation-plan.md`: the `ConnectionLost` fix now describes the web path (per-connection token
   from `/api/game-token`, SignalR automatic reconnect, `failed` and `disconnected` phases, the Disconnected panel in
   `GameScreen.svelte`), and the P1-4 decision returns the player to `/characters` rather than a "main menu".

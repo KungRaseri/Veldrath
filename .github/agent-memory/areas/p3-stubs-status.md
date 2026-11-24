@@ -16,7 +16,7 @@ title: "P3 Stubs Status"
 > still ships, with the web overlay in `web/client/src/lib/game/GameOverlays.svelte` as its client; the
 > announcements half of item 6 survives as `Veldrath.Server/Features/Announcements`.
 > The list stays as the closed record. `engine-codebase.md`'s P3 section points at
-> [`veldrath-memory.md`](../veldrath-memory.md) and keeps only a one-line summary; nothing links here, and since the
+> [`veldrath-memory.md`](../veldrath-memory.md) and keeps only a short summary bullet; nothing links here, and since the
 > hub stopped committing a table (#301) there is nothing to link from — the `areas/` folder is the index. The
 > per-session dates are in [`session-log.md`](session-log.md).
 
