@@ -77,6 +77,19 @@ describe('describeCombatTurn', () => {
 		});
 		expect(text).toContain('The enemy is defeated!');
 	});
+
+	it('names a level-up won by the kill', () => {
+		const text = describeCombatTurn({
+			action: 'attack',
+			enemyDefeated: true,
+			xpEarned: 10,
+			newLevel: 6,
+			leveledUp: true
+		});
+
+		expect(text).toContain('+10 XP.');
+		expect(text).toContain('Level up! You are now level 6.');
+	});
 });
 
 describe('stat reducers', () => {
@@ -93,6 +106,53 @@ describe('stat reducers', () => {
 		expect(next.currentMana).toBe(22);
 		expect(next.experience).toBe(150);
 		expect(next.gold).toBe(30);
+	});
+
+	it('takes the server level and pools after a levelling kill instead of adding the award', () => {
+		// The kill crosses the level-2 threshold: the server banks the remainder and rewrites the pools. Adding the
+		// 10 earned XP to the old 90 would show "100 experience at level 2" and keep the level-1 health bar.
+		const next = applyCombatTurnToStats(
+			{ ...stats, level: 1, experience: 90, currentHealth: 90, maxHealth: 120 },
+			{
+				action: 'attack',
+				enemyDefeated: true,
+				playerRemainingHealth: 90,
+				xpEarned: 10,
+				newLevel: 2,
+				newExperience: 0,
+				leveledUp: true,
+				maxHealth: 132,
+				currentHealth: 90,
+				maxMana: 22,
+				currentMana: 30,
+				unspentAttributePoints: 4
+			}
+		);
+
+		expect(next.level).toBe(2);
+		expect(next.experience).toBe(0);
+		expect(next.maxHealth).toBe(132);
+		expect(next.currentHealth).toBe(90);
+		expect(next.maxMana).toBe(22);
+		expect(next.unspentAttributePoints).toBe(4);
+	});
+
+	it('keeps the level on a kill that does not cross the threshold', () => {
+		const next = applyCombatTurnToStats(
+			{ ...stats, level: 1, experience: 0, currentHealth: 90 },
+			{
+				action: 'attack',
+				enemyDefeated: true,
+				playerRemainingHealth: 90,
+				xpEarned: 10,
+				newLevel: 1,
+				newExperience: 10,
+				leveledUp: false
+			}
+		);
+
+		expect(next.level).toBe(1);
+		expect(next.experience).toBe(10);
 	});
 
 	it('applies rest results', () => {

@@ -63,6 +63,12 @@ public record AttackEnemyHubResult
     /// <summary>Gets the gold awarded to this player when the enemy was defeated.</summary>
     public int GoldEarned { get; init; }
 
+    /// <summary>
+    /// Gets the level and pool state this player's share of the kill left them at, or <see langword="null"/> when
+    /// the turn paid no experience (or the caller was not credited with the kill).
+    /// </summary>
+    public CombatProgression? Progression { get; init; }
+
     /// <summary>Gets the gold the death cost, or 0 when the character survived.</summary>
     public int GoldLost { get; init; }
 
@@ -106,6 +112,42 @@ public record AttackEnemyHubResult
 public record CombatLootDrop(string ItemSlug, int Quantity);
 
 /// <summary>
+/// What a combat reward left the character at: the level, the experience still banked toward the next level, and
+/// the derived pools the award rewrote.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The caller's own turn carries this so the sheet can move without a reload. It mirrors the fields
+/// <see cref="Veldrath.Server.Features.LevelUp.GainExperienceHubResult"/> reports after a quest turn-in: a levelling
+/// award banks the remainder instead of adding it to the old bar, and it rewrites <c>MaxHealth</c>/<c>MaxMana</c>.
+/// </para>
+/// <para>
+/// A client that only added <see cref="AttackEnemyHubResult.XpEarned"/> to its own numbers would show the old
+/// level beside an experience bar past its threshold. <see cref="NewExperience"/> is the authoritative remainder;
+/// <see cref="XpEarned"/> stays the amount the kill paid, for the log line.
+/// </para>
+/// </remarks>
+/// <param name="OldLevel">The character's level before the award.</param>
+/// <param name="NewLevel">The character's level after the award.</param>
+/// <param name="NewExperience">The experience still banked toward the next level after the award.</param>
+/// <param name="LeveledUp">Whether this award crossed at least one level.</param>
+/// <param name="MaxHealth">The maximum health stored in the attributes blob after the award.</param>
+/// <param name="CurrentHealth">The current health stored in the blob after the award.</param>
+/// <param name="MaxMana">The maximum mana stored in the blob after the award.</param>
+/// <param name="CurrentMana">The current mana stored in the blob after the award.</param>
+/// <param name="UnspentAttributePoints">The attribute points the blob holds unspent after the award.</param>
+public record CombatProgression(
+    int OldLevel,
+    int NewLevel,
+    long NewExperience,
+    bool LeveledUp,
+    int MaxHealth,
+    int CurrentHealth,
+    int MaxMana,
+    int CurrentMana,
+    int UnspentAttributePoints);
+
+/// <summary>
 /// Handles <see cref="AttackEnemyHubCommand"/> by loading the player and enemy state,
 /// computing and applying damage in both directions, handling death outcomes,
 /// and persisting updated character state.
@@ -114,6 +156,7 @@ public class AttackEnemyHubCommandHandler
     : IRequestHandler<AttackEnemyHubCommand, AttackEnemyHubResult>
 {
     private readonly ICharacterRepository _characterRepo;
+    private readonly ICharacterClassRepository _classRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
     private readonly Veldrath.Server.Features.Zones.IZoneInstanceService _instances;
@@ -124,6 +167,9 @@ public class AttackEnemyHubCommandHandler
 
     /// <summary>Initializes a new instance of <see cref="AttackEnemyHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="classRepo">
+    /// Catalogue repository used to resolve the killer's class curve when a reward crosses a level.
+    /// </param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="instances">Instance-run service, used to record a cleared room.</param>
@@ -133,6 +179,7 @@ public class AttackEnemyHubCommandHandler
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public AttackEnemyHubCommandHandler(
         ICharacterRepository characterRepo,
+        ICharacterClassRepository classRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
         Veldrath.Server.Features.Zones.IZoneInstanceService instances,
@@ -142,6 +189,7 @@ public class AttackEnemyHubCommandHandler
         IRandomSource? randomSource = null)
     {
         _characterRepo = characterRepo;
+        _classRepo = classRepo;
         _enemies = enemies;
         _sessions = sessions;
         _instances = instances;
@@ -206,7 +254,7 @@ public class AttackEnemyHubCommandHandler
         // --- Enemy defeated ---
         if (!enemy.IsAlive)
         {
-            (Guid CharacterId, int Xp, int Gold) myReward = default;
+            CombatRewardShare? myReward = null;
             IReadOnlyList<Guid> participants;
             lock (enemy.SyncRoot)
             {
@@ -216,7 +264,8 @@ public class AttackEnemyHubCommandHandler
             // Only the caller that wins the death transition distributes rewards.
             if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
             {
-                var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
+                var rewardList = await CombatHelpers.DistributeRewardsAsync(
+                    enemy, _characterRepo, _classRepo, _sessions, cancellationToken, _logger);
                 myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
             }
 
@@ -271,8 +320,9 @@ public class AttackEnemyHubCommandHandler
                 EnemyArchetypeSlug = enemy.ArchetypeSlug,
                 ParticipantIds = participants,
                 PlayerRemainingHealth = player.Health,
-                XpEarned = myReward.Xp,
-                GoldEarned = myReward.Gold,
+                XpEarned = myReward?.Xp ?? 0,
+                GoldEarned = myReward?.Gold ?? 0,
+                Progression = myReward?.Progression,
                 ClearedInstanceId = cleared is { Cleared: true } ? enemy.ZoneInstanceId : null,
                 ClearedLocationSlug = cleared is { Cleared: true } ? enemy.LocationSlug : null,
                 FirstClearOfRun = cleared?.FirstClearOfRun ?? false,

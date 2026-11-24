@@ -704,6 +704,26 @@ export interface CombatTurnPayload {
 	xpLost?: number;
 	xpEarned?: number;
 	goldEarned?: number;
+	/**
+	 * Level after a kill that paid experience, or null on a turn that paid none. The server awards through the
+	 * rolling `Level × 100` formula, so the level and the bar move together and the client takes the server's
+	 * numbers rather than adding `xpEarned` to the old total.
+	 */
+	newLevel?: number | null;
+	/** Experience still banked toward the next level after the award — the remainder, not the old total. */
+	newExperience?: number | null;
+	/** Whether the kill crossed a level. */
+	leveledUp?: boolean | null;
+	/** Maximum health after the award; a level-up raises it along the class curve. */
+	maxHealth?: number | null;
+	/** Health after the award. A bigger bar is not a heal: the pool is clamped, never refilled. */
+	currentHealth?: number | null;
+	/** Maximum mana after the award. */
+	maxMana?: number | null;
+	/** Mana after the award. */
+	currentMana?: number | null;
+	/** Attribute points the level-up banked, so the allocation panel can enable without a re-select. */
+	unspentAttributePoints?: number | null;
 	/** What the defeated enemy dropped into the bag, so the log can name it. */
 	itemsDropped?: { itemSlug: string; quantity: number }[] | null;
 	abilityId?: string | null;

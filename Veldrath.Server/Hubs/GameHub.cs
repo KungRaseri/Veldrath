@@ -2887,6 +2887,17 @@ public class GameHub : Hub
                 result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
+                // A levelling reward banks the remainder and rewrites the pools server-side, so the turn carries
+                // the result: a client that only added XpEarned would keep the old level beside a bar that had
+                // already crossed its threshold. Null on a turn that paid no experience.
+                NewLevel = result.Progression?.NewLevel,
+                NewExperience = result.Progression?.NewExperience,
+                LeveledUp = result.Progression?.LeveledUp,
+                MaxHealth = result.Progression?.MaxHealth,
+                CurrentHealth = result.Progression?.CurrentHealth,
+                MaxMana = result.Progression?.MaxMana,
+                CurrentMana = result.Progression?.CurrentMana,
+                UnspentAttributePoints = result.Progression?.UnspentAttributePoints,
                 // Loot is a consequence of the kill, so it travels with the same turn the client narrates.
                 result.ItemsDropped,
             });
@@ -3082,6 +3093,15 @@ public class GameHub : Hub
                 result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
+                // Same reason as AttackEnemy: a levelling kill reports where the award left the character.
+                NewLevel = result.Progression?.NewLevel,
+                NewExperience = result.Progression?.NewExperience,
+                LeveledUp = result.Progression?.LeveledUp,
+                MaxHealth = result.Progression?.MaxHealth,
+                CurrentHealth = result.Progression?.CurrentHealth,
+                MaxMana = result.Progression?.MaxMana,
+                CurrentMana = result.Progression?.CurrentMana,
+                UnspentAttributePoints = result.Progression?.UnspentAttributePoints,
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
