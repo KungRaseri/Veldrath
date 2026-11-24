@@ -28,7 +28,7 @@ locations:
       - archetype: fen-lurker
         weight: 5   # band: 10-12 | seeded 9-14
       - archetype: bog-lantern
-        weight: 3   # band: 10-12 | to be seeded 10-12
+        weight: 3   # band: 10-12 | seeded 10-12
       - archetype: cairn-haunt
         weight: 2   # band: 10-12 | seeded 8-14
   - slug: submerged-ruins
@@ -38,7 +38,7 @@ locations:
       - archetype: drowned-revenant
         weight: 4   # band: 13-15 | seeded 11-18
       - archetype: bog-lantern
-        weight: 3   # band: 10-12 | to be seeded 10-12
+        weight: 3   # band: 10-12 | seeded 10-12
       - archetype: cairn-haunt
         weight: 3   # band: 10-12 | seeded 8-14
 

@@ -28,13 +28,13 @@ locations:
       - archetype: drowned-revenant
         weight: 5   # band: 13-15 | seeded 11-18
       - archetype: burrow-worm
-        weight: 5   # band: 10-12 | to be seeded 10-12
+        weight: 5   # band: 10-12 | seeded 10-12
   - slug: relic-chamber
     # band: b11-14 (D0 budget) | location L12-14
     level_range: [12, 14]
     pool:
       - archetype: burrow-worm
-        weight: 6   # band: 10-12 | to be seeded 10-12
+        weight: 6   # band: 10-12 | seeded 10-12
       - archetype: drowned-revenant
         weight: 4   # band: 13-15 | seeded 11-18
   - slug: deeps-entrance

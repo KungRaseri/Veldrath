@@ -28,9 +28,9 @@ locations:
       - archetype: moor-wight
         weight: 4   # band: 7-9 | seeded 6-10
       - archetype: barrow-bear
-        weight: 4   # band: 7-9 | to be seeded 7-9
+        weight: 4   # band: 7-9 | seeded 7-9
       - archetype: moor-tollman
-        weight: 3   # band: 7-9 | to be seeded 7-9
+        weight: 3   # band: 7-9 | seeded 7-9
       - archetype: cairn-haunt
         weight: 2   # band: 10-12 | seeded 8-14
   - slug: shifting-waymark
@@ -38,7 +38,7 @@ locations:
     level_range: [8, 14]
     pool:
       - archetype: moor-tollman
-        weight: 5   # band: 7-9 | to be seeded 7-9
+        weight: 5   # band: 7-9 | seeded 7-9
       - archetype: cairn-haunt
         weight: 4   # band: 10-12 | seeded 8-14
       - archetype: moor-wight

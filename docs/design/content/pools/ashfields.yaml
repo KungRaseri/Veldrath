@@ -39,9 +39,9 @@ locations:
       - archetype: cinderling
         weight: 5   # band: 19-20 | seeded 20-26
       - archetype: ash-jack
-        weight: 3   # band: 19-20 | to be seeded 19-22
+        weight: 3   # band: 19-20 | seeded 19-22
       - archetype: forge-deserter
-        weight: 3   # band: 19-20 | to be seeded 19-22
+        weight: 3   # band: 19-20 | seeded 19-22
   - slug: ash-shrine
     # band: b19-22 (D0 budget) | location L20-25
     level_range: [20, 25]
