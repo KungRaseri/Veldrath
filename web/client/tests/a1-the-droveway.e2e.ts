@@ -55,8 +55,9 @@ import { makeAccount, register, stackEnabled, stackSkipReason } from './support/
  *  - **A specific archetype at the Drove Road.** A location's roster is one weighted roll per zone scope, created
  *    once and revived — not re-rolled — by the respawn sweeper (`EfCoreEnemyInstanceStore.GetAliveOrSpawnAsync`
  *    spawns only when the location has no rows at all, and `SweepExpiredRespawnsAsync` flips `IsAlive` back on the
- *    same rows). The zone scope is shared by every character in the zone (`zone:the-droveway`, `ZoneGroupName`), so
- *    demanding "a drove-cur appears" would either be a coin flip or a fight with whatever else is standing here.
+ *    same rows). The zone scope is shared by the characters of one difficulty mode (`zone:the-droveway_normal`,
+ *    `ZoneGroupName`), so demanding "a drove-cur appears" would either be a coin flip or a fight with whatever else
+ *    is standing here.
  *    What the spec demands instead is that *every* draw is a member of the imported pool, and it prefers a
  *    `drove-cur`/`peat-adder` when the roll produced one — the two the seeder's interim pool never named.
  *  - **The Sunken Fields on foot.** It is pooled by the pack (checked from the stored row), but it is hidden behind a
@@ -98,6 +99,17 @@ const ZONE_ID = 'the-droveway';
 const ENCOUNTER_LOCATION = 'drove-road';
 const SAFE_LOCATION = 'weathered-waypost';
 
+/**
+ * The zone group this journey's character joins.
+ *
+ * A wilderness scope is `zone:{zoneId}_{difficultyMode}` (`ZoneGroupName.ForZone`), and the wizard creates a
+ * character in the default `normal` mode. `encounters.e2e.ts` fights the same location as `hardcore`, so the Drove
+ * Road can hold a second group's roster — rows this character's panel never lists. The roster *count* must read this
+ * group; the archetype and placement checks stay on the location-wide union, because what a row may be does not
+ * depend on which group wrote it.
+ */
+const ENCOUNTER_ZONE_GROUP = `zone:${ZONE_ID}_normal`;
+
 const MAP_NODES = {
 	townSquare: 'The Crestfall Square',
 	zoneGate: 'Road to The Droveway',
@@ -125,19 +137,28 @@ interface RosterRow {
  * Road too (`encounters.e2e.ts`). A row with a participant is somebody's current fight, and killing it would end
  * their combat — so the spec treats those as off limits rather than racing them.
  *
- * The read is deliberately not scoped to one group: the store spawns a location's roster per `ZoneGroup` and only
- * when that group has no rows at all (`EfCoreEnemyInstanceStore.GetAliveOrSpawnAsync`), and a client only loads the
- * group its connection joined. So a location can hold two copies — one written when the character walked in carrying
- * the previous zone's group, one under `zone:<zone>_normal` — and a reused stack can keep a copy drawn from an older
- * pool revision, because a stored roster is revived, never re-rolled. Every copy at this location is still a draw
- * this zone's pool once allowed; the panel is what decides which of them the journey may actually fight (see
- * {@link findShownTarget}).
+ * The default read is deliberately not scoped to one group: the store spawns a location's roster per `ZoneGroup` and
+ * only when that group has no rows at all (`EfCoreEnemyInstanceStore.GetAliveOrSpawnAsync`), and a client only loads
+ * the group its connection joined. So a location can hold two copies — one written when the character walked in
+ * carrying the previous zone's group, one under `zone:<zone>_normal` — and a reused stack can keep a copy drawn from
+ * an older pool revision, because a stored roster is revived, never re-rolled. Every copy at this location is still
+ * a draw this zone's pool once allowed; the panel is what decides which of them the journey may actually fight (see
+ * {@link findShownTarget}), and a row's archetype and placement do not depend on the group that wrote it.
+ *
+ * Passing `zoneGroup` narrows the read to that group's copy. The roster *count* uses that form: another spec's
+ * `_hardcore` rows at this location are rows this journey's panel never lists, so counting the union would let the
+ * assertion pass on a roster its character cannot see (see {@link ENCOUNTER_ZONE_GROUP}).
  *
  * @param sql The open reader.
  * @param locationSlug Location to read.
+ * @param zoneGroup Group to narrow the read to, or `null` for every group's copy at the location.
  * @returns The living enemies there, oldest spawn first.
  */
-async function readRoster(sql: Sql, locationSlug: string): Promise<RosterRow[]> {
+async function readRoster(
+	sql: Sql,
+	locationSlug: string,
+	zoneGroup: string | null = null
+): Promise<RosterRow[]> {
 	const rows = await sql<
 		{ id: string; archetype: string; instance: string | null; name: string; participants: number }[]
 	>`
@@ -148,6 +169,7 @@ async function readRoster(sql: Sql, locationSlug: string): Promise<RosterRow[]> 
 		       (SELECT count(*)::int FROM "EnemyParticipants" p WHERE p."EnemyInstanceId" = e."Id") AS participants
 		FROM "EnemyInstances" e
 		WHERE e."LocationSlug" = ${locationSlug} AND e."IsAlive" = true
+		  AND (${zoneGroup}::text IS NULL OR e."ZoneGroup" = ${zoneGroup}::text)
 		ORDER BY e."SpawnedAt", e."Id"
 	`;
 
@@ -492,14 +514,20 @@ test.describe('A1 — The Droveway pools', () => {
 			// A browser shows the enemy's name; the stored row carries the archetype slug the pool drew. The
 			// Drove Road has no authored placement, so every row here is a draw.
 			//
+			// The count is read from this character's own zone group: the suite's encounters specs fight here as
+			// `hardcore` (see {@link ENCOUNTER_ZONE_GROUP}), so the location-wide union can hold rows this
+			// journey's panel never lists. The archetype and placement checks below stay on the union — what a
+			// row may be is not a property of the group that wrote it.
+			//
 			// No upper bound on the count: the 2–4 roll (`ActorPoolResolver.MinCount`/`MaxCount`) governs one
 			// spawn, and a shared location can hold more rows than that once several characters have arrived —
 			// the store spawns whenever it sees no rows, and its unique index is per (archetype, spawn instant).
 			// This suite runs its specs in parallel, so a count ceiling here would fail on scheduling, not on content.
 			const roster = await readRoster(sql, ENCOUNTER_LOCATION);
+			const ownGroup = await readRoster(sql, ENCOUNTER_LOCATION, ENCOUNTER_ZONE_GROUP);
 			expect(
-				roster.length,
-				'walking onto the drove road must spawn its roster from the imported pool'
+				ownGroup.length,
+				`walking onto the drove road must spawn its roster in ${ENCOUNTER_ZONE_GROUP}, the group this character joined`
 			).toBeGreaterThanOrEqual(2);
 
 			for (const enemy of roster) {

@@ -107,8 +107,9 @@ test.describe('combat and death', () => {
 		test.setTimeout(120_000);
 
 		// Hardcore, so the kill this spec lands sits in `zone:the-droveway_hardcore`. `a1-the-droveway.e2e.ts` runs
-		// in the same stack and asserts the drove road spawned at least two rows — a pool draw here rolls exactly two,
-		// so one kill in the shared `_normal` roster would take it below that until the 2s respawn.
+		// in the same stack and asserts the drove road spawned at least two rows in the group its character joined — a
+		// pool draw here rolls 2–4 rows (`ActorPoolResolver.MinCount`/`MaxCount`), so when it rolls 2 one kill in the
+		// shared `_normal` roster would take it below that until the 2s respawn.
 		const { context, page } = await characterOnTheRoad(browser, request, 'hardcore');
 
 		// The HUD's "Local" panel lists what spawned; the button is the engage action.
