@@ -14,10 +14,14 @@ bands and its slugs are unchanged from what was approved.
 
 - **Proposals 3–5 — accepted.** The Pits has no combat form; Vraen is off the level ladder; there is
   no Aethori archetype at levels 1–20.
-- **Proposals 6–8 — declined.** No gull-rider lore entry, no geography for the seeded organisations,
-  no Ash Shrine dedication.
+- **Proposals 6–8 — declined.** No gull-rider lore entry, no geography for the Iron Anvil Guild or the
+  Shadowhand Syndicate, no Ash Shrine dedication.
 - **The `gull-rider clans` faction tie is descriptive only.** It rests on the map seeder's assertion
   of rival clans, not on canon — do not treat it as an established organisation.
+- **`goblin-warband` — recorded 2026-11-23, no numbered proposal.** PR #229 (`ce262000`) seeded the
+  third organisation, promoting a slug the catalogue already referenced (`elder-goblin-chief`'s
+  `FactionOverride`, seeded in `bf715a9b`); it asserts no new world claim, and no roster row's faction
+  tie changes. The record is under *Organisation promotion recorded — the Goblin Warband* below.
 - **Proposal 9 — decided 2026-11-20.** The content standard is published in `game-context/GAME.md`
   §3 (Teen-equivalent and self-imposed, with the permitted, testimony-only and not-permitted lists)
   and the four design pillars with their fails-when clauses in §4. A borderline description is
@@ -68,14 +72,23 @@ bands and its slugs are unchanged from what was approved.
   hostile archetype carries the row.
 - **Faction ties** use organisations that already exist in the seeders (`OrganizationsSeeder.cs`) or
   a group the seeder prose already asserts. `none recorded` means the tie is explicitly "no
-  organisation" — it is a tie, not an omission. A new faction needs a numbered canon proposal.
+  organisation" — it is a tie, not an omission. A faction the catalogue has not asserted needs a
+  numbered canon proposal; a group the catalogue already asserts is promoted by seeding a row,
+  recorded in this document, and needs none — that is what happened to the Goblin Warband.
 
 **Only two rows tie to a real faction, and that is a finding, not an oversight.** The repository
-seeds exactly two organisations — the Iron Anvil Guild and the Shadowhand Syndicate — and neither has
-a geography in any lore file: no region, no zone, no city. Placing their members anywhere is a new
-claim, so the guild- and syndicate-tied archetypes were held out and named in proposals 6–7. The
-gull-rider clans are the one faction a row can tie to, because the map seeder already asserts them.
-The faction picture fills in with the regional design, not with more archetypes.
+seeds three organisations — the Iron Anvil Guild, the Shadowhand Syndicate and the Goblin Warband —
+and only the warband has a ground: its row comment names the Ashlen Wood and the Droveway, the two
+zones `goblin-scout` already spawns in. The guild and the syndicate have no geography in any lore
+file: no region, no zone, no city. No archetype can be tied to either while proposal 7 stands
+declined, so the guild- and syndicate-tied archetypes stay held out and named under *What this
+roster does not cover*. The warband's tie is available and is the intended next step, but it is held
+here on purpose: the roster's faction column describes the archetype, the catalogue asserts the
+warband on one instance (`elder-goblin-chief`, `FactionOverride = "goblin-warband"`), and a third tie
+would need a third faction mark in the approved portrait vocabulary (`archetype-visuals.md` R4). The
+gull-rider clans are the faction the two tied rows belong to, because the map seeder already asserts
+them. The faction picture fills in with the regional design and the portrait decision, not with more
+archetypes.
 
 ## The roster
 
@@ -382,16 +395,43 @@ seeded `gull-rider-brute` — accurate, but not written down anywhere a lore rea
 `wiki/Region-Saltcliff.md` at Phase 5+, and as a note in `OrganizationsSeeder.cs` if the clans are
 promoted to an Organisation row.
 
-**Proposal 7 — both seeded organisations get a geography.**
+**Proposal 7 — the Iron Anvil Guild and the Shadowhand Syndicate get a geography.**
 **Claim:** the Shadowhand Syndicate's money comes through `tolvaren` and the roads feeding it; the
 Iron Anvil Guild's forge trade is centred on `skarhold` and its shops reach the four market towns.
-**Reason:** the repository seeds exactly two organisations with wealth, shops, quest hooks and
-reputation thresholds, and gives neither a single region, zone or city. Until they are placed, no
-archetype — hostile or not — can be tied to either, and two otherwise-obvious rows
-(`syndicate-collector`, a guild enforcer or bailiff) stay out of the roster. **Touches:**
-`saltcliff`, `tolvaren`, `tidewrack-flats`, the roads west to `greymoor`, `cinderplain`, `skarhold`,
-`crestfall`, `aldenmere`. **Recorded in:** `wiki/Region-Saltcliff.md` and
+**Reason:** the repository seeds two organisations with shops and quest hooks — the Iron Anvil Guild
+and the Shadowhand Syndicate — and gives neither a single region, zone or city. (The third seeded
+row, the Goblin Warband, is Hostile-only with no shop and no quest hook, and its ground is recorded
+below.) Until they are placed, no archetype — hostile or not — can be tied to either, and two
+otherwise-obvious rows (`syndicate-collector`, a guild enforcer or bailiff) stay out of the roster.
+**Touches:** `saltcliff`, `tolvaren`, `tidewrack-flats`, the roads west to `greymoor`, `cinderplain`,
+`skarhold`, `crestfall`, `aldenmere`. **Recorded in:** `wiki/Region-Saltcliff.md` and
 `wiki/Region-Cinderplain.md` at Phase 5+, plus the `wiki` organisation pages.
+
+**Organisation promotion recorded — the Goblin Warband (no numbered proposal).**
+**Claim:** the goblin packs of the Ashlen Wood and the Droveway answer to a chief, and those packs are
+the seeded organisation `goblin-warband`. **Reason:** it is a promotion, not a new claim.
+`ActorInstancesSeeder.cs` has carried `FactionOverride = "goblin-warband"` on `elder-goblin-chief`
+since `bf715a9b` — a reference to a slug no organisation row carried — and the instance is placed at
+`old-clearing`. `pool-matrix.md` already records that "goblin packs shadow the carts" and that
+"Goblin scouts shadow it and report back to somewhere". PR #229 (`ce262000`) gave that reference a row
+and the one sentence the `Organization` entity has no column for. It names no new place and no new
+conflict, and its one relationship — the packs answering to a chief — is the one the pool prose
+already implies ("report back to somewhere") and the seeded `elder-goblin-chief` supplies. So a
+faction the catalogue already asserted did not need a numbered proposal; the row made the assertion
+resolvable. The display name is Common and coins nothing. **Touches:** `ashlen-wood` (`wood-road`,
+`old-clearing`), `the-droveway` (`drove-road`), `goblin-scout`, `OrganizationsSeeder.cs`.
+**Recorded in:** `OrganizationsSeeder.cs` (the row comment is the whole of its prose canon) and this
+document.
+
+**`goblin-scout` stays untied, deliberately.** Its faction tie stays `none recorded (goblin packs)`
+even though the warband is now a seeded organisation with a ground. The faction column describes the
+archetype, while the catalogue asserts the warband on an instance — the same shape the roster already
+carries with `bandit-ruffian` ("unaffiliated banditry") against `captain-blackthorn`
+(`FactionOverride = "shadowhand-syndicate"`). Tying it would also put a third faction into the
+approved portrait vocabulary: `archetype-visuals.md` R4 gives a mark to `gull-rider-skirmisher` and
+`gull-rider-brute` and calls that "the whole faction vocabulary". The tie is the next step and lands
+with that portrait decision; its absence here is not an oversight. **Touches:** the `goblin-scout`
+row, `archetype-visuals.md` R4. **Recorded in:** this document until the portrait decision.
 
 ### Proposals for the gaps in `game-context/GAME.md`
 
@@ -440,9 +480,10 @@ two.
 - **Nothing in the tail is Calethic-built.** The Caleth surveyed the ash-plain (*Daeld-Ald*) and did
   not settle it (P4, locked), so no row is a construct, a guardian or a marker left by them. Proposal
   11 asks for that to be recorded as a rule rather than left to inference.
-- **No faction.** The two seeded organisations still have no geography (proposal 7 was declined), and
-  this card forbids inventing a faction in the endgame region. Every row is `none recorded`, and each
-  says explicitly what the tie is *not*.
+- **No faction in the ash plain.** The Iron Anvil Guild and the Shadowhand Syndicate still have no
+  geography (proposal 7 was declined), and the Goblin Warband's ground is the Ashlen Wood and the
+  Droveway, in Varenmark, which gives it no claim here. This card forbids inventing a faction in the
+  endgame region. Every row is `none recorded`, and each says explicitly what the tie is *not*.
 - **Bands.** `budget.yaml` published seven bands to 26, so `b23-26` was the top of the ladder when this
   section was first written. **The band table now extends to 1–30 with `b27-30` in the same wave as this
   approval (C4)**, which is why two rows sit above 26. No tail row is banded `19–22`: the ash plain's
@@ -574,8 +615,9 @@ reason and where it is recorded.
 **Claim:** outside `skarhold`, the people who work the heat break ash-glass and iron off the cooled
 flow and the battlefield, mark a claim with a pick-cut in the rock, and have no guild, no written
 title and no organisation behind them. **Reason:** `ash-picker` needs a social fact to stand on, and
-proposal 7 (geography for the two seeded organisations) was declined — so the row may not be
-guild-tied, and the seeded region prose already has "those who work the heat" staking a claim.
+proposal 7 (geography for the Iron Anvil Guild and the Shadowhand Syndicate) was declined — so the
+row may not be guild-tied, and the seeded region prose already has "those who work the heat" staking a
+claim.
 **Touches:** `ashfields` (`scorched-battlefield`), `smoldering-reach` (`vent-fields`), `skarhold`'s
 ash-glass trade (`ash-glass-seller`), the Cinderplain region page. **Recorded in:**
 `world-lore-plan.md` under *Cinderplain settlements*, and `wiki/Region-Cinderplain.md` at Phase 5+.

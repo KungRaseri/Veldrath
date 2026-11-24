@@ -449,6 +449,23 @@ describe('GameSession map and location events', () => {
 		expect(hub.lastCall('GetMapGraph')).toEqual([null]);
 	});
 
+	it('re-reads the map after a respawn so the node the server moved is the one drawn', async () => {
+		await connected();
+
+		hub.emit('CharacterRespawned', {
+			characterId: 'char-1',
+			currentHealth: 25,
+			currentMana: 40,
+			locationSlug: 'sunken-estate',
+			locationDisplayName: 'The Sunken Estate'
+		});
+
+		await flush();
+		// The respawn moves CurrentNodeId server-side as well as the location, so the graph on screen is stale and the
+		// current-node marker has to come back from the server rather than be guessed here.
+		expect(hub.lastCall('GetMapGraph')).toEqual([null]);
+	});
+
 	it('skips the shop catalog request when the hub is already gone', async () => {
 		const session = await connected();
 		await session.disconnect();

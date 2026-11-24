@@ -9,6 +9,10 @@ using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
+using MapGraph = RealmEngine.Shared.Models.MapGraph;
+using MapNodeEntry = RealmEngine.Shared.Models.MapNodeEntry;
+using MapNodeType = RealmEngine.Shared.Models.MapNodeType;
+using MapType = RealmEngine.Shared.Models.MapType;
 using ZoneLocationEntry = RealmEngine.Shared.Models.ZoneLocationEntry;
 
 namespace Veldrath.Server.Tests.Features;
@@ -22,11 +26,13 @@ public class RespawnHubCommandHandlerTests : IDisposable
     private RespawnHubCommandHandler MakeHandler(
         ApplicationDbContext db,
         IZoneLocationRepository? zoneLocations = null,
-        DeathPenaltyOptions? options = null) =>
+        DeathPenaltyOptions? options = null,
+        IMapGraphRepository? maps = null) =>
         new(
             new CharacterRepository(db),
             _sessions,
             zoneLocations ?? ZoneLocationsWith().Object,
+            maps ?? MapsWith(null).Object,
             Options.Create(options ?? new DeathPenaltyOptions()),
             NullLogger<RespawnHubCommandHandler>.Instance);
 
@@ -43,6 +49,34 @@ public class RespawnHubCommandHandlerTests : IDisposable
 
     private static ZoneLocationEntry Location(string slug, string displayName, bool safeRespawn = false) =>
         new(slug, displayName, "locations", "zone-1", 10, null, null, IsSafeRespawn: safeRespawn);
+
+    private static Mock<IMapGraphRepository> MapsWith(MapGraph? zoneMap)
+    {
+        var mock = new Mock<IMapGraphRepository>();
+        mock.Setup(repo => repo.GetMapForZoneAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(zoneMap);
+        return mock;
+    }
+
+    /// <summary>Builds a zone map whose entry node is followed by one location node per authored location.</summary>
+    private static MapGraph ZoneMap(string zoneId, params (string Slug, string Name)[] locations) =>
+        new(
+            $"zone:{zoneId}",
+            MapType.Zone,
+            zoneId,
+            "Zone",
+            string.Empty,
+            $"zone:{zoneId}:entry",
+            [
+                new MapNodeEntry(
+                    $"zone:{zoneId}:entry", $"zone:{zoneId}", MapNodeType.EntryPoint, null, "Arrival", string.Empty,
+                    null, null, null, true, false, null, null, false, null, null, null, 0),
+                .. locations.Select((location, index) => new MapNodeEntry(
+                    $"zone:{zoneId}:location:{location.Slug}", $"zone:{zoneId}", MapNodeType.Location, location.Slug,
+                    location.Name, string.Empty, null, null, null, false, false, null, null, false, null, null, null,
+                    (index + 1) * 10)),
+            ],
+            []);
 
     private static async Task<Character> SeedDeadCharacterAsync(ApplicationDbContext db, string zoneId = "zone-1")
     {
@@ -72,6 +106,33 @@ public class RespawnHubCommandHandlerTests : IDisposable
         var storedSlug = await db.Characters.AsNoTracking()
             .Where(c => c.Id == character.Id).Select(c => c.CurrentZoneLocationSlug).SingleAsync();
         storedSlug.Should().Be("inn", "the player must actually move, not just be told about it");
+    }
+
+    [Fact]
+    public async Task Handle_Moves_The_Map_Node_To_The_Safe_Locations_Node()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedDeadCharacterAsync(db);
+        character.CurrentMapId = "zone:zone-1";
+        character.CurrentNodeId = "zone:zone-1:location:market"; // where the character fell
+        await db.SaveChangesAsync();
+
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market"),
+            Location("inn", "The Grey Cup", safeRespawn: true));
+        var maps = MapsWith(ZoneMap("zone-1", ("market", "The Market"), ("inn", "The Grey Cup")));
+
+        var result = await MakeHandler(db, zoneLocations.Object, maps: maps.Object)
+            .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(c => c.Id == character.Id);
+        stored.CurrentMapId.Should().Be("zone:zone-1");
+        stored.CurrentNodeId.Should().Be(
+            "zone:zone-1:location:inn",
+            "a resumed client wakes from the node, so moving only the slug sends it back to the zone's arrival node");
+        stored.CurrentZoneLocationSlug.Should().Be("inn");
     }
 
     [Fact]

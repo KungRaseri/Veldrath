@@ -997,6 +997,11 @@ export class GameSession {
 					spawnedEnemies: []
 				};
 				void this.requestGroundItems();
+
+				// The server moves the map node as well as the location, so the graph the shell is already drawing is
+				// one move out of date. Re-read it from the server rather than guessing the node: the current-node
+				// marker and the travel panel both come back in the same answer.
+				void this.requestMapGraph(null);
 			}
 
 			const sickness = payload?.sicknessExpiresAt

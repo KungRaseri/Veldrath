@@ -1034,12 +1034,16 @@ carried forward from the session-44 snapshot (that one said 23 / 130 / 196 and i
   for nineteen zone maps because `playground` (`IsDevOnly`) sits on no region map.
 - Edges by type once seeded: `Walk` 246, `ExitToRegion` 35, `ExitToZone` 25.
 - **A live zone being targeted is not the same as being walkable into.** `LinkRegionZonesToZoneMaps` gives every
-  region `Zone` node a `TargetMapId`, so `MapGraphValidator`'s `map_unreachable` never fires for a zone whose only
-  inbound target is its region node — and the region board is not a through-route: `region:varenmark`'s entry node
-  is adjacent to `zone:crestfall` alone, and every `Zone` node on the board enters its zone. The Drowning Pits was
-  unreachable on foot until `zone:grevenmire:exit:zone:drowning-pits` (a `ZoneExit` on the Sunken Estate, the same
-  shape as `ashlen-wood → grevenmire`) landed in t_a39b46eb, and the Halrow got the same repair in t_835e7914
-  (`zone:the-droveway:exit:zone:the-halrow` on the Weathered Waypost).
+  region `Zone` node a `TargetMapId`, so `map_unreachable` used to stay silent for a zone whose only inbound target
+  is its region node — the region board is not a through-route: `region:varenmark`'s entry node is adjacent to
+  `zone:crestfall` alone, and every `Zone` node on the board enters its zone. The Drowning Pits was unreachable on
+  foot until `zone:grevenmire:exit:zone:drowning-pits` (a `ZoneExit` on the Sunken Estate, the same shape as
+  `ashlen-wood → grevenmire`) landed in t_a39b46eb. Since t_53311432 the rule does not count a region board's
+  `Zone` node as an inbound exit, so it warned on the 14 seeded zones that still had no door — `the-halrow` among
+  them — and `MapGraphSeederTests.SeedAsync_EveryLiveZoneCanBeEnteredThroughADoorRatherThanItsRegionNode` pins that
+  list and may only shrink. t_835e7914 gave the Halrow the same repair the Pits got
+  (`zone:the-droveway:exit:zone:the-halrow` on the Weathered Waypost), so the list drops to **13** and the test's
+  row for it goes with it — a stale row would pass silently and stop catching the next zone that loses its door.
 - The chain is per zone map: entry → each `Location` node in `SortOrder`, one hop each way. 39 of those hop
   directions already existed as authored edges, and 5 were dropped because the source node already used all four
   cardinal directions (`zone:crestfall` 2, `zone:playground` 3). All 67 `Location` nodes still have a path from
@@ -4818,3 +4822,31 @@ projection) kept the flat 50 HP / 25 XP / 10 gold forever: nothing in production
 - E2E `web/client/tests/a1-the-halrow.e2e.ts` (registered in the manifest stack run, now 27 specs): Crestfall Square
   → the Droveway → the Drove Road → the Weathered Waypost → the halrow stair → the Threshold → the Rootbound Cellars,
   a pool kill pays its imported loot and the bag shows it, home through Varenmark. Focused run 11.7s, non-skipped.
+
+### Session-D4-t_990e7186 (2026-11-23) — Respawn moves the map node, so a reload wakes where the player did
+
+`RespawnHubCommandHandler` wrote `CurrentZoneLocationSlug` and left `CurrentNodeId` at the node the character fell on.
+`SelectCharacter` re-projected the row onto the region entry on the next login, so `EnterZone` resolved a node that did
+not exist in the zone graph and fell back to the arrival node: the player who respawned at the safe location came back
+at the zone gate after a reload.
+
+- **Respawn now writes the whole position.** It resolves the safe location's map node from
+  `IMapGraphRepository.GetMapForZoneAsync` (by `NodeType == Location` + `RefId`, not by a `zone:x:location:y` string
+  guess — the Foundry editor writes its own node ids) and calls `UpdateMapPositionAsync(mapId, nodeId, zoneId, slug)`.
+  A zone with no graph, or a location with no node, keeps the old slug-only write and logs an `Error`.
+- **The location slug survives the login projection.** `SelectCharacter` still re-points the row at the region entry,
+  but it now passes `CurrentZoneLocationSlug` through instead of nulling it. `EnterZone` resolves that slug back to its
+  location node, so a reload — and the tutorial handoff, which also writes a slug without a node — resumes where the
+  server left the character.
+- **The live client follows the node.** `CharacterRespawned` in `session.svelte.ts` re-reads `GetMapGraph(null)` when
+  the payload names a location; without it the map kept drawing the character on the node they fell on while the server
+  (and the sheet) had already moved them, so the next click could be a node the server refuses.
+- **Zone maps are connected, so the A1 specs stay green.** `MapGraphSeeder.ConnectZoneEntriesToLocations` chains
+  `entry → location(sortOrder) → …` and bridges visible locations across a hidden one, which is why a respawn at the
+  fallback location (Ashlen Wood has no visible `SafeRespawn`; `strangled-oak` is hidden, so the degraded path picks the
+  first visible location) can still walk back to the encounter.
+- Tests: `RespawnHubCommandHandlerTests.Handle_Moves_The_Map_Node_To_The_Safe_Locations_Node`,
+  `GameHubZoneTests.EnterZone_Resumes_The_Location_Node_A_Login_Projected_Onto_The_Region_Map`,
+  `GameHubZoneTests.SelectCharacter_Keeps_The_Zone_Location_Across_The_Region_Projection`; all three fail on the old
+  code. The A1 Grevenmire spec reads `CurrentNodeId` and the `MapNodes` row back from Postgres after the respawn and
+  asserts the map draws the safe location as current before walking out of it.

@@ -265,7 +265,9 @@ public class GameHub : Hub
         var regionId = zone?.RegionId ?? starterRegion!.Id;
         Context.Items["CurrentRegionId"] = regionId;
 
-        // Ensure the character has a map/node position. Characters start on the region map.
+        // Ensure the character has a map/node position. Characters start on the region map — but the zone location
+        // survives the projection: this write re-points the node at the region entry, so the slug is all that still
+        // says where inside the zone the character stood, and EnterZone needs it to put them back there.
         var regionGraph = await _mapRepo.GetMapForRegionAsync(regionId);
         if (!string.IsNullOrWhiteSpace(regionGraph?.Id) &&
             !string.IsNullOrWhiteSpace(regionGraph.EntryNodeId))
@@ -275,7 +277,9 @@ public class GameHub : Hub
                 regionGraph.Id,
                 regionGraph.EntryNodeId,
                 zoneId: null,
-                locationSlug: null);
+                locationSlug: string.IsNullOrWhiteSpace(character.CurrentZoneId)
+                    ? null
+                    : character.CurrentZoneLocationSlug);
         }
 
         // A3: a character who has not finished the tutorial is placed on the authored tutorial start location with
@@ -850,6 +854,20 @@ public class GameHub : Hub
             zoneGraph?.EntryNodeId);
 
         var resumeLocationSlug = resumingHere ? character!.CurrentZoneLocationSlug : null;
+
+        // A login re-projects the character onto the region map (`SelectCharacter`), which re-points CurrentNodeId at
+        // the region entry and leaves the zone location slug as the only record of where inside the zone they stood —
+        // a respawn at the safe location is exactly that case. Resolve the slug back to its node, or every reload
+        // would wake the player at the zone's arrival node instead of the location the server left them on.
+        var savedLocationNode = resumingHere && zoneGraph is not null &&
+                                !string.IsNullOrWhiteSpace(resumeLocationSlug)
+            ? zoneGraph.Nodes.FirstOrDefault(node =>
+                node.NodeType == MapNodeType.Location &&
+                string.Equals(node.RefId, resumeLocationSlug, StringComparison.OrdinalIgnoreCase))
+            : null;
+
+        if (savedLocationNode is not null)
+            resumeNodeId = savedLocationNode.Id;
 
         // Leave current zone first (if in one)
         await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
