@@ -98,23 +98,19 @@ public class GetCraftableRecipesQueryHandler
 
     private readonly ICharacterRepository _characters;
     private readonly IRecipeRepository _recipes;
-    private readonly IInventoryService _inventory;
     private readonly ILogger<GetCraftableRecipesQueryHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="GetCraftableRecipesQueryHandler"/>.</summary>
     /// <param name="characters">Character repository.</param>
     /// <param name="recipes">Recipe catalog.</param>
-    /// <param name="inventory">Inventory service, keyed by character name.</param>
     /// <param name="logger">Logger instance.</param>
     public GetCraftableRecipesQueryHandler(
         ICharacterRepository characters,
         IRecipeRepository recipes,
-        IInventoryService inventory,
         ILogger<GetCraftableRecipesQueryHandler> logger)
     {
         _characters = characters;
         _recipes = recipes;
-        _inventory = inventory;
         _logger = logger;
     }
 
@@ -142,6 +138,10 @@ public class GetCraftableRecipesQueryHandler
         }
 
         var ranks = ReadSkillRanks(character.Attributes, character.Id);
+
+        // Same bag the craft consumes from and GetInventoryHubCommand returns to the client; the engine's
+        // inventory service reads a table no server path writes, so every material used to show as unowned.
+        var bag = CharacterBag.Read(character.InventoryBlob);
         var craftable = new List<CraftableRecipeDto>();
 
         foreach (var recipe in recipes.Where(recipe => !string.IsNullOrWhiteSpace(recipe.OutputItemReference)))
@@ -158,7 +158,7 @@ public class GetCraftableRecipesQueryHandler
                 {
                     ItemRef = material.ItemReference,
                     Required = material.Quantity,
-                    Owned = await _inventory.GetItemCountAsync(character.Name, material.ItemReference),
+                    Owned = CharacterBag.Count(bag, material.ItemReference),
                 });
             }
 

@@ -62,7 +62,7 @@ public record CraftItemHubResult
 }
 
 /// <summary>
-/// Handles <see cref="CraftItemHubCommand"/> against the recipe catalog and the character's inventory.
+/// Handles <see cref="CraftItemHubCommand"/> against the recipe catalog and the character's bag.
 /// </summary>
 /// <remarks>
 /// Deliberately does not go through the engine's <c>CraftRecipeCommand</c>: that path takes a
@@ -71,6 +71,13 @@ public record CraftItemHubResult
 /// data can actually answer — level, skill rank and materials. <c>RequiredStation</c> is content the
 /// world model cannot yet match to a place (nothing places a station in a location), so it is
 /// reported to the client as information rather than pretended to be enforced.
+/// <para>
+/// Materials are read from and written to the character's own <c>InventoryBlob</c> through
+/// <see cref="CharacterBag"/> — the bag every other server path fills and <c>GetInventoryHubCommand</c>
+/// returns to the client. The engine's <c>IInventoryService</c> is not used: it writes
+/// <c>GameDbContext.InventoryRecords</c>, a table nothing populates, so crafting through it demanded
+/// materials the player had and handed back items they never received.
+/// </para>
 /// </remarks>
 public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, CraftItemHubResult>
 {
@@ -86,26 +93,22 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
 
     private readonly ICharacterRepository _characterRepo;
     private readonly IRecipeRepository _recipes;
-    private readonly IInventoryService _inventory;
     private readonly IMediator _mediator;
     private readonly ILogger<CraftItemHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="CraftItemHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository used to load and persist characters.</param>
     /// <param name="recipes">Recipe catalog.</param>
-    /// <param name="inventory">Inventory service, keyed by character name.</param>
     /// <param name="mediator">Mediator used to award the recipe's skill experience.</param>
     /// <param name="logger">Logger instance.</param>
     public CraftItemHubCommandHandler(
         ICharacterRepository characterRepo,
         IRecipeRepository recipes,
-        IInventoryService inventory,
         IMediator mediator,
         ILogger<CraftItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
         _recipes = recipes;
-        _inventory = inventory;
         _mediator = mediator;
         _logger = logger;
     }
@@ -172,6 +175,12 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             }
         }
 
+        // The bag is the character's own InventoryBlob — the store harvesting, chests, combat loot and the
+        // shop write, and the one GetInventoryHubCommand hands back to the client. Reading it through the
+        // engine's inventory service instead looked at an empty table: every material read as unowned and
+        // every crafted item went somewhere no client could see.
+        var bag = CharacterBag.Read(character.InventoryBlob);
+
         // Check every material before consuming any of them, so a missing ingredient costs nothing.
         var shortages = new List<string>();
         foreach (var material in recipe.Materials)
@@ -179,7 +188,7 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             if (string.IsNullOrWhiteSpace(material.ItemReference) || material.Quantity <= 0)
                 continue;
 
-            var owned = await _inventory.GetItemCountAsync(character.Name, material.ItemReference);
+            var owned = CharacterBag.Count(bag, material.ItemReference);
             if (owned < material.Quantity)
                 shortages.Add($"{material.Quantity - owned} more {material.ItemReference}");
         }
@@ -192,19 +201,16 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
                 recipe.Name);
         }
 
-        // Consume, compensating on failure so a partial craft can never happen.
+        // Take is all-or-nothing and the shortages above are already ruled out, so a refused take means the
+        // bag changed under us; nothing has been written at that point, so refusing costs the player nothing.
         var consumed = new List<ConsumedMaterialDto>();
         foreach (var material in recipe.Materials)
         {
             if (string.IsNullOrWhiteSpace(material.ItemReference) || material.Quantity <= 0)
                 continue;
 
-            var removed = await _inventory.RemoveItemAsync(
-                character.Name, material.ItemReference, material.Quantity);
-
-            if (!removed)
+            if (!CharacterBag.Take(bag, material.ItemReference, material.Quantity))
             {
-                await RefundAsync(character.Name, consumed);
                 _logger.LogError(
                     "Failed to remove {Quantity}x {ItemRef} for character {CharacterId}; craft refused.",
                     material.Quantity, material.ItemReference, character.Id);
@@ -214,22 +220,19 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             consumed.Add(new ConsumedMaterialDto(material.ItemReference, material.Quantity));
         }
 
+        // Bag entries carry the bare slug because that is what the client resolves in the catalog; a recipe
+        // names the full reference, so the output is reduced the same way harvesting and chest loot are.
         var outputQuantity = recipe.OutputQuantity > 0 ? recipe.OutputQuantity : 1;
-        var added = await _inventory.AddItemAsync(character.Name, recipe.OutputItemReference, outputQuantity);
-
-        if (!added)
-        {
-            await RefundAsync(character.Name, consumed);
-            _logger.LogError(
-                "Failed to add {ItemRef} for character {CharacterId}; craft refunded.",
-                recipe.OutputItemReference, character.Id);
-            return Fail(request.RecipeSlug, "There was no room for the result, so nothing was crafted.", recipe.Name);
-        }
+        CharacterBag.Add(bag, CharacterBag.Slug(recipe.OutputItemReference), outputQuantity);
+        character.InventoryBlob = CharacterBag.Serialize(bag);
 
         // The award itself is a command, so the key convention and the rank size live in one place. The character
-        // is handed over already loaded because this handler owns the attributes-blob write: the award handler
-        // applies it in memory and leaves it unsaved, and the single UpdateAsync below persists the craft and the
-        // award together. A second load/save here would write the blob back over the craft it was meant to accompany.
+        // is handed over already loaded because this handler owns the character-row write: the award handler
+        // applies the experience to the attributes blob in memory and leaves it unsaved, and the single
+        // UpdateAsync below writes that row once — InventoryBlob (materials taken, output added) and Attributes
+        // (the award) together, plus LastPlayedAt. That is one row in one save; it is not a transaction with
+        // anything else. The craft does not go through IInventoryService at all, so there is no second store and
+        // no second write to clobber the bag.
         AwardSkillXpHubResult? award = null;
         if (skillId is not null && recipe.ExperienceGained > 0)
         {
@@ -255,8 +258,10 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
         if (award is not null)
         {
             character.LastPlayedAt = DateTimeOffset.UtcNow;
-            await _characterRepo.UpdateAsync(character, cancellationToken);
         }
+
+        // Always saved: the bag changed even when the recipe trains no skill.
+        await _characterRepo.UpdateAsync(character, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterId} crafted {Quantity}x '{ItemRef}' from recipe '{RecipeSlug}'.",
@@ -276,15 +281,6 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
             SkillRank = award?.CurrentRank ?? 0,
             SkillRankedUp = award?.RankedUp ?? false,
         };
-    }
-
-    /// <summary>Puts consumed materials back when a later step fails.</summary>
-    private async Task RefundAsync(string characterName, IReadOnlyList<ConsumedMaterialDto> consumed)
-    {
-        foreach (var material in consumed)
-        {
-            await _inventory.AddItemAsync(characterName, material.ItemRef, material.Quantity);
-        }
     }
 
     private Dictionary<string, int> ReadAttributes(string? attributesJson, Guid characterId)
