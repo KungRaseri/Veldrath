@@ -2385,11 +2385,26 @@ public class GameHub : Hub
 
         if (result.GoldReward > 0)
         {
-            await _mediator.Send(new AddGoldHubCommand
+            var goldResult = await _mediator.Send(new AddGoldHubCommand
             {
                 CharacterId = characterId,
                 Amount = result.GoldReward,
             });
+
+            // Quest gold is paid through the single gold writer, so the purse is announced from the writer's
+            // own figures rather than from the reward the toast names: GoldChanged carries the total the
+            // server actually stored, and gold is private, so it goes to the caller alone.
+            if (goldResult.Success && goldResult.GoldAdded > 0)
+            {
+                await Clients.Caller.SendAsync("GoldChanged",
+                    new
+                    {
+                        CharacterId = characterId,
+                        GoldAdded = goldResult.GoldAdded,
+                        NewGoldTotal = goldResult.NewGoldTotal,
+                        Source = $"Quest:{result.Slug}",
+                    });
+            }
         }
 
         if (result.XpReward > 0)
