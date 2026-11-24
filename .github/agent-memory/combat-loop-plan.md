@@ -116,24 +116,24 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 #### `Program.cs`
 - Added `builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();`
 
-### New/Modified Client Files
+### Client files — the SvelteKit shell, not a view model
 
-#### `GameViewModel.cs`
-- 8 combat state backing fields + public properties: `IsInCombat`, `IsPlayerDead`, `IsHardcoreDeath`, `CombatEnemyId`, `CombatEnemyName`, `CombatEnemyLevel`, `CombatEnemyCurrentHealth`, `CombatEnemyMaxHealth`
-- `ObservableCollection<string> EnemyAbilityNames`
-- `ObservableCollection<SpawnedEnemyItemViewModel> SpawnedEnemies`
-- 6 `ReactiveCommand` declarations + constructor initializations: `EngageEnemyCommand<Guid>`, `AttackEnemyCommand`, `DefendActionCommand`, `FleeFromCombatCommand`, `UseAbilityInCombatCommand<string>` (abilityId), `RespawnCommand`
-- Hub event handlers: `OnCombatStarted`, `OnCombatTurn`, `OnCombatEnded`, `OnEnemyDefeated(Guid)`, `OnEnemyEngaged(Guid, Guid, string)`, `OnEnemySpawned(Guid, string, int, int, int)`, `OnCharacterRespawned(int, int)`
-- Updated `OnLocationEntered(string, string, string, IReadOnlyList<SpawnedEnemyItemViewModel>? = null)` — populates `SpawnedEnemies`
-- Private `DoXxx` methods for each command (try/catch → `AppendLog` on error)
-- `SpawnedEnemyItemViewModel : ReactiveObject` class at end of file (Id, Name, Level, MaxHealth, CurrentHealth with `RaisePropertyChanged(IsAlive)`)
+> `GameViewModel.cs`, `CharacterSelectViewModel.cs` and `GameView.axaml`, which this section used to document,
+> were deleted with the Avalonia client in session-68 (2026-10-25) — see
+> [`work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md`](work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md).
 
-#### `CharacterSelectViewModel.cs`
-- 7 new subscription fields: `_combatStartedSub`, `_combatTurnSub`, `_combatEndedSub`, `_enemyDefeatedSub`, `_enemyEngagedSub`, `_enemySpawnedSub`, `_characterRespawnedSub`
-- Disposal for all 7 in the dispose block
-- 7 new event subscriptions (mapping payloads to `GameViewModel` handler methods)
-- Updated `LocationEnteredPayload` → now has `IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies`; maps to `SpawnedEnemyItemViewModel` in the `LocationEntered` callback
-- New payload records: `SpawnedEnemyEntry`, `CombatStartedPayload`, `CombatTurnPayload`, `CombatEndedPayload`, `EnemyDefeatedPayload(Guid CharacterId)`, `EnemyEngagedPayload(Guid CharacterId, Guid EnemyId, string EnemyName)`, `EnemySpawnedPayload`, `CharacterRespawnedPayload`
+#### `web/client/src/lib/game/session.svelte.ts`
+- Combat state: `combat` (`active`, `enemy`, `log`, `participants`, `outcome`), the current location's `enemies` roster, and `dead` for the death banner
+- `combat.enemy` carries `id`, `name`, `level`, `currentHealth`, `maxHealth`, `abilities`, `archetypeSlug`, `typeKey`, `tier`
+- Commands: `engageEnemy(enemyId)` → `EngageEnemy` (sent with the current `locationSlug`), `attack()` → `AttackEnemy`, `defend()` → `DefendAction`, `flee()` → `FleeFromCombat`, `useCombatAbility(abilityId)` → `UseAbilityInCombat`, `respawn()` → `Respawn`
+- Subscribers: `CombatStarted` (opens the panel and drops that enemy from `enemies`), `CombatParticipants` (the shared enemy-health and participant snapshot a party member's turn updates), `CombatTurn` (`applyCombatTurnToStats` + `describeCombatTurn`; on `playerDefeated` sets `dead` and applies the penalty, on `enemyDefeated` closes the fight and re-reads the bag when loot dropped), `CombatEnded` (keeps the summary the player's own turns earned; a `shared kill` closes cleanly), `EnemyDefeated` (log line), `CharacterRespawned` (clears `dead`, restores health/mana, moves the location and re-reads the map graph)
+- `LocationEntered` fills `enemies` from `spawnedEnemies` (`SpawnedEnemy { id, name, level, currentHealth, maxHealth }`), filtered so a fight resumed after a reconnect is not listed twice
+
+#### `web/client/src/lib/game/CombatPanel.svelte`
+- The combat UI: enemy portrait addressed by `archetypeSlug`, name/level/health, participants with their share, the enemy's ability list, the running log, the outcome summary, and the attack / defend / flee / ability buttons behind a `waiting` guard so a turn cannot be submitted twice
+
+#### `web/client/src/lib/game/GameScreen.svelte`
+- The location's enemy roster with an Engage button per enemy (`session.engageEnemy(enemy.id)`), the death banner with Respawn, and the disconnected panel — a kick is a dead session, not a dismissible banner
 
 ### Critical Implementation Notes
 
@@ -149,9 +149,9 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 | Phase | Task | Status |
 |---|---|---|
 | 8 | Tests — server combat handler unit tests | ✅ |
-| 8 | Tests — client GameViewModel combat command tests | ✅ |
-| 9 | `GameView.axaml` — combat panel UI (enemy roster, action buttons, death/respawn overlay) | ✅ |
-| Final | `dotnet test Veldrath.slnx --filter "Category!=UI"` | ✅ 525+491=1016 |
+| 8 | Tests — web combat state (`session.test.ts`, `combat-panel.test.ts`) | ✅ |
+| 9 | `CombatPanel.svelte`, plus the roster / death banner / disconnected panel in `GameScreen.svelte` | ✅ |
+| Final | `dotnet test Realm.Full.slnx` and `cd web && npm run test` | ✅ (the `Veldrath.slnx --filter "Category!=UI"` run retired with the client) |
 
 #### Phase 8 — Test Priorities
 - `EngageEnemyHubCommandHandlerTests`: guard (already in combat), enemy not found, enemy dead, success
@@ -160,14 +160,13 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 - `FleeFromCombatHubCommandHandlerTests`: 50% flee logic (seed RNG for determinism)
 - `UseAbilityInCombatHubCommandHandlerTests`: cooldown guard, mana guard, heal vs damage path
 - `RespawnHubCommandHandlerTests`: HC guard, alive guard, HP/mana restore, session cleared
-- `GameViewModelCombatTests`: `OnCombatStarted` sets state, `OnCombatTurn` updates HP + sets `IsPlayerDead`, `OnEnemySpawned` adds to collection
+- `web/client/src/lib/game/session.test.ts` combat cases: the fight opens on `CombatStarted`, a turn updates the enemy's health and keeps the whole log, `enemyDefeated` closes the fight, `playerDefeated` sets `dead`, and a reconnect does not duplicate the enemy being fought. The panel's own rendering is `combat-panel.test.ts`.
 
-#### Phase 9 — GameView.axaml Combat Panel
-Add below zone-location content:
-- Enemy roster `ItemsControl` bound to `SpawnedEnemies` — each item shows Name, Level, HP bar, Engage button (binds `EngageEnemyCommand` with enemy Id)
-- Combat HUD (visible when `IsInCombat`): enemy name+level+HP bar; Attack / Defend / Flee buttons; ability list (ItemsControl over `EnemyAbilityNames` with `UseAbilityInCombatCommand`)
-- Death overlay (visible when `IsPlayerDead && !IsHardcoreDeath`): "You have been defeated" + Respawn button
-- HC death overlay (visible when `IsHardcoreDeath`): "Your character has been permanently lost" + Return to menu button
+#### Phase 9 — Combat panel (web)
+Implemented as [`CombatPanel.svelte`](../../web/client/src/lib/game/CombatPanel.svelte), with the roster and the death banner in [`GameScreen.svelte`](../../web/client/src/lib/game/GameScreen.svelte):
+- The location's spawned enemies are listed with name, level and health, each with an Engage button
+- The panel (open while `combat.active`): enemy portrait and name/level/health, participants with their share, the enemy's ability list, the running log, the outcome summary — including the hardcore note on a permadeath — and the Attack / Defend / Flee buttons
+- A defeated player gets the death banner with a Respawn button; the server moves them to the zone's safe location and the shell re-reads the map graph
 
 ---
 
