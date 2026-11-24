@@ -51,8 +51,9 @@ rows, and two consecutive full-suite runs lost the death journey this way while 
   re-engages whatever is still standing instead of assuming one enemy will outlast it. A shared kill never heals, so
   the walk to 0 HP stays monotonic and the Respawn assertions still test what they were written for.
 - **The specs that kill fight in their own zone group.** `a1-the-droveway.e2e.ts` asserts the drove road spawned at
-  least two living rows, and a pool draw there rolls exactly two — so one kill in the shared `zone:the-droveway_normal`
-  roster drops it to one until the 2 s respawn, and a1 read that window (measured: pair run on a fresh stack, a1 red
+  least two living rows, and a pool draw there rolls 2–4 rows (`ActorPoolResolver.MinCount`/`MaxCount`) — so when it
+  rolls 2, one kill in the shared `zone:the-droveway_normal` roster drops it to one until the 2 s respawn, and a1 read
+  that window (measured: pair run on a fresh stack, a1 red
   at `roster.length` 1 while encounters passed; a1 alone green). A wilderness scope is `zone:{zoneId}_{mode}`, so the
   two encounters specs that kill now create **hardcore** characters: their roster is `zone:the-droveway_hardcore`,
   which no other spec touches, and the `_normal` roster a1 reads is never depleted. The death journey stays `normal`
