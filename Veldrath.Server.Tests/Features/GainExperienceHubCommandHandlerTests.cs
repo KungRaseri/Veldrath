@@ -4,6 +4,7 @@ using Moq;
 using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.LevelUp;
 using SharedModels = RealmEngine.Shared.Models;
 
@@ -332,5 +333,130 @@ public class GainExperienceHubCommandHandlerTests
         result.NewLevel.Should().Be(3);
         result.NewExperience.Should().Be(5);
         character.LastPlayedAt.Should().BeAfter(before);
+    }
+
+    // Attribute points: the engine's own LevelUp() hands the player points to spend. Nothing in Veldrath.Server
+    // incremented the blob key before this, so the field stayed at zero for a character's whole life and
+    // AllocateAttributePoints could only ever answer "not enough points".
+
+    [Fact]
+    public async Task Handle_LevelUp_BanksTheAttributePointsTheEngineAwards()
+    {
+        var (handler, _, character) = Arrange(experience: 90, level: 1);
+
+        await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["UnspentAttributePoints"].Should().Be(3, "reaching level 2 is worth the engine's 3 attribute points");
+        // The pools still move in the same write: banking points must not cost the level-up its derived stats.
+        stored["MaxHealth"].Should().Be(110);
+    }
+
+    [Fact]
+    public async Task Handle_MultiLevelAward_BanksPointsForEveryLevelCrossedAndKeepsTheBalance()
+    {
+        // A character that already banked 4 points (a previous level-up nobody has spent yet) crosses 1 → 4.
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+        {
+            ["UnspentAttributePoints"] = 4,
+            ["Strength"] = 10,
+        });
+        var (handler, _, character) = Arrange(experience: 0, level: 1, attributes: attributes);
+
+        // 1 → 2 costs 100, 2 → 3 costs 200, 3 → 4 costs 300.
+        var result = await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 600 },
+            CancellationToken.None);
+
+        result.NewLevel.Should().Be(4);
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["UnspentAttributePoints"].Should().Be(13, "three levels at 3 points each, on top of the unspent 4");
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_OnAFifthLevel_BanksTheBonusPoints()
+    {
+        var (handler, _, character) = Arrange(experience: 0, level: 4);
+
+        // 4 → 5 costs 400.
+        await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 400 },
+            CancellationToken.None);
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["UnspentAttributePoints"].Should().Be(5, "levels 5, 10, 15 … are worth 3 + 2 points");
+    }
+
+    [Fact]
+    public async Task Handle_MultiLevelAward_PaysTheBonusForEveryFifthLevelItCrosses()
+    {
+        var (handler, _, character) = Arrange(experience: 0, level: 3);
+
+        // 3 → 4 costs 300, 4 → 5 costs 400, 5 → 6 costs 500.
+        await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 1200 },
+            CancellationToken.None);
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["UnspentAttributePoints"].Should().Be(11, "levels 4 and 6 are worth 3, level 5 is worth 5");
+    }
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(10)]
+    [InlineData(15)]
+    [InlineData(20)]
+    public async Task Handle_LevelUp_BanksExactlyWhatTheEngineLevelUpBanks(int newLevel)
+    {
+        // The engine is the author of the award; the server must not become a second opinion on it. Drive a real
+        // engine level-up for the same level and compare. If either rate changes (3 per level, +2 every fifth) this
+        // reddens rather than drifting silently.
+        var engine = new SharedModels.Character { Level = newLevel - 1, Experience = 0 };
+        engine.GainExperience((newLevel - 1) * 100);
+        engine.Level.Should().Be(newLevel, "one engine level-up per test level");
+
+        var (handler, _, character) = Arrange(experience: 0, level: newLevel - 1);
+        await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = (newLevel - 1) * 100 },
+            CancellationToken.None);
+
+        var stored = JsonSerializer.Deserialize<Dictionary<string, int>>(character.Attributes)!;
+        stored["UnspentAttributePoints"].Should().Be(
+            engine.UnspentAttributePoints, "the server banks the same points the engine's LevelUp() awards");
+    }
+
+    [Fact]
+    public async Task Handle_LevelUp_BanksPointsTheAllocateAttributePointsCommandCanSpend()
+    {
+        // The end of the story the card was filed about: a level-up has to leave the character able to allocate.
+        var attributes = JsonSerializer.Serialize(new Dictionary<string, int> { ["Strength"] = 10 });
+        var (handler, repo, character) = Arrange(experience: 90, level: 1, attributes: attributes);
+
+        await handler.Handle(
+            new GainExperienceHubCommand { CharacterId = character.Id, Amount = 10 },
+            CancellationToken.None);
+
+        var allocate = new AllocateAttributePointsHubCommandHandler(
+            repo.Object, NullLogger<AllocateAttributePointsHubCommandHandler>.Instance);
+
+        var result = await allocate.Handle(
+            new AllocateAttributePointsHubCommand
+            {
+                CharacterId = character.Id,
+                Allocations = new Dictionary<string, int> { ["Strength"] = 3 },
+            },
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue("the level-up banked exactly the 3 points this allocation spends");
+        result.PointsSpent.Should().Be(3);
+        result.RemainingPoints.Should().Be(0);
+        result.NewAttributes["Strength"].Should().Be(13);
+        repo.Verify(r => r.UpdateAsync(character, It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 }

@@ -16,6 +16,15 @@ namespace Veldrath.Server.Features.LevelUp;
 /// The engine's own <see cref="RealmEngine.Shared.Models.Character.GainExperience(int)"/> recomputes health and mana
 /// on a level-up; the server blob carries the authoritative numbers, and when only <c>Level</c>/<c>Experience</c>
 /// were written every level-up was cosmetic — a level-6 character kept the level-1 120 HP bar.
+/// <para>
+/// A level-up also banks the points the engine's own <see cref="RealmEngine.Shared.Models.Character"/> hands the
+/// player — 3 attribute points per level plus 2 more on every fifth — under <c>UnspentAttributePoints</c>, the key
+/// <see cref="Veldrath.Server.Features.Characters.AllocateAttributePointsHubCommandHandler"/> spends from. Before
+/// this, nothing in
+/// <c>Veldrath.Server</c> ever incremented that key: it could only be decremented, so every character carried zero
+/// unspent points for life and the attribute-allocation command always answered "not enough points". Skill points
+/// are still not persisted — the server has no path that spends them.
+/// </para>
 /// </remarks>
 internal static class CharacterProgression
 {
@@ -25,6 +34,40 @@ internal static class CharacterProgression
     internal const string KeyMaxHealth = "MaxHealth";
     internal const string KeyCurrentMana = "CurrentMana";
     internal const string KeyMaxMana = "MaxMana";
+
+    /// <summary>
+    /// The attributes-blob key that holds the points a player has banked but not yet allocated. Written by a
+    /// level-up here and spent by <c>AllocateAttributePointsHubCommandHandler</c>, which requires the exact spelling.
+    /// </summary>
+    internal const string KeyUnspentAttributePoints = "UnspentAttributePoints";
+
+    /// <summary>Attribute points the engine awards for <em>reaching</em> <paramref name="level"/>.</summary>
+    /// <remarks>
+    /// Mirrors <c>RealmEngine.Shared.Models.Character.LevelUp()</c>: 3 points per level plus 2 more on every fifth
+    /// (5, 10, 15, …), which is the same rule <c>RealmEngine.Shared.Tests</c> pins. The award is reproduced here
+    /// rather than delegated to the engine object because that object's <c>LevelUp()</c> also rewrites the pools
+    /// from its <c>Constitution × 10</c> formulas, which this path deliberately does not adopt; a server test pins
+    /// the two rules together so they cannot drift.
+    /// </remarks>
+    /// <param name="level">The level reached.</param>
+    /// <returns>The attribute points that level is worth.</returns>
+    internal static int AttributePointsForLevel(int level) => 3 + (level % 5 == 0 ? 2 : 0);
+
+    /// <summary>The points a <paramref name="oldLevel"/> → <paramref name="newLevel"/> crossing awards.</summary>
+    /// <remarks>
+    /// Every level crossed is awarded on its own, exactly as the engine's per-level <c>LevelUp()</c> loop does: a
+    /// 3 → 7 award pays levels 4, 5, 6 and 7 (3 + 5 + 3 + 3 = 14), not a flat multiple of the starting level's rate.
+    /// </remarks>
+    /// <param name="oldLevel">Level before the award.</param>
+    /// <param name="newLevel">Level after the award.</param>
+    /// <returns>The total points awarded, or 0 when no level was crossed.</returns>
+    internal static int AttributePointsForLevels(int oldLevel, int newLevel)
+    {
+        var total = 0;
+        for (var level = oldLevel + 1; level <= newLevel; level++)
+            total += AttributePointsForLevel(level);
+        return total;
+    }
 
     /// <summary>What an award did to the character's level and experience.</summary>
     /// <param name="OldLevel">Level before the award.</param>
@@ -38,7 +81,8 @@ internal static class CharacterProgression
 
     /// <summary>
     /// Applies an experience award and, when it crosses a level, rebuilds the derived pools in
-    /// <paramref name="attributes"/> from the character's class curve and its new level.
+    /// <paramref name="attributes"/> from the character's class curve and its new level, and banks the attribute
+    /// points those levels are worth.
     /// </summary>
     /// <param name="character">Character row to advance.</param>
     /// <param name="amount">Positive experience to award.</param>
@@ -70,7 +114,16 @@ internal static class CharacterProgression
         character.Level = level;
 
         if (level > oldLevel)
+        {
+            // The engine's own level-up hands the player points to spend. Nothing else in the server ever increments
+            // the key, so without this every character carries zero unspent points for life and the allocation
+            // command can never succeed. Awarded before the pools are rebuilt so both edits land in one blob write.
+            attributes[KeyUnspentAttributePoints] =
+                attributes.GetValueOrDefault(KeyUnspentAttributePoints)
+                + AttributePointsForLevels(oldLevel, level);
+
             RecomputeDerivedStats(attributes, level, characterClass);
+        }
 
         return new Progress(oldLevel, level, xp);
     }

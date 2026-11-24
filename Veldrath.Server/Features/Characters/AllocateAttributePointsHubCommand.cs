@@ -9,6 +9,12 @@ namespace Veldrath.Server.Features.Characters;
 /// Hub command that spends a character's unallocated attribute points.
 /// Validates that the character has enough points, applies the increases, and persists the result.
 /// </summary>
+/// <remarks>
+/// The points it spends are granted by <see cref="Veldrath.Server.Features.LevelUp.CharacterProgression"/> on every
+/// level-up (3 per level, 2 more on every fifth) and stored in the attributes blob under
+/// <c>UnspentAttributePoints</c> — the exact spelling matched below. A level-up that crossed no level banks nothing,
+/// and a character created by the engine carries none until it levels.
+/// </remarks>
 public record AllocateAttributePointsHubCommand : IRequest<AllocateAttributePointsHubResult>
 {
     /// <summary>Gets the ID of the character receiving the attribute increases.</summary>
