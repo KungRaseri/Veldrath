@@ -7,16 +7,25 @@ title: "VisitShop Handler Details (session-17)"
 
 ## VisitShop Handler Details (session-17)
 
-- Uses `IZoneRepository.GetByIdAsync(zoneId)` — validates zone exists + `HasMerchant == true`
-- ZoneId empty string → fails with "Zone ID cannot be empty"
-- Zone not found → fails with `"Zone '{zoneId}' not found"`
-- Zone `HasMerchant == false` → fails with `"Zone '{name}' has no merchant"`
-- Returns `{ ZoneId, ZoneName }` on success
-- Broadcasts `ShopVisited` payload: `{ CharacterId, ZoneId, ZoneName }` — **to Caller ONLY** (not zone group)
-- `ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName)` internal record in `CharacterSelectViewModel.cs`
-- 18th subscription: `_shopVisitedSub` field + disposal + `"ShopVisited"` subscription in `DoSelectAsync`
-- Client callback: `GameViewModel.OnShopVisited(string zoneId, string zoneName)` → `AppendLog("Welcome to the shop at {zoneName}!")`
-- Client sends: `SendCommandAsync<object>("VisitShop", new { ZoneId = _currentZoneId })`
-- `VisitShopHubRequest(string ZoneId)` DTO record at bottom of `GameHub.cs`
-- Zone with `HasMerchant = true` for handler tests: `"fenwick-crossing"` (from seed data)
-- Zone with `HasMerchant = false` for handler tests: `"greenveil-paths"`
+- `VisitShopHubCommand(Guid CharacterId, string ZoneId)` → `VisitShopHubResult`: `Success`, `Refusal`
+  (`ShopRefusal`), `ErrorMessage`, `ZoneId`, `ZoneName`. In `Veldrath.Server/Features/Characters/VisitShopHubCommand.cs`.
+- Validates the request in order: empty `ZoneId` → `ShopRefusal.InvalidRequest` with "Zone ID cannot be empty";
+  unknown zone → `ShopRefusal.ZoneNotFound` with `"Zone '{zoneId}' not found"`; unknown character →
+  `ShopRefusal.CharacterNotFound`.
+- The merchant is then resolved by `ShopMerchantResolver.ResolveAsync`, which needs three facts to line up: the
+  character's **stored** position (never the zone id the client sent), the zone's `HasMerchant` flag, and a
+  `LocationNpc` at the character's current location whose archetype has `ArchetypeTraits.Shopkeeper == true`.
+  A zone flag alone is not a merchant.
+- Refusals from that step: `ShopRefusal.ZoneMismatch` → "You are not standing in that zone.";
+  `ShopRefusal.NoMerchant` → "There is no one to trade with here."
+- Success returns the handler's `ZoneId` / `ZoneName`. `GameHub.VisitShop(VisitShopHubRequest)` sends `ShopVisited`
+  with `{ CharacterId, ZoneId, ZoneName }` **to the caller only** — never the zone group. The payload is an
+  anonymous object; there is no C# `ShopVisitedPayload` record.
+- `ShopVisited` only announces the merchant. The client must then ask for the stock, which the web
+  `Session` does: `hub.on('ShopVisited')` sets `shopZone` / `showShop` and invokes `GetShopCatalog`.
+  `GameHub.GetShopCatalog()` replies with `ShopCatalog` `{ ZoneId, Catalog: [{ Slug, Name, Rarity, Price }] }`,
+  and `ShopCatalogPayload` in `web/client/src/lib/game/types.ts` is the web shape.
+- Web request: `hub.invoke('VisitShop', { zoneId: this.zone.id })` from `session.svelte.ts`.
+  `VisitShopHubRequest(string ZoneId)` is declared at the bottom of `Veldrath.Server/Hubs/GameHub.cs`.
+- Handler tests have to seed all three resolver facts (stored location, `Zone.HasMerchant`, a shopkeeper NPC
+  placed at that location); `Veldrath.Server.Tests/Features/ShopMerchantResolverTests.cs` is the reference.
