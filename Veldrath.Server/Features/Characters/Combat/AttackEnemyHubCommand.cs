@@ -84,6 +84,18 @@ public record AttackEnemyHubResult
     /// </summary>
     public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
 
+    /// <summary>
+    /// Gets every character whose combat session this kill released — the killer and anyone else engaged with the
+    /// same enemy, including a defender who never landed a hit. Empty unless <see cref="EnemyDefeated"/> is
+    /// <see langword="true"/>.
+    /// </summary>
+    /// <remarks>
+    /// The enemy row is shared, so killing it ends every fight pointed at it, not only this one. The hub sends
+    /// each of these characters a <c>CombatEnded</c>; without that they keep a panel for a fight the server has
+    /// already dropped and their next action is answered "Not in combat".
+    /// </remarks>
+    public IReadOnlyList<Guid> ReleasedCombatCharacterIds { get; init; } = [];
+
     /// <summary>Gets the run whose room this kill cleared, or <see langword="null"/> when it cleared nothing.</summary>
     public Guid? ClearedInstanceId { get; init; }
 
@@ -255,6 +267,7 @@ public class AttackEnemyHubCommandHandler
         if (!enemy.IsAlive)
         {
             CombatRewardShare? myReward = null;
+            IReadOnlyList<Guid> released = [];
             IReadOnlyList<Guid> participants;
             lock (enemy.SyncRoot)
             {
@@ -264,9 +277,10 @@ public class AttackEnemyHubCommandHandler
             // Only the caller that wins the death transition distributes rewards.
             if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
             {
-                var rewardList = await CombatHelpers.DistributeRewardsAsync(
+                var distribution = await CombatHelpers.DistributeRewardsAsync(
                     enemy, _characterRepo, _classRepo, _sessions, cancellationToken, _logger);
-                myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+                myReward = distribution.Rewards.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+                released = distribution.ReleasedCharacterIds;
             }
 
             _logger.LogInformation(
@@ -319,6 +333,7 @@ public class AttackEnemyHubCommandHandler
                 EnemyName = enemy.Name,
                 EnemyArchetypeSlug = enemy.ArchetypeSlug,
                 ParticipantIds = participants,
+                ReleasedCombatCharacterIds = released,
                 PlayerRemainingHealth = player.Health,
                 XpEarned = myReward?.Xp ?? 0,
                 GoldEarned = myReward?.Gold ?? 0,

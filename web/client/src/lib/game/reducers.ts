@@ -53,6 +53,32 @@ export function outcomeFrom(turn: CombatTurnPayload): CombatOutcome | null {
 	return null;
 }
 
+/**
+ * Derives the summary a `CombatEnded` reason deserves when the caller's own turn did not record one.
+ *
+ * `defeated` and `fled` are the two endings the player caused and are the only ones summarised. A reason the
+ * client does not know ends the fight without a win and without a death — today that is `shared kill`, when
+ * another character lands the killing blow on the enemy you were fighting and the server releases your session
+ * with everyone else's. Reading an unknown reason as a defeat (the old `reason === 'fled' ? fled : defeat`)
+ * would tell a character who is still standing, and lost nothing, that they were defeated.
+ *
+ * @param reason The reason the server named on `CombatEnded`.
+ * @returns The matching outcome, or `null` when the ending was neither a victory nor a death.
+ */
+export function outcomeFromCombatEndReason(reason: string): CombatOutcome | null {
+	const normalised = reason.trim().toLowerCase();
+
+	if (normalised === 'fled') {
+		return { kind: 'fled', xpEarned: 0, goldEarned: 0, xpLost: 0, goldLost: 0, hardcore: false };
+	}
+
+	if (normalised === 'defeated') {
+		return { kind: 'defeat', xpEarned: 0, goldEarned: 0, xpLost: 0, goldLost: 0, hardcore: false };
+	}
+
+	return null;
+}
+
 export function describeCombatTurn(turn: CombatTurnPayload): string {
 	const parts: string[] = [];
 

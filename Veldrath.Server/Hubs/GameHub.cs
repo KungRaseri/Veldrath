@@ -504,6 +504,16 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// The <c>CombatEnded</c> reason for a fight another character finished.
+    /// </summary>
+    /// <remarks>
+    /// A fight is shared — one enemy row, one combat session per engaged character — so the killing blow releases
+    /// every session pointed at it. This is not a defeat: the character is still standing and lost nothing, and the
+    /// client keeps its own turn's summary instead of inventing a loss from an ending it did not cause.
+    /// </remarks>
+    private const string SharedKillReason = "shared kill";
+
+    /// <summary>
     /// Tells the caller that the fight is over because they died.
     /// </summary>
     /// <remarks>
@@ -516,6 +526,57 @@ public class GameHub : Hub
     private async Task SendCombatEndedAsync(Guid characterId, string reason)
     {
         await Clients.Caller.SendAsync("CombatEnded", new { CharacterId = characterId, Reason = reason });
+    }
+
+    /// <summary>
+    /// Ends the fight for every other character the kill released, not only the one that landed it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The enemy row is one instance and every engaged character holds a session pointed at it, so
+    /// <c>CombatHelpers.DistributeRewardsAsync</c> removing the sessions of an enemy removes all of them. That is
+    /// correct — the enemy is dead — but only the killer's turn reports it. Everyone else used to keep a combat
+    /// panel for a fight the server no longer had: the next Defend, Attack or ability was answered
+    /// "Not in combat" and the panel stayed up with a live enemy portrait for the rest of the session.
+    /// </para>
+    /// <para>
+    /// Each released character is addressed through the connection its player session names, the same way kill
+    /// objectives reach a party member. A character with no session row is offline in the reconnect window; its
+    /// session is gone with the enemy, so there is nothing to tell and nothing to resume.
+    /// </para>
+    /// </remarks>
+    /// <param name="releasedCharacterIds">The characters whose combat sessions the kill released.</param>
+    /// <param name="killerId">The caller's character, which gets its own victory turn instead.</param>
+    private async Task EndReleasedFightsAsync(IReadOnlyList<Guid> releasedCharacterIds, Guid killerId)
+    {
+        foreach (var releasedId in releasedCharacterIds.Distinct())
+        {
+            if (releasedId == killerId) continue;
+
+            try
+            {
+                var playerSession = await _playerSessionRepo.GetByCharacterIdAsync(releasedId);
+                if (playerSession is null || string.IsNullOrEmpty(playerSession.ConnectionId))
+                {
+                    _logger.LogDebug(
+                        "A shared kill released character {CharacterIdPrefix}'s session while they were offline",
+                        releasedId.ToString()[..8]);
+                    continue;
+                }
+
+                await Clients.Client(playerSession.ConnectionId)
+                    .SendAsync("CombatEnded", new { CharacterId = releasedId, Reason = SharedKillReason });
+            }
+            catch (Exception ex)
+            {
+                // The kill and its rewards are already committed; closing someone else's panel is a courtesy that
+                // must not turn a successful kill into a failed turn.
+                _logger.LogWarning(
+                    ex,
+                    "Could not tell character {CharacterIdPrefix} that another character killed their enemy",
+                    releasedId.ToString()[..8]);
+            }
+        }
     }
 
     /// <summary>
@@ -2875,6 +2936,10 @@ public class GameHub : Hub
 
             if (result.EnemyDefeated)
             {
+                // The same enemy row can hold several fights; this kill released all of them, and only this
+                // connection is about to hear about it from its own turn.
+                await EndReleasedFightsAsync(result.ReleasedCombatCharacterIds, characterId);
+
                 await AdvanceKillObjectivesAsync(result, characterId);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -3077,6 +3142,9 @@ public class GameHub : Hub
 
             if (result.EnemyDefeated)
             {
+                // Same as a melee kill: the ability's killing blow ended every fight pointed at this enemy.
+                await EndReleasedFightsAsync(result.ReleasedCombatCharacterIds, characterId);
+
                 await AdvanceQuestObjectivesAsync(characterId, "kill", result.EnemyName);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))

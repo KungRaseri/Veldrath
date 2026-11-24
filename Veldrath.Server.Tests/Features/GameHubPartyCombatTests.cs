@@ -673,6 +673,40 @@ public class GameHubPartyCombatTests : IDisposable
     }
 
     [Fact]
+    public async Task AttackEnemy_On_A_Shared_Kill_Ends_The_Other_Fighters_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var killer = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var defenderAccount = await HubHarness.SeedAccountAsync(db);
+        var defender = await HubHarness.SeedCharacterAsync(db, defenderAccount.Id);
+        await HubHarness.SeedSessionAsync(db, defender, "conn-defender");
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(killer.Id);
+        mediator.Returns(new AttackEnemyHubResult
+        {
+            Success = true,
+            EnemyDefeated = true,
+            EnemyName = "Goblin",
+            EnemyArchetypeSlug = "goblin",
+            ParticipantIds = [killer.Id, defender.Id],
+            ReleasedCombatCharacterIds = [killer.Id, defender.Id],
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1 });
+
+        await hub.AttackEnemy();
+
+        // The kill removed the defender's session too, so the other connection is told its fight is over. Without
+        // this it keeps a combat panel for a fight the server dropped and its next Defend is answered "Not in combat".
+        clients.Connection("conn-defender").SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = defender.Id, Reason = "shared kill" });
+
+        // The killer's own turn already closed their panel; a second, contradicting end event would overwrite it.
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "CombatEnded");
+    }
+
+    [Fact]
     public async Task AttackEnemy_On_Player_Defeat_Ends_The_Fight()
     {
         await using var db = _factory.CreateContext();
@@ -1024,6 +1058,37 @@ public class GameHubPartyCombatTests : IDisposable
             .OfType<AdvanceQuestObjectivesHubCommand>().Single();
         advance.Kind.Should().Be("kill");
         advance.Key.Should().Be("Goblin");
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_A_Shared_Kill_Ends_The_Other_Fighters_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var caster = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var defenderAccount = await HubHarness.SeedAccountAsync(db);
+        var defender = await HubHarness.SeedCharacterAsync(db, defenderAccount.Id);
+        await HubHarness.SeedSessionAsync(db, defender, "conn-defender");
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(caster.Id);
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyDefeated = true,
+            EnemyName = "Goblin",
+            ReleasedCombatCharacterIds = [caster.Id, defender.Id],
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        // An ability kill is a kill: it releases every session pointed at the enemy, and the other fighter has to be
+        // told rather than left with a panel the server no longer backs.
+        clients.Connection("conn-defender").SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = defender.Id, Reason = "shared kill" });
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "CombatEnded");
     }
 
     [Fact]
