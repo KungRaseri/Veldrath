@@ -142,7 +142,7 @@ faction, and they exist so trade, dialogue and quest content has a person to att
 | `forge-deserter` | Forge Deserter | Took a master's tools out of the Forge Quarter and now makes for whoever pays and does not ask. | 19–20 | none recorded (Skarhold forge trade) | `ashfields` | yes | armoured melee |
 | `village-blacksmith` | Village Blacksmith † § | Works the square at Crestfall and will not discuss the cellars. | — | none recorded (village trade) | `crestfall` | no | shop, trade |
 | `tavern-keeper` | Tavern Keeper † § | Keeps the Hearthbound Inn and hears everything said at the bar. | — | none recorded (Crestfall) | `crestfall`, `aldenmere`, `tolvaren` | no | shop, quest hook |
-| `wayfarer-elder` | Wayfarer Elder † § | Sits by the Weathered Waypost and can still read the old names cut into it. | — | none recorded | `the-droveway` | no | quest hook |
+| `wayfarer-elder` | Wayfarer Elder † § | Sits by the Weathered Waypost and can still read the old names cut into it. | — | none recorded | `crestfall`, `the-droveway` | no | quest hook |
 | `market-factor` | Market Factor § | Buys in one market and sells in the next, and keeps a written price list he honours. | — | none recorded (independent trader) | `crestfall`, `aldenmere`, `tolvaren`, `skarhold` | no | shop |
 | `gate-watch` | Gate Watch § | Stands the north road at Crestfall and checks every cart for a toll mark. | — | none recorded (town watch) | `crestfall`, `aldenmere` | no | guard |
 | `shrine-keeper` | Shrine Keeper § | Tends the Ash Shrine and will not say who is owed the ash. | — | none recorded (dedication undecided — see the proposals) | `ashfields` | no | quest hook |
