@@ -375,17 +375,30 @@ Acceptance: server handlers + hub methods with tests, `payload-contract.test.ts`
 and a `GameSession` store test suite driven by `FakeHub`.
 ```
 
-#### NEW-9 — `docs: fix stale plan status and retired-command references`
+#### NEW-9 — `docs: drop the retired desktop build from the web-development skill`
+
+> **Updated 2026-11-24.** The body was drafted against a tree that no longer existed: `97080fb9`
+> ("docs: drop desktop-shell leftovers and mark the decommission plan complete") landed at 12:44 on
+> 2026-10-25, thirty minutes before this plan at 13:14. `plans/README.md` already read ✅ Complete
+> (W1–W12) at line 14 of that revision, line 22 today; `.vscode/tasks.json` had no `desktop` task at
+> all — `:622` was `web:test`, and the file is 465 lines today, so that anchor is past EOF; the skill
+> never mentioned `build:desktop`, though its `adapter-static` clause was live then and still is. §3
+> above records the same drift as removed.
+>
+> Corrected rather than frozen: the acceptance line also named `repo-hygiene`, deleted in the
+> seven-workflow consolidation; and NEW-1 … NEW-11 carry no issue number anywhere in this file — §6's
+> apply checklist is unchecked and blocked on `issues: write` — so no filing recorded here quoted the
+> old text. The title drops "stale plan status" for the same reason and §6a's copy of it is updated to
+> match. One bullet is left.
 
 ```markdown
-- `plans/README.md` still lists `blazor-decommission-and-cleanup.md` as 🟢 Active although the plan is
-  Done; it should be removed from the live table (or marked Done and kept as history).
-- `.vscode/tasks.json:622` still runs `npm run build:desktop`.
-- `.roo/skills/web-development/SKILL.md` still tells agents to run `npm run build:desktop` and mentions
-  `adapter-static`.
+- `.roo/skills/web-development/SKILL.md:16` still describes the build config as
+  "adapter-node vs adapter-static desktop build", although the desktop build was retired in W11 and
+  `web/client/vite.config.ts:20` records that the app is served by `adapter-node` only. The
+  parenthetical should name `adapter-node` alone.
 
-Acceptance: `grep -rn "build:desktop" -- . ':!web/llms'` returns nothing outside agent-memory history,
-`repo-hygiene` passes, and the plans index matches reality.
+Acceptance: `.roo/skills/web-development/SKILL.md` describes the build as `adapter-node` only, with no
+desktop build implied.
 ```
 
 #### NEW-10 — `ci: flip Codecov statuses from informational to blocking`
@@ -451,7 +464,7 @@ Titles for the new issues, in the order they should be created:
 6. `feat(web): quest HUD tracker and completion toast`
 7. `feat(engine,server): quest objective types beyond kill/collect/visit`
 8. `feat(web,server): party panel and invite flow`
-9. `docs: fix stale plan status and retired-command references`
+9. `docs: drop the retired desktop build from the web-development skill`
 10. `ci: flip Codecov statuses from informational to blocking`
 11. `ops(dev): Mailpit for local mail, and a NullEmailSender that logs nothing`
 
