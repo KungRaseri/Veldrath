@@ -26,7 +26,7 @@ locations:
     level_range: [4, 6]
     pool:
       - archetype: sump-crawler
-        weight: 6   # band: 4-6 | to be seeded 4-6
+        weight: 6   # band: 4-6 | seeded 4-6
       - archetype: bandit-ruffian
         weight: 4   # band: 4-6 | seeded 3-6
   - slug: deepest-chamber
@@ -36,7 +36,7 @@ locations:
       - archetype: bandit-ruffian
         weight: 5   # band: 4-6 | seeded 3-6
       - archetype: sump-crawler
-        weight: 5   # band: 4-6 | to be seeded 4-6
+        weight: 5   # band: 4-6 | seeded 4-6
   - slug: pit-descent
     # band: b4-6 (D0 budget) | location L4-6
     level_range: [4, 6]

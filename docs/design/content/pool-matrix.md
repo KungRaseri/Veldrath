@@ -557,9 +557,9 @@ locations:
       - archetype: goblin-scout
         weight: 3   # band: 1-3 | seeded 1-3
       - archetype: drove-cur
-        weight: 3   # band: 1-3 | to be seeded 1-3
+        weight: 3   # band: 1-3 | seeded 1-3
       - archetype: peat-adder
-        weight: 2   # band: 1-3 | to be seeded 1-3
+        weight: 2   # band: 1-3 | seeded 1-3
   - slug: weathered-waypost
     # band: b1-3 (D0 budget) | location L1-4
     level_range: [1, 4]

@@ -26,19 +26,19 @@ locations:
     level_range: [12, 18]
     pool:
       - archetype: tide-strider
-        weight: 4   # band: 13-15 | to be seeded 13-15
+        weight: 4   # band: 13-15 | seeded 13-15
       - archetype: drowned-revenant
         weight: 3   # band: 13-15 | seeded 11-18
       - archetype: gull-rider-skirmisher
-        weight: 3   # band: 13-15 | to be seeded 13-15
+        weight: 3   # band: 13-15 | seeded 13-15
   - slug: bone-strand
     # band: b11-14 (D0 budget) | location L13-18
     level_range: [13, 18]
     pool:
       - archetype: gull-rider-skirmisher
-        weight: 4   # band: 13-15 | to be seeded 13-15
+        weight: 4   # band: 13-15 | seeded 13-15
       - archetype: tide-strider
-        weight: 3   # band: 13-15 | to be seeded 13-15
+        weight: 3   # band: 13-15 | seeded 13-15
       - archetype: gull-rider-brute
         weight: 3   # band: 16-18 | seeded 13-18
   - slug: tidal-grotto
@@ -48,7 +48,7 @@ locations:
       - archetype: drowned-revenant
         weight: 4   # band: 13-15 | seeded 11-18
       - archetype: tide-strider
-        weight: 3   # band: 13-15 | to be seeded 13-15
+        weight: 3   # band: 13-15 | seeded 13-15
       - archetype: storm-harrower
         weight: 3   # band: 16-18 | seeded 15-20
 

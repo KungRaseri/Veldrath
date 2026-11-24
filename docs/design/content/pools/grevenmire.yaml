@@ -26,9 +26,9 @@ locations:
     level_range: [3, 6]
     pool:
       - archetype: peat-adder
-        weight: 4   # band: 1-3 | to be seeded 1-3
+        weight: 4   # band: 1-3 | seeded 1-3
       - archetype: mire-boar
-        weight: 4   # band: 4-6 | to be seeded 4-6
+        weight: 4   # band: 4-6 | seeded 4-6
       - archetype: bandit-ruffian
         weight: 3   # band: 4-6 | seeded 3-6
       - archetype: forest-wolf
@@ -40,7 +40,7 @@ locations:
       - archetype: bandit-ruffian
         weight: 5   # band: 4-6 | seeded 3-6
       - archetype: mire-boar
-        weight: 3   # band: 4-6 | to be seeded 4-6
+        weight: 3   # band: 4-6 | seeded 4-6
       # The wight is the hollow's identity, not its difficulty: stacked bone, a cold that spoils a fire,
       # behind a DC 8 passive check. 2026-11-20 amendment 2 therefore dropped it to weight 1 rather than
       # moving it to a 7-9 room — it stays, as the rarest thing in the pool, and the cap holds.

@@ -30,15 +30,15 @@ locations:
       - archetype: storm-harrower
         weight: 3   # band: 16-18 | seeded 15-20
       - archetype: undertow
-        weight: 3   # band: 16-18 | to be seeded 16-18
+        weight: 3   # band: 16-18 | seeded 16-18
   - slug: tidelocked-vault
     # band: b15-18 (D0 budget) | location L17-20
     level_range: [17, 20]
     pool:
       - archetype: undertow
-        weight: 5   # band: 16-18 | to be seeded 16-18
+        weight: 5   # band: 16-18 | seeded 16-18
       - archetype: drowned-cantor
-        weight: 4   # band: 19-20 | to be seeded 19-20
+        weight: 4   # band: 19-20 | seeded 19-20
       - archetype: drowned-revenant
         weight: 2   # band: 13-15 | seeded 11-18
   - slug: drowned-threshold

@@ -41,7 +41,7 @@ locations:
     # is the cap's, not the room's. Read pool-matrix.md §7 before importing this pool.
     pool:
       - archetype: maw-serpent
-        weight: 6   # band: 28-30 | to be seeded 28-30 (D6/L6)
+        weight: 6   # band: 28-30 | seeded 28-30 (D6/L6)
       - archetype: pyreling
         weight: 2   # band: b23-26 (D0) / 21-30 (D1) | seeded 23-28; one band below, weight <= 2
   - slug: maw-descent
