@@ -91,6 +91,16 @@ public record ChooseNpcOptionResult
     /// <summary>Gets what changed, in the same words the panel previewed.</summary>
     public IReadOnlyList<string> Applied { get; init; } = [];
 
+    /// <summary>Gets the gold the choice actually paid, summed across every gold grant that went through.</summary>
+    public int GoldAwarded { get; init; }
+
+    /// <summary>Gets the character's gold total after the last successful gold grant, or <see langword="null"/> when none paid.</summary>
+    /// <remarks>
+    /// The hub announces this as <c>GoldChanged</c>; the client folds that event into its gold stat rather
+    /// than trying to parse the human-readable line in <see cref="Applied"/>.
+    /// </remarks>
+    public int? NewGoldTotal { get; init; }
+
     /// <summary>Gets the conversation to continue into, when the option chains to another entry.</summary>
     public NpcDialogueDto? Next { get; init; }
 
@@ -482,7 +492,8 @@ public class ChooseNpcOptionHubCommandHandler(
         if (oneShot && !await ClaimAsync(character.Id, slug, option.Key, cancellationToken))
             return Fail("You have already spoken about that.");
 
-        var applied = await ApplyGrantsAsync(character, slug, option, cancellationToken);
+        var grants = await ApplyGrantsAsync(character, slug, option, cancellationToken);
+        var applied = grants.Applied;
 
         logger.LogInformation(
             "Character {CharacterId} chose '{OptionKey}' from {NpcId} at {Zone}/{Location}: {Applied}",
@@ -515,6 +526,8 @@ public class ChooseNpcOptionHubCommandHandler(
             DisplayName = view.DisplayName,
             Response = option.Response,
             Applied = applied,
+            GoldAwarded = grants.GoldAwarded,
+            NewGoldTotal = grants.NewGoldTotal,
             Next = next,
             Ended = next is null,
         };
@@ -555,14 +568,22 @@ public class ChooseNpcOptionHubCommandHandler(
         }
     }
 
+    /// <summary>What a choice granted: the client's words plus the gold figures the hub announces.</summary>
+    /// <param name="Applied">Human-readable grant descriptions, in the order they were applied.</param>
+    /// <param name="GoldAwarded">Gold actually paid by this choice.</param>
+    /// <param name="NewGoldTotal">The character's gold total after the last successful grant, or null when none paid.</param>
+    private sealed record DialogueGrants(IReadOnlyList<string> Applied, int GoldAwarded, int? NewGoldTotal);
+
     /// <summary>Applies what the option grants, in the order that keeps the single writers authoritative.</summary>
-    private async Task<IReadOnlyList<string>> ApplyGrantsAsync(
+    private async Task<DialogueGrants> ApplyGrantsAsync(
         Character character,
         string speakerSlug,
         DialogueOption option,
         CancellationToken cancellationToken)
     {
         var applied = new List<string>();
+        var goldAwarded = 0;
+        int? newGoldTotal = null;
         var effects = new List<DialogueEffect>();
 
         foreach (var entry in DialogueOptionGrammar.Split(option.Grants))
@@ -645,10 +666,14 @@ public class ChooseNpcOptionHubCommandHandler(
                 cancellationToken);
 
             if (gold.Success)
+            {
                 applied.Add(effect.Describe());
+                goldAwarded += gold.GoldAdded;
+                newGoldTotal = gold.NewGoldTotal;
+            }
         }
 
-        return applied;
+        return new DialogueGrants(applied, goldAwarded, newGoldTotal);
     }
 
     private static ChooseNpcOptionResult Fail(string message) => new() { Success = false, ErrorMessage = message };

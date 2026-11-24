@@ -58,6 +58,14 @@ public record OpenChestHubResult
     /// <summary>Gets the gold that came out of it, if any.</summary>
     public int Gold { get; init; }
 
+    /// <summary>Gets the character's gold total after the award, or <see langword="null"/> when no gold was paid.</summary>
+    /// <remarks>
+    /// This travels in-process so the hub can announce <c>GoldChanged</c> from the server's own total. The
+    /// zone-wide <c>ChestOpened</c> broadcast deliberately omits it: the loot is announced, but the opener's
+    /// purse is not the party's business.
+    /// </remarks>
+    public int? NewGoldTotal { get; init; }
+
     /// <summary>Gets the server-worded outcome line the client logs.</summary>
     public string? Message { get; init; }
 
@@ -207,11 +215,12 @@ public class OpenChestHubCommandHandler(
         character.InventoryBlob = CharacterBag.Serialize(bag);
         await db.SaveChangesAsync(cancellationToken);
 
+        int? newGoldTotal = null;
         if (roll.Gold > 0)
         {
             // Gold lives in the attributes blob and has exactly one writer, so go through it rather than
             // re-implementing the key and the clamp here.
-            await sender.Send(
+            var award = await sender.Send(
                 new AddGoldHubCommand
                 {
                     CharacterId = request.CharacterId,
@@ -219,6 +228,13 @@ public class OpenChestHubCommandHandler(
                     Source = $"Chest:{chest.ChestId}",
                 },
                 cancellationToken);
+
+            if (award.Success)
+                newGoldTotal = award.NewGoldTotal;
+            else
+                logger.LogWarning(
+                    "Chest {ChestId} rolled {Gold} gold for character {CharacterId}, but the award failed: {Error}",
+                    chest.ChestId, roll.Gold, request.CharacterId, award.ErrorMessage);
         }
 
         var summary = items.Count == 0
@@ -255,6 +271,7 @@ public class OpenChestHubCommandHandler(
             DisplayName = chest.DisplayName,
             Items = items,
             Gold = roll.Gold,
+            NewGoldTotal = newGoldTotal,
             Message = message,
             RemainingChests = remaining.Select(GetLocationChestsHubCommandHandler.ToDto).ToList(),
         };

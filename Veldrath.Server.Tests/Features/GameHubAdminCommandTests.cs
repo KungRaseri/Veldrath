@@ -661,7 +661,14 @@ public class GameHubAdminCommandTests : IDisposable
         document.RootElement.GetProperty("Strength").GetInt32().Should().Be(10, "other attributes are preserved");
 
         clients.Connection("conn-target").SentMessages.Should()
-            .ContainSingle(m => m.Method == "GoldChanged");
+            .ContainSingle(m => m.Method == "GoldChanged")
+            .Which.Args[0].Should().BeEquivalentTo(new
+            {
+                CharacterId = target.Id,
+                GoldAdded = 895,
+                NewGoldTotal = 900,
+                Source = "Admin",
+            }, "the client's GoldChanged handler reads goldAdded/newGoldTotal, not gold");
         SystemText(clients).Should().Be($"Set gold to 900 for {target.Name}.");
     }
 

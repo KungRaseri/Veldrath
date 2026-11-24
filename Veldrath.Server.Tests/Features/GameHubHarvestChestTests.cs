@@ -358,8 +358,69 @@ public class GameHubHarvestChestTests : IDisposable
         await hub.OpenChest(new OpenChestRequest(chestId));
 
         clients.GroupNamed("zone:crestfall").SentMessages.Single(m => m.Method == "ChestOpened").Args[0]
-            .Should().BeSameAs(result);
+            .Should().BeEquivalentTo(new
+            {
+                Success = true,
+                ChestId = chestId,
+                DisplayName = "Mossy Strongbox",
+                Items = new[] { new ChestLootItem("@items/general:health-potion", "Health Potion", 1) },
+                Gold = 0,
+                Message = "Opened the Mossy Strongbox: Health Potion.",
+                RemainingChests = Array.Empty<LocationChestDto>(),
+            }, "the zone gets the event shape the client's ChestOpenedPayload describes");
         clients.Caller.SentMessages.Should().Contain(m => m.Method == "LocationChests");
+    }
+
+    [Fact]
+    public async Task OpenChest_Announces_The_Gold_To_The_Opener_Only()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        var chestId = Guid.NewGuid();
+        mediator.Returns(new OpenChestHubResult
+        {
+            Success = true,
+            ChestId = chestId,
+            DisplayName = "Mossy Strongbox",
+            Gold = 12,
+            NewGoldTotal = 59,
+            Message = "Opened the Mossy Strongbox: and 12 gold.",
+        });
+        mediator.Returns(new GetInventoryHubResult { Success = false });
+        mediator.Returns<IReadOnlyList<LocationChestDto>>(Array.Empty<LocationChestDto>());
+
+        await hub.OpenChest(new OpenChestRequest(chestId));
+
+        clients.Caller.SentMessages.Single(m => m.Method == "GoldChanged").Args[0]
+            .Should().BeEquivalentTo(new
+            {
+                CharacterId = characterId,
+                GoldAdded = 12,
+                NewGoldTotal = 59,
+                Source = "Chest",
+            });
+        clients.GroupNamed("zone:crestfall").SentMessages.Should()
+            .NotContain(m => m.Method == "GoldChanged",
+                "the loot is the party's business, one player's purse is not");
+    }
+
+    [Fact]
+    public async Task OpenChest_Sends_No_GoldChanged_When_The_Chest_Paid_No_Gold()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(Guid.NewGuid());
+        mediator.Returns(new OpenChestHubResult { Success = true, ChestId = Guid.NewGuid(), Gold = 0 });
+        mediator.Returns(new GetInventoryHubResult { Success = false });
+        mediator.Returns<IReadOnlyList<LocationChestDto>>(Array.Empty<LocationChestDto>());
+
+        await hub.OpenChest(new OpenChestRequest(Guid.NewGuid()));
+
+        clients.EveryMessage.Should().NotContain(m => m.Method == "GoldChanged");
     }
 
     [Fact]

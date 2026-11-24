@@ -1666,6 +1666,50 @@ describe('GameSession progression and economy', () => {
 		expect(session.chat.at(-1)?.message).toBe('Sold dagger for 12 gold.');
 	});
 
+	it('advances the gold stat when a chest or a dialogue choice pays out server-side', async () => {
+		const session = await connected();
+
+		// Chest gold and dialogue gold are paid by the server, which announces GoldChanged with its own
+		// total; the reward event itself carries the loot, not the purse. That is what used to leave
+		// stats.gold stale until a reload.
+		hub.emit('ChestOpened', {
+			success: true,
+			chestId: 'chest-1',
+			displayName: 'Mossy Strongbox',
+			items: [],
+			gold: 12,
+			message: 'Opened the Mossy Strongbox: and 12 gold.',
+			remainingChests: []
+		});
+		expect(session.stats.gold).toBe(0);
+
+		hub.emit('GoldChanged', {
+			characterId: 'char-1',
+			goldAdded: 12,
+			newGoldTotal: 59,
+			source: 'Chest'
+		});
+		expect(session.stats.gold).toBe(59);
+
+		hub.emit('NpcOptionChosen', {
+			success: true,
+			speakerSlug: 'village-blacksmith',
+			displayName: 'Mira',
+			response: 'Take it, and mind the edge.',
+			applied: ['25 gold'],
+			next: null,
+			ended: true
+		});
+		hub.emit('GoldChanged', {
+			characterId: 'char-1',
+			goldAdded: 25,
+			newGoldTotal: 84,
+			source: 'Dialogue:village-blacksmith'
+		});
+
+		expect(session.stats.gold).toBe(84);
+	});
+
 	it('updates unspent attribute points and mirrors the allocated attributes', async () => {
 		const session = await connected();
 
