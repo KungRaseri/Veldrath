@@ -1,4 +1,7 @@
+using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -20,12 +23,34 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
 {
     private readonly TestDbContextFactory _dbFactory = new();
 
-    private EfCoreEnemyInstanceStore CreateStore(ApplicationDbContext db) =>
+    /// <summary>
+    /// Captures what the store logs, so a test can prove the sweep reports the rows it deliberately leaves alone.
+    /// </summary>
+    private sealed class CapturingLogger : ILogger<EfCoreEnemyInstanceStore>
+    {
+        public ConcurrentQueue<(LogLevel Level, string Message)> Entries { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter) =>
+            Entries.Enqueue((logLevel, formatter(state, exception)));
+    }
+
+    private EfCoreEnemyInstanceStore CreateStore(
+        ApplicationDbContext db,
+        ILogger<EfCoreEnemyInstanceStore>? logger = null) =>
         new(
             db,
             new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             Options.Create(new EnemyWorldOptions()),
-            NullLogger<EfCoreEnemyInstanceStore>.Instance);
+            logger ?? NullLogger<EfCoreEnemyInstanceStore>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();
 
@@ -281,6 +306,78 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
         (await store.TryGetAsync(correct.Id)).Should().NotBeNull();
         (await store.TryGetAsync(deadRun.Id)).Should().NotBeNull("an instance scope still names its zone");
     }
+
+    [Fact]
+    public async Task RemoveForeignZoneGroupRowsAsync_Reports_A_Slug_The_Map_Does_Not_Hold()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var logger = new CapturingLogger();
+        var store = CreateStore(db, logger);
+
+        // Two rows on the same unjudgeable slug: the report counts the rows and names the pair once.
+        db.EnemyInstances.AddRange(
+            StoredRow("zone:crestfall", "lost-place"),
+            StoredRow("zone:crestfall", "lost-place"));
+        await db.SaveChangesAsync();
+
+        var zones = new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["mire-crossing"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "grevenmire" },
+        };
+
+        var removed = await store.RemoveForeignZoneGroupRowsAsync(zones, CancellationToken.None);
+
+        removed.Should().Be(0, "a slug the map does not hold cannot be judged, so nothing is deleted");
+        (await db.EnemyInstances.CountAsync()).Should().Be(2, "an absent slug must survive the sweep");
+
+        var warnings = logger.Entries
+            .Where(entry => entry.Level == LogLevel.Warning)
+            .Select(entry => entry.Message)
+            .ToList();
+
+        warnings.Should().ContainSingle()
+            .Which.Should().Contain("2 enemy row(s)")
+            .And.Contain("zone:crestfall/lost-place", "the report names the group and slug it could not judge");
+
+        Regex.Matches(warnings[0], Regex.Escape("zone:crestfall/lost-place"))
+            .Count.Should().Be(1, "each distinct group/slug pair is named once");
+    }
+
+    [Fact]
+    public async Task RemoveForeignZoneGroupRowsAsync_Stays_Quiet_When_Every_Slug_Is_Known()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var logger = new CapturingLogger();
+        var store = CreateStore(db, logger);
+
+        // Seeded straight as a row, so the only thing this test can observe is what the sweep itself logs.
+        db.EnemyInstances.Add(StoredRow("zone:grevenmire_normal", "mire-crossing"));
+        await db.SaveChangesAsync();
+
+        var zones = new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["mire-crossing"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "grevenmire" },
+        };
+
+        (await store.RemoveForeignZoneGroupRowsAsync(zones, CancellationToken.None)).Should().Be(0);
+
+        // The sweep runs at every startup, so a clean catalogue must not produce a warning.
+        logger.Entries.Should().NotContain(
+            entry => entry.Level >= LogLevel.Warning,
+            "there is nothing the sweep could not judge");
+    }
+
+    private static EnemyInstance StoredRow(string zoneGroup, string locationSlug) => new()
+    {
+        ZoneGroup = zoneGroup,
+        LocationSlug = locationSlug,
+        ArchetypeSlug = "goblin",
+        Name = "Goblin",
+        Level = 1,
+        CurrentHealth = 10,
+        MaxHealth = 10,
+        SpawnedAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+    };
 
     private static async Task<SpawnedEnemy> SeedEnemyAsync(
         EfCoreEnemyInstanceStore store,
