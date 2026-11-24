@@ -94,6 +94,24 @@ public interface IEnemyInstanceStore
     Task RemoveAsync(Guid enemyId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Deletes every stored enemy whose zone group does not name a zone that owns its location, and returns how many
+    /// rows went. This is debris cleanup, not read-side filtering: a row a client can never load still costs every
+    /// read of its location and would otherwise stay in the table forever.
+    /// </summary>
+    /// <remarks>
+    /// The caller supplies the zones per location slug because that mapping is content, and this store only sees the
+    /// application database. A row whose slug is absent from the map is reported-and-left, never deleted: a slug the
+    /// catalog no longer holds cannot be judged, and deleting on absence is how live state gets destroyed by a
+    /// content rollback.
+    /// </remarks>
+    /// <param name="zonesByLocationSlug">Zones that own each location slug, keyed by slug.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many enemy rows were deleted.</returns>
+    Task<int> RemoveForeignZoneGroupRowsAsync(
+        IReadOnlyDictionary<string, IReadOnlySet<string>> zonesByLocationSlug,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Pushes back the pending respawn of every enemy that died at a location, which is what makes a
     /// <em>cleared</em> room stay quiet longer than a single kill does.
     /// </summary>

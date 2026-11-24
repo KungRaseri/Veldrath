@@ -66,6 +66,30 @@ public readonly record struct ZoneGroupName
             instanceId.ToString("D")));
     }
 
+    /// <summary>
+    /// Gets a value indicating whether this scope names <paramref name="zoneId"/>.
+    /// </summary>
+    /// <remarks>
+    /// A scope names its zone as <c>zone:{zoneId}</c> or, for wilderness, <c>zone:{zoneId}_{difficultyMode}</c>;
+    /// either may carry an instance run id. A name that does not parse names no zone.
+    /// </remarks>
+    /// <param name="zoneId">Zone slug to test.</param>
+    /// <returns><see langword="true"/> when the scope belongs to the zone.</returns>
+    public bool BelongsToZone(string zoneId)
+    {
+        if (string.IsNullOrWhiteSpace(zoneId) || !TryParse(Value, out _))
+            return false;
+
+        var body = Value[ZonePrefix.Length..];
+        var markerIndex = body.IndexOf(InstanceMarker, StringComparison.Ordinal);
+        var zonePart = markerIndex < 0 ? body : body[..markerIndex];
+
+        return string.Equals(zonePart, zoneId, StringComparison.Ordinal)
+               || (zonePart.Length > zoneId.Length
+                   && zonePart.StartsWith(zoneId, StringComparison.Ordinal)
+                   && zonePart[zoneId.Length] == '_');
+    }
+
     /// <summary>Reads a group name back into its parts.</summary>
     /// <param name="value">Candidate group name.</param>
     /// <param name="group">The parsed group when the method returns <see langword="true"/>.</param>

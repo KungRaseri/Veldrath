@@ -450,6 +450,30 @@ try
                     string.Join("; ", canonSweep.DriftedFields));
             }
 
+            // Enemy rows written before the roster scope was derived from the destination zone can stand under the
+            // group of the zone the character walked out of. Nothing rewrites them, so they stay visible to a read
+            // forever; the sweep deletes only rows whose group names no zone that owns their location, and leaves a
+            // slug the catalog no longer holds alone rather than deleting state on absence.
+            var zonesByLocationSlug = (await services.GetRequiredService<IZoneLocationRepository>().GetAllAsync())
+                .GroupBy(location => location.Slug, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlySet<string>)group
+                        .Select(location => location.ZoneId)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase),
+                    StringComparer.OrdinalIgnoreCase);
+
+            var foreignEnemyRows = await services
+                .GetRequiredService<IEnemyInstanceStore>()
+                .RemoveForeignZoneGroupRowsAsync(zonesByLocationSlug);
+
+            if (foreignEnemyRows > 0)
+            {
+                app.Logger.LogWarning(
+                    "Enemy roster scope sweep deleted {RowCount} row(s) stored under a group that names no zone owning their location",
+                    foreignEnemyRows);
+            }
+
             // Authored chests live in the application database, beside the ground items they resemble, and are
             // idempotent by chest id so a restart never refills a chest a player emptied a moment ago.
             await Veldrath.Server.Data.Seeders.LootChestsSeeder.SeedAsync(appDb);

@@ -46,6 +46,9 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     /// <summary>Gets how many times a location's cleared-room respawn window was applied.</summary>
     public Dictionary<string, int> ClearedWindowApplications { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>Gets the (group, location) pairs a roster was requested under, in call order.</summary>
+    public List<(string ZoneGroup, string LocationSlug)> RosterRequests { get; } = [];
+
     /// <inheritdoc />
     public Task<int> ExtendClearedRespawnsAsync(
         string zoneGroup,
@@ -73,6 +76,8 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
         Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default)
     {
+        RosterRequests.Add((zoneGroup, locationSlug));
+
         var existing = _rows.Values
             .Where(row => row.ZoneGroup == zoneGroup && row.LocationSlug == locationSlug)
             .Select(row => row.Enemy)
@@ -135,5 +140,30 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     {
         Remove(enemyId);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<int> RemoveForeignZoneGroupRowsAsync(
+        IReadOnlyDictionary<string, IReadOnlySet<string>> zonesByLocationSlug,
+        CancellationToken cancellationToken = default)
+    {
+        var stale = _rows
+            .Where(row =>
+            {
+                if (!zonesByLocationSlug.TryGetValue(row.Value.LocationSlug, out var zones))
+                    return false;
+
+                return !Veldrath.Server.Features.Zones.ZoneGroupName.TryParse(row.Value.ZoneGroup, out var group)
+                       || !zones.Any(group.BelongsToZone);
+            })
+            .Select(row => row.Key)
+            .ToList();
+
+        foreach (var id in stale)
+        {
+            Remove(id);
+        }
+
+        return Task.FromResult(stale.Count);
     }
 }

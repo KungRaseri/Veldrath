@@ -91,4 +91,29 @@ public class ZoneGroupNameTests
         run.IsInstance.Should().BeTrue();
         run.InstanceId.Should().Be(Guid.Parse("2f9c4f3e-1a2b-4c5d-8e9f-0a1b2c3d4e5f"));
     }
+
+    [Theory]
+    [InlineData("zone:crestfall", "crestfall", true)]
+    [InlineData("zone:dark-forest_hardcore", "dark-forest", true)]
+    [InlineData("zone:the-halrow#i1:2f9c4f3e-1a2b-4c5d-8e9f-0a1b2c3d4e5f", "the-halrow", true)]
+    [InlineData("zone:dark-forest_hardcore#i1:2f9c4f3e-1a2b-4c5d-8e9f-0a1b2c3d4e5f", "dark-forest", true)]
+    public void BelongsToZone_AcceptsEveryScopeShapeThatNamesTheZone(string value, string zoneId, bool expected)
+    {
+        ZoneGroupName.TryParse(value, out var group).Should().BeTrue();
+
+        group.BelongsToZone(zoneId).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("zone:crestfall", "the-droveway")]
+    [InlineData("zone:crestfall_normal", "crestfall-square")]
+    [InlineData("zone:the-droveway_normal", "the-droveway-north")]
+    [InlineData("crestfall", "crestfall")]
+    [InlineData("zone:crestfall", "")]
+    public void BelongsToZone_RejectsANameThatIsNotThatZone(string value, string zoneId)
+    {
+        ZoneGroupName.TryParse(value, out var group);
+
+        group.BelongsToZone(zoneId).Should().BeFalse();
+    }
 }
