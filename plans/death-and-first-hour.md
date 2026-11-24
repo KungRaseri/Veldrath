@@ -9,17 +9,21 @@
 
 ---
 
-## 1. What the code does today (verified)
+## 1. What the code did when this plan was written (audit, not a description of today)
+
+This is the audit the plan was argued from, taken before A1–A6 shipped, and it is deliberately kept as it was
+written: it records the state the work was scoped against, not the present. Where a Fact below no longer matches
+the code, §2 says what shipped instead.
 
 | Behaviour | Where | Fact |
 |---|---|---|
-| Death cost | [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:174) | **10% XP and 10% gold**, both at once, hardcoded |
+| Death cost | [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:235) | **10% XP and 10% gold**, both at once, hardcoded |
 | Hardcore death | same method | `DeletedAt` is set — the character is soft-deleted and cannot respawn |
 | Respawn | [`RespawnHubCommandHandler`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:54) | 25% of max HP, full mana, and the character **stays exactly where they died** |
 | Death sickness / blessing | — | None. The deleted `RespawnService` had an unwired version |
 | Tutorial | — | No `tutorial` identifier anywhere in the codebase. Session-72 only added `ResolveResumeNodeId` (resume at the last known node) |
 | Quest objectives | [`QuestJournal.Advance`](../Veldrath.Server/Features/Quest/CharacterQuestEntry.cs:86) | Kinds `kill:`, `collect:`, `visit:` only |
-| Objective key mismatch | [`GameHub`](../Veldrath.Server/Hubs/GameHub.cs:3094) | The kill path advances with `result.EnemyName` (display name) while `visit` uses a slug — authored `kill:<slug>` content would never progress |
+| Objective key mismatch | [`GameHub`](../Veldrath.Server/Hubs/GameHub.cs:2498) | The kill path advances with `result.EnemyName` (display name) while `visit` uses a slug — authored `kill:<slug>` content would never progress |
 | Quest UI | `GameOverlays.svelte` | Journal overlay exists; no during-play tracker, no completion toast |
 | Hardcore surfaces | — | No memorial roster, no leaderboard |
 

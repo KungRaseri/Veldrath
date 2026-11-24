@@ -22,7 +22,7 @@ Everything below was checked in the working tree, not assumed:
 | The SvelteKit app is the only client and the only editing surface; every Avalonia project (desktop client, `RealmForge`, `RealmUI.Fonts`) is deleted | `AGENTS.md`, `plans/content-pipeline.md` §Scope shift |
 | Movement is a **DB map graph** (nodes + edges), rendered as panels — **no tilemap, no sprites, no TMX** | [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md): "panel-driven client UI (no tilemap/sprite rendering)"; `GetMapGraph`, `TravelToNode`, `EnterZone`, `LeaveZone`, `NavigateToLocation` in `GameHub` |
 | Login resumes the saved node (Session-72), and that seam is the intended hook for onboarding | [`work-items/2026-10-25-login-resumes-the-last-known-node.md`](../.github/agent-memory/work-items/2026-10-25-login-resumes-the-last-known-node.md) |
-| Quests are real: journal blob, objectives, accept/abandon/turn-in, and a client quest dialog | `QuestJournal`, `AcceptQuest`/`AbandonQuest`/`TurnInQuest`; [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:92) |
+| Quests are real: journal blob, objectives, accept/abandon/turn-in, and a client quest dialog | `QuestJournal`, `AcceptQuest`/`AbandonQuest`/`TurnInQuest`; [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:110) |
 | No guild, trade, duel or PvP code exists anywhere | repo-wide search: zero `Guild`/`TradeSession`/`Duel`/`Pvp` types |
 | Auth is Better Auth → JWT → JIT Identity provisioning; Identity owns RBAC only | `JwtClaimsEnrichment`, `AccountProvisioningService`, plan §W12 |
 
@@ -67,10 +67,11 @@ D4 #35 (multi-instance safety, reconnect grace, AFK service), D5 #36 (content va
 4. PvP (#5, rewritten; duels first).
 
 ### A — Death consequences + first hour → [`death-and-first-hour.md`](death-and-first-hour.md) — filed as #38
-5. **Death cost tuning.** A cost already exists — [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:185)
-   removes 10% of XP **and** 10% of gold at the moment of death. Agreed direction: make it **small and
+5. **Death cost tuning.** A cost already existed at filing — [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:235)
+   removed 10% of XP **and** 10% of gold at the moment of death. Agreed direction: make it **small and
    gold-first** — take a small share of carried gold, and only when the character carries (almost) no
-   gold take a small share of XP instead, never both. Exact percentages are a decision for the issue.
+   gold take a small share of XP instead, never both. Exact percentages were a decision for the issue; A1 (#44)
+   has since shipped the gold-first rule in [`death-and-first-hour.md`](death-and-first-hour.md) §2.1.
 6. **Respawn consequence.** Respawn must return the character to a safe node (not whatever node they
    died on) and apply a short *death sickness* status effect authored in the DB, using the existing
    `StatusEffect` machinery. The deleted `RespawnService` had an unwired version of exactly this.
