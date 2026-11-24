@@ -41,7 +41,7 @@ above `b23-26` re-measures one tail pool; it is listed with the rest so the file
    the zone's only hostile location and carries the grove's scavenger pool. After the swap `ashfields`
    holds **two `SafeRespawn` flags but exactly one respawn anchor**: the shrine is `IsHidden` +
    quest-locked and the resolver reads the hidden-filtered zone query
-   (`EfCoreZoneLocationRepository.GetByZoneIdAsync`, `RespawnHubCommand.cs:169-188`), so the anchor is
+   (`EfCoreZoneLocationRepository.GetByZoneIdAsync`, `RespawnHubCommand.cs:214-234`), so the anchor is
    deterministically `obsidian-grove` — and `SeededEncounterCoverageTests` now asserts it.
 5. **The band table reaches level 30, so the tail is measured on it (C4, `t_259ac697`).**
    `budget.yaml` publishes `b27-30` and covers 1–30; §3 relabels `kaldreks-heart` from "beyond `b23-26`"

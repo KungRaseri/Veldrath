@@ -206,7 +206,7 @@ These are bugs in the seeded world, not new features. Fixing them is part of pha
 | The Halrow's map is disconnected | edges connect `entry ↔ halrow-threshold` and `rootbound-cellars ↔ collapsed-vault`, but nothing joins the two halves | Two rooms are unreachable |
 | The Drowning Pits' workings are sealed | `deepest-chamber ↔ flooded-workings` is an island; only `pit-descent ↔ entry` connects to the entrance | The two deepest rooms are unreachable |
 | No deep room can unlock | every hidden room is `UnlockType = "quest"` with `UnlockKey = null` (and the map nodes carried the same null) | Boss rooms are permanently invisible |
-| No zone has a safe respawn | no `ZoneLocation` is flagged `IsSafeRespawn`, so [`ResolveRespawnLocationAsync`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:162) always falls through to the fallback | Every death logs an `Error` and tells the player their zone has no safe point |
+| No zone has a safe respawn | no `ZoneLocation` is flagged `IsSafeRespawn`, so [`ResolveRespawnLocationAsync`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:207) always falls through to the fallback | Every death logs an `Error` and tells the player their zone has no safe point |
 | `MinLevel` never checked | seeded and exposed in DTOs, enforced nowhere | A level 1 character can enter Kaldrek's Maw |
 
 The first two are the ones a map validator would have caught; that validator is part of F1 and the

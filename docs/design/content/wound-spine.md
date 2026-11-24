@@ -49,7 +49,7 @@ Read from code, with the line that says so. Every row shaped a decision below.
 | Band `b23-26`: HP 300–380, damage 30–44 per hit, XP 180–380, gold 30–75, drop chance 0.08–0.30 | `game-context/budget.yaml`, band `b23-26` | The endgame shares `b23-26` with region 4's last zones; `b27-30` is the ladder's top band. Escalation cannot come from numbers (§5). |
 | `RegionType` has five members — Forest, Highland, Coastal, Volcanic, Countryside — and none of them is the Wound | `Veldrath.Server/Data/Entities/Region.cs:46-62` | A sixth member is needed. It is **free**: `Region.Type` is stored via `HasConversion<string>()`, so no migration is required (`ApplicationDbContext.cs:130`). |
 | `Region.IsDiscoverable` and `Zone.IsDiscoverable` are never read | `Region.cs:28`; `Zone.cs:36`; no reader in `Features/` or the repositories | Set them honestly, but do not claim they gate anything. |
-| Every zone must flag exactly one `SafeRespawn` location, or the respawn path logs an `Error` and falls back to the zone's first location | `ZoneLocation.cs` (*SafeRespawn*); `RespawnHubCommand.cs:178-183` | Each of the five zones owes exactly one safe-respawn location to the content pass. Not zero ("lawless endgame") — zero is a logged error. |
+| Every zone must flag exactly one `SafeRespawn` location, or the respawn path logs an `Error` and falls back to the zone's first location | `ZoneLocation.cs` (*SafeRespawn*); `RespawnHubCommand.cs:223-231` | Each of the five zones owes exactly one safe-respawn location to the content pass. Not zero ("lawless endgame") — zero is a logged error. |
 | An empty spawn pool spawns nothing and substitutes nothing **only where nothing is placed**; a location with hostile placements and no pool spawns exactly those, never topped up | `ActorPoolResolver.cs:86-92`, `:111-115` | A zone with no cast yet is authorable and does not throw. The spine can land before the roster does. |
 
 ---
@@ -153,7 +153,7 @@ HP. That is also pillar 2 satisfied at region scale — the removal is telegraph
 precedes it, not sprung.
 
 **Authoring constraint inherited from §1:** each zone needs exactly one `SafeRespawn` location
-(`RespawnHubCommand.cs:178-183`), and each zone may ship with **empty** pools without throwing
+(`RespawnHubCommand.cs:223-231`), and each zone may ship with **empty** pools without throwing
 (`ActorPoolResolver.cs:86-92`: no pool **and** nothing placed is an empty roster, not an error). Zone types: 1–3 `Wilderness`, 4–5 `Dungeon` (built interiors whose
 cast is not a guardian, §5).
 
