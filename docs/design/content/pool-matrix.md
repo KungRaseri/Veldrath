@@ -268,7 +268,7 @@ of §3: 28 pooled + 26 quiet = the seeder's 54 world locations.
 | `grevenmire` | `sunken-estate` | 3–6 | b1-3 | SafeRespawn. Respawn point inside Grevenmire; note the seed lists it as a candidate hostile location in plans/content-seeding-pass.md:71 — that line is stale. |
 | `aldenmere` | `ironhollow-keep` | 5–12 | b4-6 | SafeRespawn + IsTown. Aldenmere's keep and respawn point. |
 | `pale-moor` | `moorstone-cairns` | 7–12 | b7-10 | SafeRespawn. Respawn point on the Pale Moor — the one safe ground in the zone the wights walk. |
-| `tolvaren` | `tolvaren-harbour` | 10+ | b7-10 | SafeRespawn + IsTown. Saltcliff's respawn point; two people are placed here as NPCs — `harbour-master` (seeded) and `dock-hand` (`towns.md` §4.3, 2026-11-22). Neither is a pool entry. |
+| `tolvaren` | `tolvaren-harbour` | 10+ | b7-10 | SafeRespawn + IsTown. Saltcliff's respawn point; `harbour-master` is placed here as an NPC (seeded — `LocationNpcsSeeder` row `tolvaren-harbour-master`), and `dock-hand` is a **proposed** `LocationNpc` row (`towns.md` §4.3, 2026-11-22; not yet in `LocationNpcsSeeder`). Neither is a pool entry. |
 | `saltcliff-heights` | `clifftop-ruins` | 14–20 | b11-14 | SafeRespawn. Respawn point on the Saltcliff Heights. |
 | `skarhold` | `forge-quarter` | 18+ | b15-18 | SafeRespawn + IsTown. Skarhold's respawn point and forge/shop location. |
 | `ashfields` | `obsidian-grove` | 20–25 | b19-22 | SafeRespawn since 2026-11-20 (amendment 4): the ashfields respawn point, moved here from `scorched-battlefield`. It is the node nearest the zone's arrival point, so it is what a dead character walks out of. |
