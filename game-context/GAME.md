@@ -90,7 +90,7 @@ design pillars above, and they are not renumbered by them:**
 | `.github/agent-memory/world-lore-plan.md` | The locked world facts: the Collapse, the Caleth, the Aethori, the Vraen, the Unbound, magic, the five-region spine, and the 6 open items (numbered 2–7 in the plan; item 1 was resolved 2026-04-15) | present, read-only |
 | `docs/lore/calethic-language.md` | The Calethic language: phonology, morphology, syntax, ~75-root dictionary, full named-entity pass. **The naming authority.** | present, read-only |
 | `wiki/World-Veldrath.md`, `wiki/Region-Varenmark.md`, six Varenmark zone pages, `wiki/Calethic-Language.md` | Player-facing lore, two-tier (general layer + spoiler block) | **not present** — `wiki/` is a git submodule and is not checked out here. The list is taken from `world-lore-plan.md`'s own record of completed phases, not from reading the pages. |
-| `RealmEngine.Data/Seeders/` | The shipped catalogue: 19 zones, 67 locations, 17 archetypes, 3 organisations, items, loot, quests, dialogue | present |
+| `RealmEngine.Data/Seeders/` | The shipped catalogue: 19 zones, 67 locations, 37 archetypes, 3 organisations, items, loot, quests, dialogue | present |
 | `.github/agent-memory/veldrath-memory.md`, `engine-codebase.md`, `foundry-content-schema.md` | Server/client architecture, content schema, write endpoints | present |
 | `plans/content-pipeline.md` | Validators, write path, the slug rule `^[a-z0-9]+(-[a-z0-9]+)*$` | present |
 
