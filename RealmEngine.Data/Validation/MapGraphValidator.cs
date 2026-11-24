@@ -344,7 +344,9 @@ public static class MapGraphValidator
             //     location), by staff teleport and summon, and by resume, none of which the map graph records.
             //     A walk rooted at region entries would therefore report maps players do reach.
             // So a marker-only zone is flagged even though a character standing beside the marker can walk in;
-            // that is the debt being reported, and the message no longer claims nobody can reach it.
+            // that is the debt being reported, and the message no longer claims nobody can reach it. An interior
+            // is entered differently again — from a Location node on the zone map that places its owner — and it
+            // never has a region-board marker, so each map kind gets the sentence that is true for it.
             var targetedMapIds = maps
                 .SelectMany(map => map.Nodes
                     .Where(node => !IsRegionBoardMarker(map, node))
@@ -359,12 +361,22 @@ public static class MapGraphValidator
                 if (!liveMapIds.Contains(map.Id) || targetedMapIds.Contains(map.Id))
                     continue;
 
+                // One sentence cannot be true for both kinds: a zone is entered from beside its region-board
+                // marker, an interior never has one and is entered from a Location node on the zone map that
+                // places its owning location. Naming a marker to an interior's author sends them looking for
+                // something the model does not allow them to create.
+                var message = map.MapType == MapType.Interior
+                    ? $"Map '{map.Id}' is live but nothing on another map leads into it: an interior is " +
+                      $"entered from a Location node on the zone map that places '{map.OwnerId}', so that " +
+                      "location needs a node pointing here."
+                    : $"Map '{map.Id}' is live but no exit on another map leads to it: a character can only " +
+                      "walk in through its marker on a region board, and only if that board has one beside " +
+                      "a node they can stand on.";
+
                 AddWarning(
                     issues,
                     "map_unreachable",
-                    $"Map '{map.Id}' is live but no exit on another map leads to it: a character can only walk in " +
-                    "through its marker on a region board, and only if that board has one beside a node they can " +
-                    "stand on.",
+                    message,
                     map.Id);
             }
         }

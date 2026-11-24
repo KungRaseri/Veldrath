@@ -27,6 +27,11 @@ changed. Files: `RealmEngine.Data/Validation/MapGraphValidator.cs`, the issue-co
   a character can only walk in through its marker on a region board, and only if that board has one beside a node
   they can stand on." The old "so nobody can reach it" is gone. Two tests pin it, including the marker-beside-the-
   entry arrangement the old sentence overstated.
+- **The sentence is branched by map kind** (review round 1): the same rule fires for `MapType.Interior`, which
+  never has a region-board marker — `IsRegionBoardMarker` requires a region map — so an interior's message says
+  what is true instead: "nothing on another map leads into it: an interior is entered from a Location node on the
+  zone map that places its owner, so that location needs a node pointing here." One test pins that variant; the
+  live-doorless-interior case had no coverage before.
 - **The seeded debt list keeps its one row** (`zone:playground`, the dev sandbox) and its doc now says what
   entering one depends on: a marker beside a node a character can stand on.
 - **Known limitation, not fixed here.** A zone reachable only from a marker beside a region entry is still

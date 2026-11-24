@@ -921,6 +921,46 @@ public class MapGraphValidatorIssueCodeTests
     }
 
     [Fact]
+    public void ValidateWorld_NamesTheOwningZonesLocationAsTheDoorADoorlessInteriorNeeds()
+    {
+        // Arrange — a live interior that no node on another map targets. Its door is a Location node on the
+        // zone map that places its owner, not a region-board marker (IsRegionBoardMarker requires a region
+        // map), so the warning must not send its author looking for a marker that cannot exist.
+        var zone = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true),
+                Node("room", MapNodeType.Location, refId: "tavern"),
+            ],
+            [Edge("entry", "room", MapDirection.North)]);
+        var interior = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "interior:cellar"),
+                Node("room", MapNodeType.Location, refId: "cellar-room", mapId: "interior:cellar"),
+            ],
+            [Edge("entry", "room", MapDirection.North, "interior:cellar")],
+            id: "interior:cellar",
+            ownerId: "cellar",
+            mapType: MapType.Interior);
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [zone, interior],
+            liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "interior:cellar" });
+
+        // Assert
+        var issue = result.Issues.Should()
+            .ContainSingle(i => i.Code == "map_unreachable").Subject;
+
+        issue.MapId.Should().Be("interior:cellar");
+        issue.Severity.Should().Be(MapGraphValidationSeverity.Warning);
+        issue.Message.Should()
+            .Contain("nothing on another map leads into it")
+            .And.Contain("Location node on the zone map")
+            .And.Contain("'cellar'")
+            .And.NotContain("region board");
+    }
+
+    [Fact]
     public void ValidateWorld_DoesNotWarnAboutADraftNobodyLinksTo()
     {
         // Arrange
