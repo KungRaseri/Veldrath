@@ -184,7 +184,7 @@ public static class MapGraphValidator
     /// <summary>
     /// Validates a whole world: every map on its own, plus the rules that need more than one map —
     /// destination maps and destination nodes must exist, a zone map must actually place the locations that
-    /// belong to its zone, and a live map must be reachable from somewhere.
+    /// belong to its zone, and a live zone or interior must have an exit on another map leading to it.
     /// </summary>
     /// <param name="maps">Every map in the world.</param>
     /// <param name="knownRegionSlugs">Optional set of valid region slugs for cross-context checks.</param>
@@ -199,8 +199,8 @@ public static class MapGraphValidator
     /// rules below; without it the validator cannot know which locations belong to which zone.
     /// </param>
     /// <param name="liveMapIds">
-    /// Optional set of maps that are in the game. Only those are reported as unreachable: a draft nobody links
-    /// to yet is the normal state of a map being written.
+    /// Optional set of maps that are in the game. Only those are checked for a way in: a draft nobody links to
+    /// yet is the normal state of a map being written.
     /// </param>
     /// <returns>A validation result containing errors and warnings for the whole world.</returns>
     public static MapGraphValidationResult ValidateWorld(
@@ -320,19 +320,31 @@ public static class MapGraphValidator
             }
         }
 
-        // Reachability across maps: a live zone or interior that nothing exits to cannot be entered by a
-        // character, however complete its own graph is. Regions are exempt until there is a world map to
-        // hold them, and drafts are exempt because they are still being written.
+        // A way in across maps: a live zone or interior that no door on another map leads to is content debt,
+        // however complete its own graph is. Regions are exempt until there is a world map to hold them, and
+        // drafts are exempt because they are still being written.
         if (liveMapIds is not null)
         {
-            // A Zone node on a region map is a board marker, not a door. The seeder links it to the zone map so
-            // that travelling to the node enters the zone, but the board is not a through-route: travel into a
-            // zone only happens from a node the character is standing next to, and stepping onto any Zone node
-            // enters that zone rather than passing over it. Counting the marker as an exit therefore hid every
-            // zone that has no actual door on another map — measured on a fresh stack at 571823af, 18 of 20
-            // zone maps were "reachable" on the strength of their region node alone and the Drowning Pits could
-            // not be entered on foot at all. Every other node that carries a target is a door a character can
-            // use from where it stands: a zone exit, portal, stair, or a location that opens into an interior.
+            // This rule measures "has a door", not "is reachable". A Zone node on a region map is a board marker,
+            // not a door: the seeder links it to the zone map so that travelling to the node enters the zone, but
+            // the board is not a through-route — travel into a zone only happens from a node beside the marker,
+            // and stepping onto any Zone node enters that zone rather than passing over it. Counting the marker
+            // as an exit therefore hid every zone that has no actual door on another map: measured on a fresh
+            // stack at 571823af, 14 of the 19 seeded zone maps were "reachable" on the strength of their region
+            // node alone and the Drowning Pits could not be entered on foot at all. Every other node that carries
+            // a target is a door a character can use from where it stands: a zone exit, portal, stair, or a
+            // location that opens into an interior.
+            //
+            // Keeping the door rule is deliberate, and the warning's wording says exactly what it measured:
+            //   * a door on a neighbouring zone map is the authored shape every live zone is expected to have,
+            //     and the warning is what asks an author to add one (the content card that followed PR #241
+            //     added the twelve missing doors);
+            //   * a true reachability walk would need a root set this validator does not have. A character is
+            //     placed on a map by character creation (CharacterCreationSessionEndpoints' default starting
+            //     location), by staff teleport and summon, and by resume, none of which the map graph records.
+            //     A walk rooted at region entries would therefore report maps players do reach.
+            // So a marker-only zone is flagged even though a character standing beside the marker can walk in;
+            // that is the debt being reported, and the message no longer claims nobody can reach it.
             var targetedMapIds = maps
                 .SelectMany(map => map.Nodes
                     .Where(node => !IsRegionBoardMarker(map, node))
@@ -350,7 +362,9 @@ public static class MapGraphValidator
                 AddWarning(
                     issues,
                     "map_unreachable",
-                    $"Map '{map.Id}' is live but no other map exits to it, so nobody can reach it.",
+                    $"Map '{map.Id}' is live but no exit on another map leads to it: a character can only walk in " +
+                    "through its marker on a region board, and only if that board has one beside a node they can " +
+                    "stand on.",
                     map.Id);
             }
         }
@@ -571,7 +585,9 @@ public static class MapGraphValidator
     /// <c>MapGraphSeeder.LinkRegionZonesToZoneMaps</c> points every region <c>Zone</c> node at that zone's own
     /// map so travelling to the node enters the zone. That target says where the node leads, not that the zone
     /// can be entered from elsewhere: the character still has to stand next to the node on the region board,
-    /// and the only node a character arriving in a region can stand next to is a neighbour of the entry.
+    /// and the only node a character arriving in a region can stand next to is a neighbour of the entry. It is
+    /// therefore a way in from beside the marker but not a door, which is why the world rule in
+    /// <see cref="ValidateWorld"/> measures doors and says so in its message.
     /// </remarks>
     /// <param name="map">Map that owns the node.</param>
     /// <param name="node">Node to classify.</param>
