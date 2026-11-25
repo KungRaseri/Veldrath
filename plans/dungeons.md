@@ -462,7 +462,7 @@ which already logs and adopts the winner.
 | Enter an **instanced** location | find an open run for the zone and party; else one for the zone and solo character; else insert. Then join its group |
 | Solo player | `OwnerPartyId` null, run keyed by character — still a real run, so a retry after emptying gets a new id |
 | Late joiner | the same lookup, so a party member always lands in the party's run; nobody is ever told an instance id |
-| Leave the last instanced room | the run stays Open while any `PlayerSession` points at it, including from the lobby, so backtracking keeps the attempt |
+| Leave the last instanced room | the run stays Open while any `PlayerSession` points at it, including from the lobby; a walk out of the run into the zone's shared rooms closes that character's participation and starts the emptiness grace from the walk-out, so backtracking keeps the attempt either way |
 | The run empties | State Empty and `LastOccupiedAt` now; after a configurable grace, Purging then delete, cascading enemies, ground items, participants and room state |
 | Party disbands inside | `OwnerPartyId` is provenance, not a live foreign key; the run survives until empty |
 | Death | respawn at the run's lobby if the run is still open, otherwise the public zone lobby |

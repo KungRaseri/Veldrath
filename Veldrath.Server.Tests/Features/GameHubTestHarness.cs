@@ -261,6 +261,10 @@ internal static class HubHarness
     /// <param name="connectionId">Caller connection id.</param>
     /// <param name="permissions">Permission claims granted to the caller.</param>
     /// <param name="locations">Zone-location catalog, so a test can make a location instanced or a lobby safe.</param>
+    /// <param name="zoneInstances">
+    /// Run service the hub talks to; the real one over <paramref name="db"/> when omitted, so a test can either
+    /// observe the run's rows or a mock's invocations.
+    /// </param>
     /// <returns>The hub and the fakes around it.</returns>
     public static (
         GameHub Hub,
@@ -282,6 +286,7 @@ internal static class HubHarness
         ModerationOptions? moderation = null,
         string connectionId = "conn-1",
         IZoneLocationRepository? locations = null,
+        Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         params string[] permissions)
     {
         var sender = mediator ?? new Mock<ISender>();
@@ -303,7 +308,7 @@ internal static class HubHarness
             afkTracker,
             sessions ?? new FakeCombatSessionStore(),
             enemies ?? new FakeEnemyInstanceStore(),
-            new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
+            zoneInstances ?? new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
                 db,
                 new CharacterRepository(db),
                 new CharacterUnlockedLocationRepository(db),
