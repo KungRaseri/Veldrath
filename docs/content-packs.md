@@ -176,14 +176,18 @@ the importer on purpose, and `RealmEngine.Data/Seeders/ZoneStockSeeder` is the o
 tables with no pack family are skipped for the same structural reason — none of them is a `ContentBase`, so the
 importer's `FindBySlugAsync` has nothing to match. That covers `ZoneLocationConnection`, a join
 table keyed by `FromLocationSlug`/`ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's
-`Map`/`MapNode`/`MapEdge`, a map document with its nodes and edges keyed by authored string ids — and the vocabulary
-and configuration tables, `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` and `GameConfig`, which are not
+`Map`/`MapNode`/`MapEdge` — a map document whose maps and nodes are keyed by authored string ids
+(`ContentModelConfiguration.cs:308`, `:328`), while each directed edge is keyed by a generated `uuid` and identified at
+authoring time by its natural slot `(MapId, FromNodeId, Direction)` (`:345`, `:352`) — and the vocabulary and
+configuration tables, `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` and `GameConfig`, which are not
 per-entity content at all.
 
-**The decided procedure is a data migration — not a pack, and not a reconciling seeder.** Adding a row needs no
-migration at all: the seeder inserts every authored row the database is missing, on the next start
-(`Program.cs:415` → `DatabaseSeeder.SeedAsync` → `ZoneStockSeeder.SeedAsync`). Removing a row, or changing a row's
-`SortOrder`, needs a migration, because an insert-only seeder can never take a row away.
+**For a stock shelf, the decided procedure is a data migration — not a pack, and not a reconciling seeder.** Adding a
+row needs no migration at all: the seeder inserts every authored row the database is missing, on the next start
+(`Program.cs:416` → `DatabaseSeeder.SeedAsync` → `ZoneStockSeeder.SeedAsync`). Removing a row, or changing a row's
+`SortOrder`, needs a migration, because an insert-only seeder can never take a row away. (The map graph is the same
+kind of table family with a different seeder contract: `MapGraphSeeder` is bootstrap-only, so *every* graph change is a
+migration. See the map-graph section below.)
 
 1. Edit `Authors()` in `RealmEngine.Data/Seeders/ZoneStockSeeder.cs`. That array is the truth for a database that has
    never been seeded, and it is what the next fresh database gets.
@@ -238,3 +242,79 @@ migration at all: the seeder inserts every authored row the database is missing,
 **Who owns a shelf.** `Authors()` owns it. A database that has never been seeded gets it from the seeder; a database
 that already has one gets the difference from a migration; nothing else writes these rows. A stored row `Authors()`
 no longer lists is drift, and the remedy is always a migration — never a seeder edit on its own.
+
+## Changing the authored map graph (a document family with no pack, and a bootstrap-only seeder)
+
+`Map`/`MapNode`/`MapEdge` have no pack family for the same structural reason as stock: none of them is a `ContentBase`,
+so `FindBySlugAsync` has nothing to match. Their identity is not uniform, and the difference matters when writing a
+migration:
+
+- a **map** is keyed by its authored string id (`zone:tolvaren`, `region:saltcliff`), and `(MapType, OwnerId)` is
+  unique (`ContentModelConfiguration.cs:308`, `:315`);
+- a **node** is keyed by its authored string id (`zone:tolvaren:exit:zone:sunken-name`) and belongs to exactly one map
+  (`:328`);
+- an **edge** is keyed by a generated `uuid`, and identified for authoring by its **natural slot** — `(MapId,
+  FromNodeId, Direction)` is unique (`:345`, `:352`). Seeding the same authored graph twice produces the same slots and
+  different edge uuids, so a uuid is never graph identity across databases.
+
+`MapGraphSeeder` is **bootstrap-only**: it returns immediately when `Maps` already has a row
+(`RealmEngine.Data/Seeders/MapGraphSeeder.cs:21-22`). The server applies content migrations before it seeds
+(`Program.cs:409`, `:416`), so a database that was seeded once keeps that graph forever; no restart, reseed or
+`WorldCanonSweep` (which rewrites map/node *text* only, `WorldCanonSweep.cs:169-212`) changes its topology. Foundry is
+per-instance authoring, not how a repository change reaches other instances: `MapEditorService.SaveAsync`
+(`MapEditorService.cs:181`) saves a whole candidate map and bumps `Version`, and a seeded map has no creator, so saving
+one requires `content.manage` rather than ordinary reviewer status.
+
+**A repository-authored graph change ships as a reviewed, data-only `ContentDbContext` migration.** Not a pack, not a
+seeder edit, not a Foundry replay, and not a reset.
+
+1. Edit `MapGraphSeeder.cs` first. It stays the truth for a database that has never been seeded, and it is what the
+   next fresh database gets.
+2. Scaffold the migration in `RealmEngine.Data/Migrations/`. A graph edit changes no model, so `git status` must show
+   exactly the `.cs` migration and its `.Designer.cs`, and `ContentDbContextModelSnapshot.cs` must come back unchanged:
+
+   ```bash
+   dotnet tool restore
+   dotnet restore RealmEngine.Data   # dotnet ef aborts with NETSDK1004 without restored assets
+   dotnet ef migrations add BackfillSeededMapDoorsAndArrivalHops --context ContentDbContext \
+     --project RealmEngine.Data --output-dir Migrations
+   ```
+3. Freeze the rows as literals copied from the seed diff; **never call the seeder from the migration**. An edge keeps
+   its authored `uuid` in the frozen row, but the natural slot is its identity when patching an existing database.
+4. Guard, then write, in the one transaction Entity Framework opens for the migration:
+   - Return when `Maps` is empty — the seeder creates the graph, doors included, on a fresh database.
+   - Patch only named **eligible** source maps: present, `IsActive`, `CreatedByAccountId IS NULL`, and the expected
+     `MapType`/`OwnerId`. Report absent, inactive and user-owned maps in the preflight and leave them exactly as they
+     are — never recreate or reactivate one.
+   - Verify before writing: every required endpoint belongs to its map; every exit node's `TargetMapId` names a live
+     map and its `TargetNodeId` exists there; every region marker still carries the `TargetMapId` the new Arrival hop is
+     meant to reach.
+   - An existing node id with equivalent topology (map/type/ref/exit/target/visibility/unlock semantics) satisfies the
+     patch and is left untouched, text and layout included.
+   - An existing edge at the same natural slot satisfies the patch even with another uuid, provided from, direction,
+     to, type, visibility and traversability match; keep its uuid and its label.
+   - A seed-time walk the new door displaces may be **re-homed** only when the patch declares it: the source slot must
+     hold exactly that walk with the expected type/visibility/traversability, the destination slot must be free (or
+     already hold the moved walk on a replay), and the row keeps its uuid and label. `#270` needs one — Aldenmere's
+     market walk to the Grey Cup moves East→North so the moor-road door can take East, which is where a fresh seed puts
+     it. Anything else is a conflict.
+   - A conflict — an incompatible node id, an incompatible uuid, an occupied slot holding a different edge, a missing
+     required endpoint or target — aborts the whole migration with the exact identity. Never `ON CONFLICT DO NOTHING`,
+     never silently pick another direction, and never leave half a door recorded.
+   - Bump `Version`/`UpdatedAt` once per changed map, and preserve activation, authorship and review fields.
+   - Replaying the body is a no-op: every row is satisfied and no map is bumped a second time.
+5. `Down` deletes nothing. The rows may have been edited in Foundry since, and an inserted door cannot be told apart
+   from an authored one. Roll data back by restoring the pre-migration backup, or ship a reviewed compensating
+   migration that names the exact ids and slots — do not write a blind `DELETE` into `Down`.
+
+**Rollout and proof.** Preflight on a restored copy (run the `Up` body inside a transaction and roll it back), then
+quiesce other writers and instances while the migration applies. The committed proof is
+`scripts/verify-map-graph-upgrade.sh`: it seeds disposable PostgreSQL 17 with the real server from before the change,
+proves the rows were absent, starts the new server on that same database with no reseed or reset, and asserts the
+persisted rows, the migration history, unrelated authoring and activation/review survival, restart idempotence, a fresh
+database, an equivalent pre-existing node/edge carrying another uuid, and that a hostile slot or node aborts with no
+partial writes and no history row. Unit tests cannot cover this: the test factories build their schema with
+`EnsureCreated()` and never run a migration.
+
+The first such migration is `BackfillSeededMapDoorsAndArrivalHops`, which carries the twelve zone doors from #270 and
+the two region Arrival hops from #282.
