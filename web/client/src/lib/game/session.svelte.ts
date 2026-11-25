@@ -58,6 +58,7 @@ import type {
 	LocationEnteredPayload,
 	LocationNode,
 	LocationNodesPayload,
+	LocationRosterPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
 	MutedPayload,
@@ -419,6 +420,17 @@ export class GameSession {
 	async requestLocationNpcs(): Promise<void> {
 		if (!this.hub) return;
 		await this.hub.invoke('GetLocationNpcs');
+	}
+
+	/**
+	 * Asks for the enemies standing where the character already is; the server answers with `LocationRoster`.
+	 *
+	 * The roster only ever arrives with a travel result, so a resumed session has to ask for it — otherwise a
+	 * room with an active pool looks empty until the player walks to a neighbour.
+	 */
+	async requestLocationRoster(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationRoster');
 	}
 
 	/** Speaks to one of them. Their line arrives as `NpcTalked`. */
@@ -838,6 +850,24 @@ export class GameSession {
 
 		hub.on('LocationNpcs', (payload: LocationNpcsPayload) => {
 			this.npcs = payload.npcs ?? [];
+		});
+
+		hub.on('LocationRoster', (payload: LocationRosterPayload) => {
+			// The read can outlive a move: a roster for a room the character has already left must not replace the
+			// one they are standing in. On resume there is no location yet, and this is exactly the answer that
+			// fills it in, so an unmatched slug is applied.
+			if (
+				this.location &&
+				payload.locationSlug &&
+				this.location.locationSlug !== payload.locationSlug
+			)
+				return;
+
+			// The enemy already being fought belongs to the combat panel, not the location list — the same filter
+			// `LocationEntered` applies, so a fight resumed after a reconnect does not appear twice.
+			const engagedEnemyId = this.combat.enemy?.id;
+			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
+			if (this.location) this.location.spawnedEnemies = this.enemies;
 		});
 
 		hub.on('NpcTalked', (payload: NpcTalkedPayload) => {
@@ -1401,7 +1431,15 @@ export class GameSession {
 		// as the character is selected instead of waiting for a manual refresh.
 		await this.openInventory();
 
-		if (payload.currentZoneId) await this.enterZone(payload.currentZoneId);
+		if (payload.currentZoneId) {
+			await this.enterZone(payload.currentZoneId);
+
+			// `EnterZone` has just put the character back on the node they logged out on (or in the zone's lobby when
+			// their run was swept), but the roster is only ever pushed with a travel result: without this the room
+			// they resumed into renders empty until their next move. The server reads the position it just wrote, so
+			// no node is sent from here.
+			void this.requestLocationRoster();
+		}
 		await this.requestMapGraph(null);
 
 		// A resumed character already stands somewhere, and the location lists are only pushed on a *move*: ask

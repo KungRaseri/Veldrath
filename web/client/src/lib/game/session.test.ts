@@ -872,6 +872,8 @@ describe('GameSession character and world events', () => {
 			{ method: 'GetParty', args: [] },
 			{ method: 'GetInventory', args: [] },
 			{ method: 'EnterZone', args: ['zone-1'] },
+			// The roster only ever arrives with a travel result, so a resume asks for the room it woke in.
+			{ method: 'GetLocationRoster', args: [] },
 			{ method: 'GetMapGraph', args: [null] },
 			// A resumed character stands somewhere already, and the lists are only pushed on a move.
 			{ method: 'GetGroundItems', args: [] },

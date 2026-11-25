@@ -226,6 +226,8 @@ try
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
     builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();
+    // One roster read for every arrival: a walk and a resume must not be able to spawn two cohorts for one room.
+    builder.Services.AddScoped<Veldrath.Server.Features.Zones.LocationRosterReader>();
     builder.Services.AddScoped<Veldrath.Server.Features.Content.MapEditorService>();
     // Shop gate: the merchant standing with a character, and the stock their town offers.
     builder.Services.AddScoped<Veldrath.Server.Features.Shop.IShopMerchantResolver,

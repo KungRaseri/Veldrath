@@ -5,7 +5,8 @@ import type {
 	PartySnapshot,
 	QuestLogEntry,
 	SkillView,
-	SkillXpGainedPayload
+	SkillXpGainedPayload,
+	SpawnedEnemy
 } from './types';
 
 /**
@@ -526,6 +527,88 @@ describe('GameSession map and location events', () => {
 		expect(hub.methods()).not.toContain('GetShopCatalog');
 		expect(session.shopZone).toBe('Aldenmere');
 		expect(session.showShop).toBe(true);
+	});
+
+	it('asks for the room roster when a resumed character is inside a zone', async () => {
+		await connected();
+
+		hub.emit('CharacterSelected', { id: 'char-1', currentZoneId: 'the-halrow' });
+		await flush();
+
+		// The roster is only ever pushed with a travel result, so a resume has to ask for it or the room it wakes
+		// into renders empty. It is asked for after EnterZone, which is what has placed the character.
+		expect(hub.methods()).toContain('GetLocationRoster');
+		expect(hub.methods().indexOf('GetLocationRoster')).toBeGreaterThan(
+			hub.methods().indexOf('EnterZone')
+		);
+	});
+
+	it('does not ask for a room roster when the character is not inside a zone', async () => {
+		await connected();
+
+		hub.emit('CharacterSelected', { id: 'char-1' });
+		await flush();
+
+		expect(hub.methods()).not.toContain('EnterZone');
+		expect(hub.methods()).not.toContain('GetLocationRoster');
+	});
+
+	it('renders the roster a resumed session asked for', async () => {
+		const session = await connected();
+		session.enemies = [{ id: 'stale', name: 'Stale', level: 1, currentHealth: 1, maxHealth: 1 }];
+
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [
+				{ id: 'warden', name: 'Rootbound Warden', level: 7, currentHealth: 40, maxHealth: 40 }
+			]
+		});
+
+		expect(session.enemies.map((enemy: SpawnedEnemy) => enemy.id)).toEqual(['warden']);
+	});
+
+	it('leaves the enemy being fought out of the location roster', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', {
+			characterId: 'char-1',
+			enemyId: 'warden',
+			enemyName: 'Rootbound Warden',
+			enemyLevel: 7,
+			enemyCurrentHealth: 40,
+			enemyMaxHealth: 40
+		});
+
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [
+				{ id: 'warden', name: 'Rootbound Warden', level: 7, currentHealth: 40, maxHealth: 40 },
+				{ id: 'rat', name: 'Cellar Rat', level: 3, currentHealth: 8, maxHealth: 8 }
+			]
+		});
+
+		// The fight is in the combat panel; the same enemy in the room list would be a second target.
+		expect(session.enemies.map((enemy: SpawnedEnemy) => enemy.id)).toEqual(['rat']);
+	});
+
+	it('ignores a roster for a room the character has already left', async () => {
+		const session = await connected();
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'collapsed-vault',
+			spawnedEnemies: [
+				{ id: 'vault-rat', name: 'Vault Rat', level: 4, currentHealth: 9, maxHealth: 9 }
+			]
+		});
+
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [
+				{ id: 'warden', name: 'Rootbound Warden', level: 7, currentHealth: 40, maxHealth: 40 }
+			]
+		});
+
+		expect(session.enemies.map((enemy: SpawnedEnemy) => enemy.id)).toEqual(['vault-rat']);
 	});
 });
 

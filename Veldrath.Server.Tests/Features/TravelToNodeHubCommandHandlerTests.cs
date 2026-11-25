@@ -8,6 +8,7 @@ using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Map;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Tests.Infrastructure;
 using CharacterEntity = Veldrath.Server.Data.Entities.Character;
 
@@ -501,6 +502,14 @@ public class TravelToNodeHubCommandHandlerTests
         var actorPoolResolver = new ActorPoolResolver(
             new EnemyGenerator(enemyRepo.Object, NullLogger<EnemyGenerator>.Instance));
 
+        // The one roster read a walk and a resume share; the test's store is the same object either way, so a
+        // second arrival sees the cohort the first one spawned.
+        var rosters = new LocationRosterReader(
+            enemyStore ?? new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
+            actorPoolResolver,
+            NullLogger<LocationRosterReader>.Instance);
+
         var instanceService = new Mock<Veldrath.Server.Features.Zones.IZoneInstanceService>();
         instanceService
             .Setup(service => service.FindOrCreateAsync(
@@ -521,9 +530,7 @@ public class TravelToNodeHubCommandHandlerTests
             sessionRepo.Object,
             zoneRepo.Object,
             locationRepo.Object,
-            actorPoolResolver,
-            enemyStore ?? new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
-            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
+            rosters,
             instanceService.Object,
             NullLogger<TravelToNodeHubCommandHandler>.Instance);
 

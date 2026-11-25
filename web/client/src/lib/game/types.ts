@@ -510,6 +510,18 @@ export interface LocationEnteredPayload {
 	spawnedEnemies?: SpawnedEnemy[] | null;
 }
 
+/**
+ * The enemies standing where the character already is.
+ *
+ * Sent when a resumed session asks for the roster: the roster is otherwise only ever pushed with a travel
+ * result, so a login inside a location would show an empty room until the next move.
+ */
+export interface LocationRosterPayload {
+	/** The location the roster belongs to, or `null` when the character is not standing on one. */
+	locationSlug?: string | null;
+	spawnedEnemies?: SpawnedEnemy[] | null;
+}
+
 /** A resource node standing in the current location. */
 export interface LocationNode {
 	nodeId: string;
