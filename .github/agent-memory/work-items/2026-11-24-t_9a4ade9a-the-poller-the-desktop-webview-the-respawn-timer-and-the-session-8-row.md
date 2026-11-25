@@ -9,8 +9,9 @@ title: "The poller, the desktop WebView, the respawn timer and the session-8 row
 ### Session t_9a4ade9a (2026-11-24) — The poller, the desktop WebView, the respawn timer and the session-8 row
 
 Six claims from the `t_d3eef21a` review's follow-up list still described retired things as current fact. Every
-replacement was read out of the source at `development@dee6b0ad`, by method body rather than by the doc comment
-above it.
+replacement was read out of the source by method body rather than by the doc comment above it: at
+`development@dee6b0ad`, where this branch is cut, and re-checked unchanged on `development@6e9d6caf`, which moved
+under the review when #314 landed and touches neither the combat nor the announcements code.
 
 - `areas/server-reconnect-polling-session-20.md` was **kept as a closed record with a banner**, the same judgement
   `p3-stubs-status.md` got in #297: the poller half is a session-20 Avalonia story, and deleting it would lose the
@@ -38,11 +39,13 @@ above it.
   What remains is web-side OAuth link-mode coverage: `pages-account.test.ts` and `pages-account-branches.test.ts`
   drive `authClient.linkSocial` / `unlinkAccount`, and `auth-pages.test.ts` covers `linkableProviders` and the
   OAuth error mapping.
-- `combat-loop-plan.md:189` scopes work to `Veldrath (Server/Contracts)`, with the client deletion dated and the
-  SvelteKit app named as the client.
-- `combat-loop-plan.md` no longer presents `ScheduleRespawn` as the implementation. `grep` finds it nowhere in the
-  tree; the note now points at a new "Enemy respawn — what ships (no timer)" section: death is one conditional
-  `UPDATE` in `TryMarkDeadAsync` that stamps `RespawnAt` from `EnemyWorldOptions.RespawnDelay`; `EnemyRespawnService`
+- `combat-loop-plan.md`'s `Scope:` bullet now scopes work to `Veldrath (Server/Contracts)`, with the client
+  deletion dated and the SvelteKit app named as the client.
+- `combat-loop-plan.md` no longer presents `ScheduleRespawn` as the implementation. It is nowhere in the source
+  (`git grep ScheduleRespawn --include=*.cs` returns nothing); the only surviving mentions are records of its
+  removal, and the note now points at a new "Enemy respawn — what ships (no per-enemy timer)" section: death is
+  one conditional `UPDATE` in `TryMarkDeadAsync` that stamps `RespawnAt` from `EnemyWorldOptions.RespawnDelay`;
+  `EnemyRespawnService`
   (`BackgroundService`, `Program.cs:197`) sweeps every `SweepIntervalSeconds` (default 5),
   `SweepExpiredRespawnsAsync` claims due rows with `FOR UPDATE SKIP LOCKED` and returns them,
   `EnemySpawned { Id, Name, Level, CurrentHealth, MaxHealth }` goes to `enemy.ZoneGroup` after the commit, a
@@ -61,5 +64,13 @@ refers to the deleted Avalonia build — without it the new respawn section cont
 
 **Verified:** `node scripts/memory/memory-index.mjs --write` then `--check` exit 0,
 `node scripts/check-markdown-links.mjs` exits 0, `veldrath-memory.md` untouched (it is the template verbatim since
-#301), and a grep for `ScheduleRespawn`, `DesktopUiServer`, `VELDRATH_DESKTOP_UI`, `build-desktop` and
-`LoginViewModel` over the six files finds only struck-through or banner-scoped mentions.
+#301). A grep for `ScheduleRespawn`, `DesktopUiServer`, `VELDRATH_DESKTOP_UI`, `build-desktop` and `LoginViewModel`
+over the six files finds only records of their removal — struck-through lines, banner-scoped text and lines that
+say the thing went with the client.
+
+Round-1 review corrections, all applied: the `Scope:` bullet is named rather than cited by line number (its number
+moves with every edit above it); the grep claim reads "nowhere in the source (`git grep --include=*.cs` returns
+nothing)" instead of "nowhere in the tree"; and the three nits — `ServerStatusService` is qualified as the client's
+(the Discord bot still ships a class of that name in `Veldrath.Discord/Services/ServerStatusService.cs`), the
+announcements line says "no client calls it — only the endpoint's own integration tests do", and the respawn
+heading says "no per-enemy timer" so it does not sit oddly above a `PeriodicTimer` sweeper.

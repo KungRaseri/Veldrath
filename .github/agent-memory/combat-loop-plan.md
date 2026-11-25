@@ -86,7 +86,7 @@ Static helpers shared by all hub command handlers.
 - ~~`ScheduleRespawn`~~ — **deleted with the world-state move (D2, 2026-10-25); this class respawns nothing.** See "Enemy respawn — what ships" below.
 - `HandleDeathIfNeededAsync` — HC: `entity.DeletedAt = DateTimeOffset.UtcNow`; Normal: `entity.Experience -= xpPenalty` (long), 10% gold penalty, `CurrentHealth = 1`
 
-### Enemy respawn — what ships (no timer)
+### Enemy respawn — what ships (no per-enemy timer)
 
 The `ScheduleRespawn` fire-and-forget timer is gone; the pending respawn is a column, so a restart mid-countdown
 continues it instead of losing it.

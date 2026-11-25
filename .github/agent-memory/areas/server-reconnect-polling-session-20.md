@@ -8,9 +8,11 @@ title: "Server Reconnect Polling (session-20)"
 ## Server Reconnect Polling (session-20)
 
 > **The poller half of this note is a closed record, not current wiring.** `IServerStatusService`,
-> `ServerStatusService`, `FakeServerStatusService`, `HttpAnnouncementService`, `SplashViewModel`,
+> `FakeServerStatusService`, `HttpAnnouncementService`, `SplashViewModel`,
 > `MainWindowViewModel`, `MainMenuViewModel` and the `MainWindow` / `MainMenuView` XAML were Avalonia code and went
-> with that client in session-68 (2026-10-25) — see
+> with that client in session-68 (2026-10-25); so did `Veldrath.Client`'s `ServerStatusService` — the Discord bot
+> still ships a class of the same name in `Veldrath.Discord/Services/ServerStatusService.cs`, which is unrelated.
+> See
 > [`work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md`](../work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md).
 > **No web counterpart was written for the poller, and none should be invented.** The shell learns that the
 > connection is dead from the hub it is already on: `session.phase` moves through `connecting`, `reconnecting`,
@@ -29,7 +31,7 @@ title: "Server Reconnect Polling (session-20)"
 - `Veldrath.Server/Data/Entities/Announcement.cs` — EF entity with `IsActive`, `ExpiresAt?`, `IsPinned`, `PublishedAt`
 - `Veldrath.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository.GetActiveAsync(CancellationToken)` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)` and orders `IsPinned` first, then `PublishedAt` newest first. **Keep the `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in the LINQ expression. Registered `AddScoped` at `Program.cs:162`.
 - `Veldrath.Server/Features/Announcements/AnnouncementEndpoints.cs` — `MapGroup("/api/announcements").WithTags("Announcements").AllowAnonymous()`, one `GET /` returning `AnnouncementDto[]`; mapped at `Program.cs:515`.
-- **Nothing in the repo calls it.** The news panel that read the feed was the desktop menu. The web site reads the editorial feed instead — `/api/editorial/announcements` in [`editorial-api.ts`](../../../web/client/src/lib/server/editorial-api.ts) — and the legacy route is allow-listed by hand as a removal candidate in `web/client/src/lib/parity/rest-routes.test.ts`, with the record in `plans/web-feature-parity-and-coverage.md`.
+- **No client calls it** — only the endpoint's own integration tests do (below). The news panel that read the feed was the desktop menu. The web site reads the editorial feed instead — `/api/editorial/announcements` in [`editorial-api.ts`](../../../web/client/src/lib/server/editorial-api.ts) — and the legacy route is allow-listed by hand as a removal candidate in `web/client/src/lib/parity/rest-routes.test.ts`, with the record in `plans/web-feature-parity-and-coverage.md`.
 - **Test structure still holds** — `Veldrath.Server.Tests/Features/AnnouncementEndpointTests.cs` is the `IAsyncLifetime` pattern: `AnnouncementsFixture` seeds in `InitializeAsync` and is shared through `IClassFixture`, and the tests that need an empty database are a **separate class with their own `WebAppFactory`** (`AnnouncementEmptyEndpointTests`), because per-test seeding under `IClassFixture` makes the "empty list" test fail when it runs after the seeded ones.
 
 ### Client half — deleted with the Avalonia client (session-68)
