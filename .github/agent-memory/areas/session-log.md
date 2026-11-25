@@ -17,7 +17,7 @@ title: "Session Log"
 | 4 | 2026-03-19 | UseAbility hub bridge, XML doc fixes (IZoneRepository + IZoneSessionRepository) | 520 |
 | 5 | 2026-03-19 | AwardSkillXp hub bridge, ClientSettings singleton, P4 XML docs (10 summaries), P3 ServerUrl stub fixed | 541 |
 | 6 | 2026-03-19 | Docker startup fix (GameDbContext DI), DbContext separation rule established | 260 server |
-| 8 | 2026-03-20 | EquipItem hub bridge, EquipmentBlob migration, P2 coverage (19 server tests) | 560 |
+| 8 | 2026-03-20 | EquipItem hub bridge, EquipmentBlob column (later folded into `InitialCreate`), P2 coverage (19 server tests) | 560 |
 | 9 | 2026-03-20 | AddGold hub bridge, ItemEquipped subscription fix (P3 stub) | 580 |
 | 10 | 2026-03-20 | TakeDamage hub bridge | 600 |
 | 11 | 2026-03-20 | GainExperience client wiring (Level/Experience reactive properties) | 608 |

@@ -7,37 +7,41 @@ title: "Server Reconnect Polling (session-20)"
 
 ## Server Reconnect Polling (session-20)
 
-**`IServerStatusService.StartPollingAsync(Func<string> getServerUrl, CancellationToken ct)`** — background loop that calls `CheckAsync` periodically:
-- Waits `OfflinePollInterval` (5 s default) between checks when offline; `OnlinePollInterval` (30 s default) when online
-- Kicked off in `App.axaml.cs` `OnFrameworkInitializationCompleted` after DI is built: `_ = serverStatus.StartPollingAsync(() => clientSettings.ServerBaseUrl)`
-- `OperationCanceledException` from `CheckAsync` is re-thrown (not treated as server failure) — prevents a shutdown cancellation from flipping Status to Offline
-- Both intervals are `internal` fields on `ServerStatusService` for test override (set to 10 ms in tests)
-- `FakeServerStatusService` has a no-op `StartPollingAsync` implementation
-- `ServerStatusServiceTests` uses event-based (`TaskCompletionSource`) assertions, not wall-clock timeouts, to avoid flakiness under parallel test runs
+> **The poller half of this note is a closed record, not current wiring.** `IServerStatusService`,
+> `ServerStatusService`, `FakeServerStatusService`, `HttpAnnouncementService`, `SplashViewModel`,
+> `MainWindowViewModel`, `MainMenuViewModel` and the `MainWindow` / `MainMenuView` XAML were Avalonia code and went
+> with that client in session-68 (2026-10-25) — see
+> [`work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md`](../work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md).
+> **No web counterpart was written for the poller, and none should be invented.** The shell learns that the
+> connection is dead from the hub it is already on: `session.phase` moves through `connecting`, `reconnecting`,
+> `failed` and `disconnected` in
+> [`session.svelte.ts`](../../../web/client/src/lib/game/session.svelte.ts). `Program.cs` still maps
+> `MapHealthChecks("/health")` and `/health/detail` for probes (`Program.cs:536`, `:546`) — not for a client-side
+> loop.
+>
+> **The announcements half survives and is current**; its pointers are in the first section below. The
+> `Announcements` table and its index ship in `Veldrath.Server/Migrations/20260416172040_InitialCreate.cs` — there
+> is no `AddAnnouncements` migration and no `Migrations/Application/` directory.
 
+### Announcements — the surviving server half
 
-**Problem fixed**: When server was offline at client launch, SplashViewModel ignored RefreshAsync failure, leaving stale tokens in memory. This caused a redirect loop (always landing on CharacterSelect) and logout not clearing auth buttons properly.
-
-**New components**:
-- `Veldrath.Contracts/Announcements/AnnouncementContracts.cs` — `AnnouncementDto(int Id, string Title, string Body, string Category, bool IsPinned, DateTimeOffset PublishedAt)` shared between server and client
+- `Veldrath.Contracts/Announcements/AnnouncementContracts.cs` — `AnnouncementDto(int Id, string Title, string Body, string Category, bool IsPinned, DateTimeOffset PublishedAt)`
 - `Veldrath.Server/Data/Entities/Announcement.cs` — EF entity with `IsActive`, `ExpiresAt?`, `IsPinned`, `PublishedAt`
-- `Veldrath.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository` + impl; `GetActiveAsync()` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)`, orders `IsPinned DESC, PublishedAt DESC`. **Must use `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in LINQ expressions.
-- `Veldrath.Server/Features/Announcements/AnnouncementEndpoints.cs` — `GET /api/announcements`, `AllowAnonymous`, returns `AnnouncementDto[]`
-- `Veldrath.Client/Services/ServerStatusService.cs` — `IServerStatusService : INotifyPropertyChanged` singleton; pings `/health`; `IsOnline`, `StatusMessage`, `Status` (enum); `CheckAsync(serverUrl)`.  **Interface must extend `System.ComponentModel.INotifyPropertyChanged`** so `WhenAnyValue(s => s.Status)` works on the interface type.
-- `Veldrath.Client/Services/AnnouncementService.cs` — `IAnnouncementService` + `HttpAnnouncementService`; uses typed `HttpClient` registered via `AddHttpClient<IAnnouncementService, HttpAnnouncementService>` with base address set in DI
+- `Veldrath.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository.GetActiveAsync(CancellationToken)` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)` and orders `IsPinned` first, then `PublishedAt` newest first. **Keep the `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in the LINQ expression. Registered `AddScoped` at `Program.cs:162`.
+- `Veldrath.Server/Features/Announcements/AnnouncementEndpoints.cs` — `MapGroup("/api/announcements").WithTags("Announcements").AllowAnonymous()`, one `GET /` returning `AnnouncementDto[]`; mapped at `Program.cs:515`.
+- **Nothing in the repo calls it.** The news panel that read the feed was the desktop menu. The web site reads the editorial feed instead — `/api/editorial/announcements` in [`editorial-api.ts`](../../../web/client/src/lib/server/editorial-api.ts) — and the legacy route is allow-listed by hand as a removal candidate in `web/client/src/lib/parity/rest-routes.test.ts`, with the record in `plans/web-feature-parity-and-coverage.md`.
+- **Test structure still holds** — `Veldrath.Server.Tests/Features/AnnouncementEndpointTests.cs` is the `IAsyncLifetime` pattern: `AnnouncementsFixture` seeds in `InitializeAsync` and is shared through `IClassFixture`, and the tests that need an empty database are a **separate class with their own `WebAppFactory`** (`AnnouncementEmptyEndpointTests`), because per-test seeding under `IClassFixture` makes the "empty list" test fail when it runs after the seeded ones.
 
-**Key architectural note — `LoadAnnouncementsAsync` guard**: Only guard on `announcementService is not null`. Do NOT also guard on `settings is not null` — the HttpClient base address is already set in DI; no need to pass `serverUrl` to the method.
+### Client half — deleted with the Avalonia client (session-68)
 
-**SplashViewModel soft-logout fix**: In `RunSplashAsync` Phase 3, check server health first. If server offline and tokens present → call `LogoutAsync()` to clear local state. If server online and tokens present → `await RefreshAsync()`; if that returns `false` → call `LogoutAsync()`. This prevents redirect loops and stale auth state.
+~~`IServerStatusService.StartPollingAsync(Func<string> getServerUrl, CancellationToken ct)` — a background loop calling `CheckAsync`, waiting `OfflinePollInterval` (5 s default) when offline and `OnlinePollInterval` (30 s) when online, kicked off from `App.axaml.cs` `OnFrameworkInitializationCompleted` after DI was built. `OperationCanceledException` was re-thrown rather than treated as a server failure, so a shutdown cancellation could not flip `Status` to Offline. Both intervals were `internal` fields on `ServerStatusService` so tests could shrink them to 10 ms, and `ServerStatusServiceTests` asserted through `TaskCompletionSource` rather than wall-clock waits.~~
 
-**MainWindowViewModel**: Added `IServerStatusService` (required parameter). Exposes `IsServerOnline` and `ServerStatusMessage` reactive properties; subscribes to `serverStatus.WhenAnyValue(s => s.Status)`.
+~~`FakeServerStatusService` had a no-op `StartPollingAsync`.~~
 
-**MainWindow.axaml**: Wraps content in 2-row `Grid`. Row 0 = dark-red `Border` banner (`IsVisible="{Binding !IsServerOnline}"`). Row 1 = `ContentControl` for page navigation.
+~~Splash soft-logout: `RunSplashAsync` phase 3 checked server health first — offline with tokens present, or an `RefreshAsync` that returned `false`, meant `LogoutAsync()`. That is what stopped the CharacterSelect redirect loop and the auth buttons that survived logout.~~
 
-**MainMenuViewModel disabled commands**: `RegisterCommand` and `LoginCommand` gated on `serverOnline` observable; `SelectCharacterCommand` gated on `canEnterGame = IsLoggedIn && IsServerOnline`. Commands are auto-disabled (greyed out) when server is offline.
+~~`MainWindowViewModel` took `IServerStatusService` as a required parameter, exposed `IsServerOnline` and `ServerStatusMessage` from `WhenAnyValue(s => s.Status)`, and `MainWindow.axaml` wrapped the shell in a two-row grid whose row 0 was the dark-red offline banner. `MainMenuViewModel` gated `RegisterCommand` and `LoginCommand` on the `serverOnline` observable and `SelectCharacterCommand` on `canEnterGame = IsLoggedIn && IsServerOnline`.~~
 
-**MainMenuView.axaml news panel**: 3-column grid (`280,*,280`). Column 0 = news panel with `ScrollViewer > StackPanel > [ItemsControl | placeholder TextBlock]`. **ScrollViewer is a ContentControl (single child only)** — wrap multiple children in a `StackPanel` inside the `ScrollViewer`.
+~~`MainMenuView.axaml` news panel: 3-column grid `280,*,280`, column 0 a `ScrollViewer` over an `ItemsControl` and a placeholder — the `ScrollViewer` is a `ContentControl` (single child only), which is why the children needed the inner `StackPanel`.~~
 
-**EF migration**: `AddAnnouncements` — in `Veldrath.Server/Data/Migrations/Application/`
-
-**Test structure — announcement integration tests**: Follow the `IAsyncLifetime` fixture pattern (same as other server integration tests). Use a `AnnouncementsFixture` that seeds all data in `InitializeAsync`. Tests needing a clean/empty DB must be in a **separate class with their own `WebAppFactory` instance** (`AnnouncementEmptyEndpointTests : IAsyncLifetime`). Using `IClassFixture<WebAppFactory>` directly with per-test seeding causes the "empty list" test to fail when it runs after seeding tests.
+~~`HttpAnnouncementService` and `AddHttpClient<IAnnouncementService, HttpAnnouncementService>` with the base address set in DI, plus the `LoadAnnouncementsAsync` guard rule: guard on `announcementService is not null` only, never also on `settings`.~~
