@@ -45,6 +45,27 @@
 	/** Character name typed into the party panel's invite box. */
 	let inviteName = $state('');
 
+	/**
+	 * Attributes the level-up panel may spend a banked point into.
+	 *
+	 * `Dexterity`, `Wisdom` and `Charisma` stay in the readout below — a saved value is still the
+	 * character's — but no regular-play rule consumes a point spent there yet, so the panel offers no
+	 * control and explains the absence per row instead of hiding the stat. `Wisdom` is not inert
+	 * everywhere: it feeds the no-class-row mana fallback at level-up. Extend this list only when a
+	 * rule actually reads the attribute.
+	 */
+	const ALLOCATABLE_ATTRIBUTES = [
+		'strength',
+		'constitution',
+		'intelligence'
+	] as const satisfies readonly (keyof CharacterAttributes)[];
+
+	type AllocatableAttribute = (typeof ALLOCATABLE_ATTRIBUTES)[number];
+
+	function isAllocatable(key: string): key is AllocatableAttribute {
+		return (ALLOCATABLE_ATTRIBUTES as readonly string[]).includes(key);
+	}
+
 	const spentPoints = $derived(Object.values(pendingPoints).reduce((sum, value) => sum + value, 0));
 	const remainingPoints = $derived(session.stats.unspentAttributePoints - spentPoints);
 
@@ -70,7 +91,7 @@
 	);
 
 	function addPoint(key: keyof CharacterAttributes) {
-		if (remainingPoints <= 0) return;
+		if (!isAllocatable(key) || remainingPoints <= 0) return;
 		pendingPoints = { ...pendingPoints, [key]: (pendingPoints[key] ?? 0) + 1 };
 	}
 
@@ -86,7 +107,10 @@
 	async function confirmAllocation() {
 		const allocations: Record<string, number> = {};
 		for (const [key, value] of Object.entries(pendingPoints)) {
-			if (value > 0) allocations[key.charAt(0).toUpperCase() + key.slice(1)] = value;
+			// The same predicate guards the payload: a key the panel cannot offer must never reach
+			// the server, even if it somehow reached the pending map.
+			if (value <= 0 || !isAllocatable(key)) continue;
+			allocations[key.charAt(0).toUpperCase() + key.slice(1)] = value;
 		}
 		if (Object.keys(allocations).length === 0) return;
 		pendingPoints = {};
@@ -294,37 +318,47 @@
 
 			<ul class="mt-3 space-y-1">
 				{#each ATTRIBUTE_ORDER as attribute (attribute.key)}
+					{@const allocatable = isAllocatable(attribute.key)}
 					<li
 						class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
 					>
-						<span>{attribute.label}</span>
-						<span class="flex items-center gap-2">
-							<span class="text-mono">{session.attributes[attribute.key]}</span>
-							{#if (pendingPoints[attribute.key] ?? 0) > 0}
-								<span class="chip preset-filled-secondary-500 text-xs">
-									+{pendingPoints[attribute.key]}
+						<span class="flex min-w-0 flex-col gap-0.5">
+							<span>{attribute.label}</span>
+							{#if !allocatable}
+								<span class="text-xs text-surface-600-400">
+									Not available for point spending yet.
 								</span>
 							{/if}
-							<span class="flex gap-1">
-								<button
-									class="btn preset-tonal-surface px-1.5 py-0.5 text-xs"
-									type="button"
-									aria-label={`Decrease ${attribute.label}`}
-									disabled={(pendingPoints[attribute.key] ?? 0) === 0}
-									onclick={() => removePoint(attribute.key)}
-								>
-									<Minus size={12} aria-hidden="true" />
-								</button>
-								<button
-									class="btn preset-tonal-surface px-1.5 py-0.5 text-xs"
-									type="button"
-									aria-label={`Increase ${attribute.label}`}
-									disabled={remainingPoints <= 0}
-									onclick={() => addPoint(attribute.key)}
-								>
-									<Plus size={12} aria-hidden="true" />
-								</button>
-							</span>
+						</span>
+						<span class="flex shrink-0 items-center gap-2">
+							<span class="text-mono">{session.attributes[attribute.key]}</span>
+							{#if allocatable}
+								{#if (pendingPoints[attribute.key] ?? 0) > 0}
+									<span class="chip preset-filled-secondary-500 text-xs">
+										+{pendingPoints[attribute.key]}
+									</span>
+								{/if}
+								<span class="flex gap-1">
+									<button
+										class="btn preset-tonal-surface px-1.5 py-0.5 text-xs"
+										type="button"
+										aria-label={`Decrease ${attribute.label}`}
+										disabled={(pendingPoints[attribute.key] ?? 0) === 0}
+										onclick={() => removePoint(attribute.key)}
+									>
+										<Minus size={12} aria-hidden="true" />
+									</button>
+									<button
+										class="btn preset-tonal-surface px-1.5 py-0.5 text-xs"
+										type="button"
+										aria-label={`Increase ${attribute.label}`}
+										disabled={remainingPoints <= 0}
+										onclick={() => addPoint(attribute.key)}
+									>
+										<Plus size={12} aria-hidden="true" />
+									</button>
+								</span>
+							{/if}
 						</span>
 					</li>
 				{/each}

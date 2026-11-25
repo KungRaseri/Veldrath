@@ -95,6 +95,46 @@ describe('attribute allocation guards', () => {
 		).toBe(true);
 	});
 
+	it('shows Dexterity, Wisdom and Charisma read-only and keeps the rest spendable', async () => {
+		const game = new GameSession();
+		game.showAttributes = true;
+		game.stats = { ...game.stats, unspentAttributePoints: 3 };
+		game.attributes = {
+			strength: 10,
+			dexterity: 12,
+			constitution: 14,
+			intelligence: 16,
+			wisdom: 18,
+			charisma: 20
+		};
+		const allocate = vi.spyOn(game, 'allocateAttributePoints').mockResolvedValue(undefined);
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Attributes' });
+		// Opening the panel spends nothing, and the bank is untouched until a point is banked.
+		expect(within(dialog).getByText('3 of 3 unspent points left.')).toBeTruthy();
+		expect(allocate).not.toHaveBeenCalled();
+
+		// The three stats with no regular-play spending rule keep their name, their saved value and
+		// an explanation, and offer no control that would bank a point the server would not use.
+		for (const [label, value] of [
+			['Dexterity', '12'],
+			['Wisdom', '18'],
+			['Charisma', '20']
+		] as const) {
+			const row = within(dialog).getByText(label).closest('li') as HTMLElement;
+			expect(within(row).getByText(value)).toBeTruthy();
+			expect(within(row).getByText('Not available for point spending yet.')).toBeTruthy();
+			expect(within(row).queryByRole('button', { name: `Increase ${label}` })).toBeNull();
+			expect(within(row).queryByRole('button', { name: `Decrease ${label}` })).toBeNull();
+		}
+
+		// Strength, Constitution and Intelligence still consume points where combat reads them.
+		for (const label of ['Strength', 'Constitution', 'Intelligence']) {
+			expect(within(dialog).getByRole('button', { name: `Increase ${label}` })).toBeTruthy();
+		}
+	});
+
 	it('sends every pending point with the plural spend label', async () => {
 		const game = new GameSession();
 		game.showAttributes = true;
@@ -104,11 +144,11 @@ describe('attribute allocation guards', () => {
 
 		const dialog = screen.getByRole('dialog', { name: 'Attributes' });
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Strength' }));
-		await fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Wisdom' }));
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Constitution' }));
 
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Spend 2 points' }));
 
-		expect(allocate).toHaveBeenCalledWith({ Strength: 1, Wisdom: 1 });
+		expect(allocate).toHaveBeenCalledWith({ Strength: 1, Constitution: 1 });
 		expect(game.showAttributes).toBe(false);
 	});
 

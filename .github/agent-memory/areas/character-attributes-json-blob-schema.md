@@ -52,9 +52,26 @@ is a recorded decision, not a bug** — the next reader should not "fix" it with
   everyone else — the split-brain the class curve exists to avoid.
 - The attributes take effect where combat reads them: `Strength` (player damage), `Constitution` (incoming-damage
   defence in `CombatHelpers.CalculateEnemyDamage`) and `Intelligence` (magic damage in `UseAbilityInCombatHubCommand`).
-  `Wisdom`, `Dexterity` and `Charisma` have no server-side reader yet, so a point there is inert until a rule consumes it.
+  `Dexterity` and `Charisma` have no reader yet, so a point there is inert until a rule consumes it. `Wisdom` is **not**
+  inert: it feeds the engine's no-class-row mana fallback on a level-up (`CharacterProgression`) and the starting mana
+  `CharacterEndpoints` derives from `GetMaxMana`.
 - The client's health bar is the stored `MaxHealth` from the `CharacterSelected` payload, so allocating `Constitution`
   does not move it.
+
+## The level-up panel withholds spending for the three ruleless attributes
+
+Decision (acceptance option 2, `t_e5288aba`): the web client's Attributes dialog spends points only into `Strength`,
+`Constitution` and `Intelligence` — the three stats a combat path actually reads. `Dexterity`, `Wisdom` and `Charisma`
+stay in the panel with their name, saved value and order, each carrying the visible note `Not available for point
+spending yet.` and no Increase/Decrease control. `GameOverlays.svelte` keeps the allowlist (`ALLOCATABLE_ATTRIBUTES`),
+guards additions with it and filters the outgoing payload, so an unavailable key never reaches
+`AllocateAttributePoints`; `game-overlays-arms.test.ts` pins the note, the absent controls, the three spendable rows
+and that opening the panel allocates nothing.
+
+That is a panel policy, not a server rule. The handler still accepts any attribute key, nothing is refunded, banked
+balances and saved values are untouched, and `ATTRIBUTE_ORDER`/`LeftSidebar` keep the full six-stat readout. Extend
+the allowlist only once a regular-play rule reads the attribute; do not promise the three "have no effect anywhere",
+since `Wisdom` moves the no-class-row mana fallback.
 
 `Veldrath.Server.Tests/Features/AllocateAttributePointsHubCommandTests.cs` pins the behaviour: the only keys an
 allocation changes are the allocated attribute and `UnspentAttributePoints`.
