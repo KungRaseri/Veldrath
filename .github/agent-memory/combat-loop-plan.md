@@ -91,10 +91,15 @@ Static helpers shared by all hub command handlers.
 The `ScheduleRespawn` fire-and-forget timer is gone; the pending respawn is a column, so a restart mid-countdown
 continues it instead of losing it.
 
-- **Death is one conditional UPDATE.** `IEnemyInstanceStore.TryMarkDeadAsync(enemyId)` runs
+- **Death is one conditional UPDATE and owns the credit.** `IEnemyInstanceStore.TryMarkDeadAsync(enemyId)` runs
   `UPDATE EnemyInstances SET IsAlive = false, RespawnAt = now + <respawn delay>, Version = Version + 1
-  WHERE Id = … AND IsAlive`, and returns true to exactly the one caller that flipped the row — the flag
-  `AttackEnemyHubCommand` uses to decide who distributes rewards. The delay is `EnemyWorldOptions.RespawnDelay`,
+  WHERE Id = … AND IsAlive` inside a transaction, then reads the row's `EnemyParticipants` before committing and
+  returns them. Exactly one caller flips the row; it gets the participant ids the kill credits, and every other
+  caller gets `null`. That is the flag `CombatHelpers.SettleKillAsync` gates on: the winner distributes rewards,
+  rolls loot, records the room clear and reports the credited set the hub advances kill objectives on, while a
+  caller holding a stale copy of the enemy (each read materialises its own) reports the death to its own client and
+  credits nothing. Reading the set at the transition is what credits a participant whose turn committed while the
+  winner was loading — the winner's own copy predates it. The delay is `EnemyWorldOptions.RespawnDelay`,
   bound from the `Enemies` section (`RespawnDelaySeconds`, default 60), not a hardcoded 60 s.
 - **A background sweeper brings them back.** `EnemyRespawnService : BackgroundService`
   (`Veldrath.Server/Features/Characters/Combat/EnemyRespawnService.cs`, registered
@@ -126,7 +131,7 @@ continues it instead of losing it.
 - Returns: enemy stats + `Template.Abilities` list for client display
 
 #### `AttackEnemyHubCommand.cs`
-Guard: has session + enemy exists (nullable) + alive → load entity+attrs → hydrate → calc damage → `lock(enemy.SyncRoot)` apply → if dead: `TryMarkDeadAsync` (the conditional UPDATE that stamps `RespawnAt`; only the caller that won it calls `DistributeRewardsAsync`) → early return with victory result → counter-attack via `RollEnemyAbility` → persist → `HandleDeathIfNeededAsync`
+Guard: has session + enemy exists (nullable) + alive → load entity+attrs → hydrate → calc damage → `lock(enemy.SyncRoot)` apply → if dead: `TryMarkDeadAsync` (the conditional UPDATE that stamps `RespawnAt` and reports the credited participants; only the caller that won it calls `CombatHelpers.SettleKillAsync`'s reward, loot, clear and credit work) → early return with victory result → counter-attack via `RollEnemyAbility` → persist → `HandleDeathIfNeededAsync`
 
 #### `DefendActionHubCommand.cs`
 Same flow as Attack but `session.WithDefending(true)`, no player attack, enemy damage halved.
