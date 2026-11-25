@@ -3557,10 +3557,23 @@ public class GameHub : Hub
     /// is re-established on a reconnect the same way an arrival establishes it: by looking up the character's
     /// still-open run, because the session row it is written to does not survive the disconnect.
     /// </summary>
+    /// <remarks>
+    /// Walking out of a run is a departure like the disconnect's, so it goes through the same
+    /// <see cref="IZoneInstanceService.LeaveAsync"/>: participation closes and the run's emptiness grace starts
+    /// at the walk-out. Without that, a run held for longer than the grace was swept on the first tick after the
+    /// last member walked into the zone's shared rooms, and the walk back opened a fresh attempt instead of
+    /// resuming this one.
+    /// </remarks>
     /// <param name="zoneGroup">Scope the arrival belongs to, or <see langword="null"/> when unchanged.</param>
     /// <param name="instanceId">Run the character is now inside, or <see langword="null"/> for the shared zone.</param>
     private async Task ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId)
     {
+        // Read before the overwrite below: the run being left is the only record of which departure this is.
+        var previousInstanceId =
+            Context.Items.TryGetValue("CurrentZoneInstanceId", out var previous) && previous is Guid left
+                ? left
+                : (Guid?)null;
+
         if (!string.IsNullOrWhiteSpace(zoneGroup))
         {
             var current = Context.Items.TryGetValue("CurrentZoneGroupName", out var value) && value is string existing
@@ -3580,7 +3593,16 @@ public class GameHub : Hub
         Context.Items["CurrentZoneInstanceId"] = instanceId;
 
         if (TryGetCharacterId(out var characterId))
+        {
+            // A different run, or no run at all, means this arrival left the previous one. `LeaveAsync` refreshes
+            // the grace only for a run that is still Open, so the path that clears an already-closed run — the
+            // respawn onto the shared zone — stays a no-op, and walking between two rooms of the same run never
+            // reports a departure.
+            if (previousInstanceId is not null && previousInstanceId != instanceId && _zoneInstances is not null)
+                await _zoneInstances.LeaveAsync(previousInstanceId.Value, characterId);
+
             await _playerSessionRepo.SetZoneInstanceAsync(characterId, instanceId);
+        }
     }
 
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";

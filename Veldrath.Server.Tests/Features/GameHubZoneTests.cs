@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Contracts.Map;
+using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Map;
 using Veldrath.Server.Features.Quest;
 using Veldrath.Server.Features.Zones;
@@ -21,6 +24,20 @@ public class GameHubZoneTests : IDisposable
 
     private static void ShouldBeError(FakeClientProxy proxy, string message) =>
         proxy.SentMessages.Last(m => m.Method == "Error").Args[0].Should().Be(message);
+
+    /// <summary>Builds the run service over the test's own context, the way the harness wires the hub's.</summary>
+    /// <param name="db">Context the hub and the service share.</param>
+    /// <param name="locations">Zone-location catalog the service reads a room from.</param>
+    /// <returns>The service the hub is using.</returns>
+    private static EfCoreZoneInstanceService ZoneInstances(
+        ApplicationDbContext db,
+        RealmEngine.Shared.Abstractions.IZoneLocationRepository locations) =>
+        new(
+            db,
+            new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
+            locations,
+            NullLogger<EfCoreZoneInstanceService>.Instance);
 
     // ── EnterZone ────────────────────────────────────────────────────────────
 
@@ -324,6 +341,168 @@ public class GameHubZoneTests : IDisposable
             .Should().BeNull("a swept run is not resumed");
         groups.AddedGroups.Should().Contain("zone:crestfall");
         ctx.Items["CurrentZoneInstanceId"].Should().BeNull();
+    }
+
+    // ── TravelToNode: walking out of a run ───────────────────────────────────
+
+    /// <summary>
+    /// Seeds an open run with one member inside, a session pointing at it, and a caller standing on one of the
+    /// run's instanced room nodes — the state a walk out of the run starts from.
+    /// </summary>
+    private static async Task<(ZoneInstance Run, PlayerSession Session)> SeedRunWithMemberAsync(
+        ApplicationDbContext db,
+        Veldrath.Server.Data.Entities.Character character,
+        string connectionId)
+    {
+        var run = new ZoneInstance
+        {
+            ZoneId = "crestfall",
+            CreatedByCharacterId = character.Id,
+            ZoneGroup = $"zone:crestfall#i1:{Guid.NewGuid():D}",
+            // Entered an hour ago: measuring the grace from the last join is exactly the bug this pins.
+            LastOccupiedAt = DateTimeOffset.UtcNow.AddHours(-1),
+        };
+        db.ZoneInstances.Add(run);
+        db.ZoneInstanceParticipants.Add(new ZoneInstanceParticipant
+        {
+            ZoneInstanceId = run.Id,
+            CharacterId = character.Id,
+        });
+        await db.SaveChangesAsync();
+
+        var session = await HubHarness.SeedSessionAsync(db, character, connectionId, zoneId: "crestfall");
+        session.ZoneInstanceId = run.Id;
+        await db.SaveChangesAsync();
+
+        return (run, session);
+    }
+
+    [Fact]
+    public async Task TravelToNode_WalkingOutOfARun_ClosesParticipationAndStartsTheGrace()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var (run, session) = await SeedRunWithMemberAsync(db, character, "conn-walkout");
+
+        var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
+        locations.Setup(repo => repo.GetBySlugAsync("vault-of-echoes"))
+                 .ReturnsAsync(new ZoneLocationEntry(
+                     "vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14,
+                     IsInstanced: true));
+
+        var (hub, _, groups, ctx, mediator, _) =
+            HubHarness.Create(db, account.Id, connectionId: "conn-walkout", locations: locations.Object);
+        ctx.EnterZoneState(
+            character.Id, character.Name, zoneGroup: run.ZoneGroup, currentMapId: "zone:crestfall");
+        ctx.Items["CurrentZoneInstanceId"] = run.Id;
+
+        // The last member walks from the run's instanced room to the zone's shared market. The destination is
+        // shared, so the arrival carries no run: `ZoneInstanceId` null and the zone's own scope.
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:crestfall",
+            NodeId = "zone:crestfall:location:market",
+            ZoneId = "crestfall",
+            LocationSlug = "market",
+            ZoneGroup = "zone:crestfall",
+            ZoneInstanceId = null,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("zone:crestfall", "zone:crestfall:location:market"));
+
+        var participant = await db.ZoneInstanceParticipants
+            .SingleAsync(row => row.ZoneInstanceId == run.Id && row.CharacterId == character.Id);
+        participant.LeftAt.Should().NotBeNull(
+            "a walk out of the run is a departure, so participation closes exactly as it does on disconnect");
+
+        session.ZoneInstanceId.Should().BeNull("the character is in the shared zone now");
+        ctx.Items["CurrentZoneInstanceId"].Should().BeNull();
+        groups.RemovedGroups.Should().Contain(run.ZoneGroup);
+        groups.AddedGroups.Should().Contain("zone:crestfall");
+
+        // The departure started the emptiness grace, so the 5 s sweep cannot empty a run that was held for an
+        // hour on its first tick after the walk-out.
+        var service = ZoneInstances(db, locations.Object);
+        await service.SweepAsync(TimeSpan.FromMinutes(1));
+
+        (await service.GetAsync(run.Id))!.State.Should().Be(ZoneInstanceState.Open);
+        (await service.FindResumableAsync("crestfall", "vault-of-echoes", character.Id))!.Id.Should().Be(
+            run.Id, "backtracking into the room rejoins the attempt instead of a fresh run");
+
+        // And the walk back in is the same run, with participation live again.
+        (await service.FindOrCreateAsync("crestfall", character.Id)).Id.Should().Be(run.Id);
+        db.ZoneInstanceParticipants.Local
+            .Single(row => row.ZoneInstanceId == run.Id && row.CharacterId == character.Id)
+            .LeftAt.Should().BeNull("walking back into the run reopens the participation");
+    }
+
+    [Fact]
+    public async Task TravelToNode_WalkingBetweenTwoRoomsOfTheSameRun_ReportsNoDeparture()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var (run, _) = await SeedRunWithMemberAsync(db, character, "conn-in-run");
+
+        var (hub, _, _, ctx, mediator, _) = HubHarness.Create(db, account.Id, connectionId: "conn-in-run");
+        ctx.EnterZoneState(
+            character.Id, character.Name, zoneGroup: run.ZoneGroup, currentMapId: "zone:crestfall");
+        ctx.Items["CurrentZoneInstanceId"] = run.Id;
+
+        // Both rooms are instanced, so the handler resolves the same open run: the character never left it.
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:crestfall",
+            NodeId = "zone:crestfall:location:crypt",
+            ZoneId = "crestfall",
+            LocationSlug = "crypt",
+            ZoneGroup = run.ZoneGroup,
+            ZoneInstanceId = run.Id,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("zone:crestfall", "zone:crestfall:location:crypt"));
+
+        var participant = await db.ZoneInstanceParticipants
+            .SingleAsync(row => row.ZoneInstanceId == run.Id && row.CharacterId == character.Id);
+        participant.LeftAt.Should().BeNull("moving inside the run is not a departure");
+        db.ZoneInstances.Local.Single(row => row.Id == run.Id).LastOccupiedAt.Should().BeCloseTo(
+            DateTimeOffset.UtcNow.AddHours(-1),
+            TimeSpan.FromMinutes(1),
+            "no leave was reported, so no grace was started");
+    }
+
+    [Fact]
+    public async Task TravelToNode_FromTheSharedZone_ReportsNoDeparture()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        // A character who was never inside a run has no departure to report, and must not be sent one.
+        var zoneInstances = new Mock<IZoneInstanceService>();
+        var (hub, _, _, ctx, mediator, _) =
+            HubHarness.Create(db, account.Id, zoneInstances: zoneInstances.Object);
+        ctx.EnterZoneState(character.Id, character.Name, currentMapId: "zone:crestfall");
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:crestfall",
+            NodeId = "zone:crestfall:location:market",
+            ZoneId = "crestfall",
+            LocationSlug = "market",
+            ZoneGroup = "zone:crestfall",
+            ZoneInstanceId = null,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("zone:crestfall", "zone:crestfall:location:market"));
+
+        zoneInstances.Verify(
+            service => service.LeaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "a character who never entered a run has no departure to report");
     }
 
     // ── LeaveZone ────────────────────────────────────────────────────────────

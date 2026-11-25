@@ -253,6 +253,39 @@ public class ZoneInstanceServiceTests
     }
 
     [Fact]
+    public async Task Leave_DoesNotRestartTheGraceOfAClosedRun()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db);
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+
+        // The sweep has already emptied it: `LastOccupiedAt` is what the purge is measured from, and the run is
+        // waiting for the next tick to delete it.
+        run.State = ZoneInstanceState.Empty;
+        run.LastOccupiedAt = DateTimeOffset.UtcNow.AddHours(-1);
+        await db.SaveChangesAsync();
+
+        // The respawn path clears a pointer at a run nobody can be inside any more and reports the departure on
+        // the way, so this leave can arrive at a closed run. Refreshing the grace here would keep the run — and
+        // its enemies and loot — alive for another window it can never be entered in.
+        await service.LeaveAsync(run.Id, solo.Id);
+
+        var closed = await db.ZoneInstances.AsNoTracking().SingleAsync(row => row.Id == run.Id);
+        closed.State.Should().Be(ZoneInstanceState.Empty);
+        closed.LastOccupiedAt.Should().BeCloseTo(
+            DateTimeOffset.UtcNow.AddHours(-1),
+            TimeSpan.FromMinutes(1),
+            "only an open run starts its grace at a departure");
+
+        var left = await db.ZoneInstanceParticipants
+            .SingleAsync(row => row.ZoneInstanceId == run.Id && row.CharacterId == solo.Id);
+        left.LeftAt.Should().NotBeNull("participation still closes, whether or not the run is open");
+    }
+
+    [Fact]
     public async Task Sweep_PurgesARunNobodyIsInside_AndKeepsAnOccupiedOne()
     {
         using var factory = new TestDbContextFactory();
