@@ -52,8 +52,12 @@ instanced location in its own zone, so standing in a dungeon's lobby and coming 
 re-entered with `JoinAsync` (which clears the participant's `LeftAt`), becomes the new session's `ZoneInstanceId`
 and `Context.Items["CurrentZoneInstanceId"]`, and its `ZoneGroup` replaces the shared group; the `ZoneEntered`
 occupant list is then the run's sessions (`GetByZoneInstanceAsync`), not the whole zone's. A run that has emptied is
-`ZoneInstanceState.Empty` and is deliberately not returned, so the character resumes in the shared zone instead of a
-group nothing else will join. A run only survives the disconnect because leaving starts its emptiness grace:
+`ZoneInstanceState.Empty` and is deliberately not returned, so the character does not resume inside it; the room they
+stood on is a shared room now, so `EnterZone` moves the resume point to the zone's safe location (`IsSafeRespawn`, the
+same rule `EnterZoneLocationHubCommandHandler` calls the entrance) and sends the sentence the respawn path sends —
+"The instance you were in has closed. You wake in the shared zone." A zone with no safe location, a lobby with no node
+on the zone map, or a room that was never instanced keeps the saved node and says nothing: a login never fails over a
+place to stand. A run only survives the disconnect because leaving starts its emptiness grace:
 `EfCoreZoneInstanceService.LeaveAsync` refreshes `LastOccupiedAt` at the departure, so the sweep (every 5 s, grace
 `EnemyWorldOptions.SessionGraceSeconds`, default 60) does not empty a run that was held for hours on the first tick
 after its last member drops; `JoinAsync` likewise refuses anything but an `Open` run, so a resume that loses the race

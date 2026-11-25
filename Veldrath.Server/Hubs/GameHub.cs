@@ -66,8 +66,16 @@ public class GameHub : Hub
     private readonly IEnemyInstanceStore _enemies;
     private readonly Veldrath.Server.Features.Zones.IZoneInstanceService? _zoneInstances;
     private readonly IRandomSource _random;
+    private readonly IZoneLocationRepository? _locations;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+    /// <summary>
+    /// Said when a run the character was inside is gone, on the respawn path and on the reconnect path alike: one
+    /// sentence, so the two cannot drift into describing the same event two ways.
+    /// </summary>
+    private const string ExpiredInstanceMessage =
+        "The instance you were in has closed. You wake in the shared zone.";
 
     /// <summary>Initializes a new instance of <see cref="GameHub"/>.</summary>
     public GameHub(
@@ -87,7 +95,8 @@ public class GameHub : Hub
         ICombatSessionStore sessions,
         IEnemyInstanceStore enemies,
         Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
-        IRandomSource? randomSource = null)
+        IRandomSource? randomSource = null,
+        IZoneLocationRepository? locations = null)
     {
         _logger = logger;
         _characterRepo = characterRepo;
@@ -106,6 +115,7 @@ public class GameHub : Hub
         _enemies = enemies;
         _zoneInstances = zoneInstances;
         _random = randomSource ?? SystemRandomSource.Shared;
+        _locations = locations;
     }
 
     public override async Task OnConnectedAsync()
@@ -959,6 +969,21 @@ public class GameHub : Hub
                 resumedRun = candidate;
         }
 
+        // A run that emptied while the character was away cannot have them back, and the room they stood on is
+        // only a room in the shared zone now — nobody else's roster, no enemies of its own. The plan's reconnect
+        // rule is that they wake in the dungeon's lobby and are told why, so move the resume point there instead
+        // of dropping them into a room whose instance is gone. No lobby (or a room that was never instanced)
+        // keeps the saved node: a login must not fail over a place to stand.
+        var lobby = resumingHere && resumedRun is null
+            ? await ResolveSweptInstanceLobbyAsync(zoneId, resumeLocationSlug, zoneGraph)
+            : null;
+
+        if (lobby is { } wake)
+        {
+            resumeNodeId = wake.NodeId;
+            resumeLocationSlug = wake.Slug;
+        }
+
         // Create new session
         var session = new PlayerSession
         {
@@ -1032,6 +1057,11 @@ public class GameHub : Hub
         });
 
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);
+
+        // The wake-up is only half the reconnect: the plan promises the player is told why they are not where
+        // they logged out, in the same words the respawn path uses for the same event.
+        if (lobby is not null)
+            await Clients.Caller.SendAsync("SystemMessage", ExpiredInstanceMessage);
     }
 
     /// <summary>Voluntarily leave the current zone.</summary>
@@ -3550,7 +3580,7 @@ public class GameHub : Hub
 
         await Clients.Caller.SendAsync(
             "SystemMessage",
-            "The instance you were in has closed. You wake in the shared zone.");
+            ExpiredInstanceMessage);
     }
 
     /// <summary>
@@ -4422,6 +4452,46 @@ public class GameHub : Hub
         return nodeIds.Contains(savedNodeId, StringComparer.OrdinalIgnoreCase)
             ? savedNodeId
             : fallbackNodeId;
+    }
+
+    /// <summary>
+    /// Resolves the zone's lobby — its safe-respawn location — as the place to wake a character whose instanced
+    /// run is gone, or <see langword="null"/> when the room they stood on was never instanced, the zone has no
+    /// safe location, or that location has no node on the zone's own map.
+    /// </summary>
+    /// <param name="zoneId">Zone the character is resuming into.</param>
+    /// <param name="locationSlug">Location the character stood on when their connection dropped.</param>
+    /// <param name="zoneGraph">The zone's map graph, which owns the node the lobby stands on.</param>
+    /// <returns>The lobby's node and slug, or <see langword="null"/> to keep the saved position.</returns>
+    private async Task<(string NodeId, string Slug)?> ResolveSweptInstanceLobbyAsync(
+        string zoneId,
+        string? locationSlug,
+        MapGraph? zoneGraph)
+    {
+        if (_locations is null || zoneGraph is null || string.IsNullOrWhiteSpace(locationSlug))
+            return null;
+
+        // Only an instanced room has a run behind it. Everywhere else the shared scope is where the character
+        // belongs anyway, so there is nothing to explain and nowhere of ours to move them.
+        var stoodOn = await _locations.GetBySlugAsync(locationSlug);
+        if (stoodOn is not { IsInstanced: true } ||
+            !string.Equals(stoodOn.ZoneId, zoneId, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // The lobby is the zone's safe location: the same rule that names the entrance of a zone, so a dungeon
+        // has one lobby rather than one per caller.
+        var lobby = (await _locations.GetByZoneIdAsync(zoneId))
+            .FirstOrDefault(candidate => candidate.IsSafeRespawn);
+        if (lobby is null)
+            return null;
+
+        var node = zoneGraph.Nodes.FirstOrDefault(candidate =>
+            candidate.NodeType == MapNodeType.Location &&
+            string.Equals(candidate.RefId, lobby.Slug, StringComparison.OrdinalIgnoreCase));
+
+        return node is null ? null : (node.Id, lobby.Slug);
     }
 
     private async Task SendInventorySnapshotAsync(
