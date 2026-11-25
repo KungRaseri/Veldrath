@@ -23,7 +23,7 @@ silently applied, in [§8](#8-decisions).
 | [`asset-specs.md`](../asset-specs.md) | canvas sizes, formats, weight budgets, naming | quotes them, never re-decides them |
 | [`brand-guide.md`](../brand-guide.md) | three materials, light from within and above, **no off-palette hue** | applies them per region |
 | [`tokens.json`](../tokens.json) | `locked: true` — 49 tokens, no new colour without a human decision | uses 16 existing tokens, adds **none** |
-| [`archetypes.md`](archetypes.md) | the whole roster — the 1–20 rows, the tail hostiles and the ten adopted townspeople (the `§` rows at the end of the table) — slugs, zones, classes, faction ties | classifies every row it can, names the five it cannot, invents no slug |
+| [`archetypes.md`](archetypes.md) | the whole roster — the 1–20 rows, the tail hostiles and the ten adopted townspeople (the `§` rows at the end of the table) — slugs, zones, classes, faction ties | classifies every row of the roster, tail included, and invents no slug |
 | [`GAME.md`](../../../game-context/GAME.md) §6, §8 | five regions; region *character* beyond biome is **TBD (Q2)** | ramps from seeded biome words only |
 
 `designctx Veldrath/Veldrath` reports convention `docs/design`, 49 palette tokens, palette matching
@@ -101,22 +101,25 @@ classes cover all of it, and the fifth (townsfolk) is the one the seeder gets ex
 
 | Class | Proportion | Facing | Opaque coverage at 64 px | Rows classified |
 |---|---|---|---|---|
-| **beast** | horizontal, mass low, longer axis ≥ 1.15× the vertical | profile, head leading **left** | 0.22–0.55 | 11 |
-| **humanoid** | vertical, shoulders 0.60–0.75 of width, head in the top third | three-quarter, off-centre | 0.22–0.55 | 8 |
+| **beast** | horizontal, mass low, longer axis ≥ 1.15× the vertical | profile, head leading **left** | 0.22–0.55 | 14 |
+| **humanoid** | vertical, shoulders 0.60–0.75 of width, head in the top third | three-quarter, off-centre | 0.22–0.55 | 9 |
 | **unquiet** | vertical but **no lower mass** — the figure frays out above the bottom margin | three-quarter, tilted | 0.22–0.55 | 4 |
-| **spirit** | one non-limbed mass, no neck, no narrow waist (elementals share this class) | arbitrary, never symmetrical | 0.22–0.55 | 4 |
+| **spirit** | one non-limbed mass, no neck, no narrow waist (elementals share this class) | arbitrary, never symmetrical | 0.22–0.55 | 5 |
 | **townsfolk** | vertical, square shoulders, head centred | **front-on and mirror-symmetric** | 0.22–0.55 | 17 |
 
-**The `Rows classified` column is counted, not estimated, and it is not the size of the roster.** It is
-the `class` column of §4.1 and §4.1b tallied by slug against the 8-column roster rows in
-`archetypes.md` (the 1–20 table plus the five-row tail) — re-run that tally to check it, in either
-direction. It covers **44 of the roster's rows — every row but the five tail hostiles**: the four
-hostile classes account for all 27 hostile rows of the 1–20 roster, and townsfolk for all 17
-non-hostile rows (the seven in §4.1 and the ten adopted ones in §4.1b). **The five are in no row of
-this table**, because the tail states no class for any of them — `vent-stalker`, `crust-crawler`,
-`ash-picker`, `ash-eater`, `maw-serpent`, bands 23–30. A class is what these proportions and R2's
-outline break are drawn from, so naming one is a decision owed by the tail roster (§4.1, *What these
-two tables cover*), never a drawing choice taken here.
+**The `Rows classified` column is counted, not estimated, and it is the size of the roster.** It is the
+`class` column of §4.1, §4.1b and §4.1c tallied by slug against the roster rows in `archetypes.md` —
+the 1–20 table, whose rows are 8 columns, plus the five-row tail, whose rows carry the class as a ninth
+column — so re-run that tally to check it, in either direction. It covers **all 49 of the roster's
+rows**: the four hostile classes account for all 32 hostile rows (the 27 of the 1–20 table and the five
+tail hostiles), and townsfolk for all 17 non-hostile rows (the seven in §4.1 and the ten adopted ones in
+§4.1b). **The five tail hostiles were the last rows without a class** — `vent-stalker`,
+`crust-crawler`, `ash-picker`, `ash-eater`, `maw-serpent`, bands 23–30 — because the tail roster stated
+a band, a faction tie, a zone, hostility and a combat role for each and no class. That gap closed on
+2026-11-25: the tail roster now carries the class as its ninth column (`vent-stalker`, `crust-crawler`
+and `maw-serpent` **beast**, `ash-picker` **humanoid**, `ash-eater` **spirit**) and §4.1c classifies the
+five row by row. A class is what these proportions and R2's outline break are drawn from, which is why it
+belongs on the tail roster and not on a drawing brief.
 
 **Facing is the hostility read.** Hostiles are three-quarter (symmetry ≤ 0.85); townsfolk are
 front-on (symmetry ≥ 0.88). A player learns it in one screen: *front-on means talk, three-quarter
@@ -396,16 +399,17 @@ of the roster. By region: Varenmark 14 (9 P0 / 5 P1), Greymoor 8 (5 P1 / 3 P2), 
 3 P2), Cinderplain 4 (3 P1 / 1 P2). The five Varenmark townsfolk are P1 by decision 3
 ([§8](#8-decisions)) — the draft had them P0; nothing else in this table moved.
 
-**What these two tables cover, and what they do not.** Counted off the 8-column roster rows in
-`archetypes.md` — the 1–20 table plus the five-row tail — §4.1 and §4.1b classify **44 of the
-roster's 49 rows**: all 27 hostiles and all 17 townsfolk of the 1–20 table, which is every row of it.
-**The five they cannot classify are the tail hostiles** — `vent-stalker`, `crust-crawler`,
-`ash-picker`, `ash-eater`, `maw-serpent` (`archetypes.md`, *The tail roster*) — and not because anyone
-overlooked them: that table states a band, a faction tie, a zone, hostility and a combat role for each
-of the five, and never a class. R1's proportions and R2's outline break are drawn from the class, so
-naming one is a decision against the tail roster's own table, recorded under [§8](#8-decisions),
-*Left open on purpose*. Until it is taken, no tail portrait can be requested and R1's count stops at
-the 44 rows these two tables hold.
+**What these three tables cover.** Counted off the roster rows in `archetypes.md` — the 1–20 table
+plus the five-row tail — §4.1, §4.1b and §4.1c classify **all 49 of the roster's rows**: §4.1's 34
+(27 hostiles and 7 townsfolk), §4.1b's ten adopted townspeople, and §4.1c's five tail hostiles. **The
+tail hostiles are the five rows that had no class until 2026-11-25** — `vent-stalker`,
+`crust-crawler`, `ash-picker`, `ash-eater`, `maw-serpent` (`archetypes.md`, *The tail roster*) — and
+not because anyone overlooked them: that table stated a band, a faction tie, a zone, hostility and a
+combat role for each, and never a class. The class was decided by Josh on 2026-11-25 (card
+`t_21bf1ee4`), is recorded on the tail roster as its ninth column, and is taken row by row in §4.1c
+below. R1's proportions and R2's outline break are drawn from the class, so a tail portrait can now
+be specified — but none is commissioned here: the five sit in no request (§5), and putting them into
+one is a request decision, not a classification.
 
 **P2 dependencies** — a P2 row cannot be requested before its base exists: `moor-tollman` ←
 `bandit-ruffian` (P0) · `cairn-haunt` ← `moor-wight` (P0) · `fen-lurker` ← `sump-crawler` (P0) ·
@@ -472,6 +476,33 @@ Two consequences are stated rather than left implied:
 This table is a companion to §4.1, not a re-count of it: the approved roster, its totals, its region
 split and the request in §5.3 are unchanged, and the ten take the same canvas and export sizes as
 every other roster row (`asset-specs` §4 via §5.2 — 256 PNG-24 master, 128 and 64 WebP).
+
+### 4.1c The five tail hostiles, classified
+
+All five are Cinderplain rows banded 23–30 (`archetypes.md`, *The tail roster*), so they open no new
+region and no new request unit. Their class was decided by Josh on 2026-11-25 (card `t_21bf1ee4`) and
+is recorded there as the tail roster's ninth column; this table states the same five values with the
+reason, so the class is not re-derived from the prose and `ash-eater` is not read back as a beast. No
+row is a boss and none is flagged elite, so all five take the **regular** frame (§2 R3). Facing and
+proportion come from the class (§2 R1): three `beast` rows in profile with the head leading left,
+`ash-picker` three-quarter and off-centre, `ash-eater` arbitrary and never symmetrical.
+
+| slug | class | reason |
+|---|---|---|
+| `vent-stalker` | beast | Long legs over a long, low body: it crosses the vent field under the noise of a blow and is gone — horizontal, mass low, the snout leading, R2's beast break at 150°–210°. |
+| `crust-crawler` | beast | It dens under the floor of the pyreling den and surfaces through the crust: a low, limb-heavy body that never stands up. |
+| `ash-picker` | humanoid | A heat-worker who breaks a face for glass and iron and treats the claim as a debt: a standing figure whose threat is the tool it holds — R2's weapon break at 20°–70°. |
+| `ash-eater` | spirit | Grown too heavy to leave the chamber: one non-limbed mass, no neck, no narrow waist, no feet, with R2's single break a column, plume or funnel in the 70°–110° sector. |
+| `maw-serpent` | beast | A serpent lying in the seam under the Maw's last floor: horizontal, limbless, and it does not move until something else does. |
+
+**`ash-eater` is `spirit` deliberately, not `beast`.** The mass is fire-touched, which invites an animal
+read, but a thing that has grown too heavy to leave the chamber has no limb and no neck to draw one
+from, and R2 gives the spirit class the break that a mass of that shape can actually carry. The class
+is a decision on `archetypes.md`'s tail roster (decision 6); a later `beast` reading is a redraw of the
+row, not a correction of this table.
+
+This table assigns no **asset class** and opens no request. Whether the five are P0, P1 or P2, and which
+request they join, are §4 and §5 decisions this card does not take: the class is all that was owed.
 
 ### 4.2 One correction to the seeder, not a visual decision
 
@@ -700,7 +731,8 @@ changed.
 | §4.1b, §5.1 | three home regions corrected — Aldenmere's `keep-castellan`, `mead-seller` and `cellar-keeper` are **greymoor**, not varenmark — so the ten split Varenmark 1 · Greymoor 3 · Saltcliff 3 · Cinderplain 3; §4.1b's light sentence now names Greymoor's ramp | review of this landing: `aldenmere` is seeded `RegionId = "greymoor"` (`ApplicationDataSeeder.cs`) and `world-lore-plan.md` records Aldenmere under *Greymoor settlements* (`towns.md` §5 P2 is where that entry was proposed), so §4.1's first-zone rule puts all three there |
 | §4.1b ×2, corrections table | `§6.8` → `§6 item 8`: §6 is a numbered list of eight refusals with no `6.x` sub-headings | review of this landing: the citation named no heading; the item number was right and only the form changed |
 | header, §0 | "44 rows: the 34-row roster plus the ten `§` townspeople" → "plus the ten adopted townspeople (the `§` rows at the end of the table)" | review of this landing: 17 rows carry `§` — the seven earlier townsfolk and the ten — so the old phrasing read as if only the ten were marked |
-| header, §0, §2 R1, §2 R3, §3, §4.1, §5.5, §6 item 2 | the roster-size tallies dropped or recomputed: R3's `Rows today` column became `Rows the frame applies to` and counts nothing; R1's `Rows` became `Rows classified`, cites the table it is counted off, and reads townsfolk **17**, not 7; §4.1 states that it and §4.1b classify 44 of the roster's 49 rows and names the five tail hostiles they cannot; the header, §0, §3, §5.5 and §6 item 2 no longer quote a roster size | card `t_23f83ab4`: the roster is **49 rows — 32 hostile, 17 non-hostile** (measured off the 8-column rows in `archetypes.md`, 1–20 table plus tail) and four sites still described the 34-row 1–20 roster with seven townsfolk — text written before the ten-townsperson wave and the tail landed. R4 set the precedent in PR #258 (`t_9e9549d5`): a hostile-row tally is a fact about roster size, so it rots with every wave while the rule it illustrates does not |
+| header, §0, §2 R1, §2 R3, §3, §4.1, §5.5, §6 item 2 | the roster-size tallies dropped or recomputed: R3's `Rows today` column became `Rows the frame applies to` and counts nothing; R1's `Rows` became `Rows classified`, cites the table it is counted off, and reads townsfolk **17**, not 7; §4.1 states that it and §4.1b classify 44 of the roster's 49 rows and names the five tail hostiles they cannot (superseded for those five by the next row); the header, §0, §3, §5.5 and §6 item 2 no longer quote a roster size | card `t_23f83ab4`: the roster is **49 rows — 32 hostile, 17 non-hostile** (measured off the 8-column rows in `archetypes.md`, 1–20 table plus tail) and four sites still described the 34-row 1–20 roster with seven townsfolk — text written before the ten-townsperson wave and the tail landed. R4 set the precedent in PR #258 (`t_9e9549d5`): a hostile-row tally is a fact about roster size, so it rots with every wave while the rule it illustrates does not |
+| §2 R1, §4.1, §4.1c, §8, §0 | the five tail hostiles classified and the counts closed: R1's `Rows classified` reads beast **14** · humanoid **9** · unquiet 4 · spirit **5** · townsfolk 17 = **49**; §4.1's coverage paragraph names the three classification tables; §4.1c is new; §8's open item is the request, not the class | card `t_21bf1ee4`: `archetypes.md`'s tail roster gained a `class` column on Josh's 2026-11-25 decision — beast ×3, humanoid, spirit — so the five rows §4.1 and §4.1b could not classify now have classes, and the 44 counted before was five short of the roster's 49 |
 
 ### Left open on purpose
 
@@ -711,12 +743,11 @@ changed.
 - **The ten adopted townspeople have no request yet.** They are classified — ten P2 rows in §4.1b —
   but a P2 row cannot be requested before its base exists, so none is commissioned until its base is
   drawn, or until a later card re-prioritises one to P1.
-- **The five tail hostiles have no silhouette class.** `archetypes.md`'s tail roster states a band, a
-  faction tie, a zone, hostility and a combat role for each of `vent-stalker`, `crust-crawler`,
-  `ash-picker`, `ash-eater` and `maw-serpent`, never a class — so §4.1 stops at 44 of the roster's 49
-  rows and R1's count with it. The class is owed against the tail roster's own table; R1's proportions
-  and R2's outline break are drawn from it, so until it is written down no tail portrait can be
-  requested. This document takes no part of that decision.
+- **The five tail hostiles are classified but not requested.** Their class was decided by Josh on
+  2026-11-25 (card `t_21bf1ee4`) and now stands on `archetypes.md`'s tail roster as its ninth column,
+  taken row by row in §4.1c, so R1's count reaches every row of the roster. What stays open is the
+  request: the five sit in no §5 request and carry no P0/P1/P2 asset class, and putting them into one
+  is a §5 decision (§5.1).
 
 ---
 
