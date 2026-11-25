@@ -140,6 +140,12 @@ public class MapGraphSeederTests
         // location are legitimate (Ashlen Wood's northern track is on the Strangled Oak, the Droveway's mirror hop
         // is on the Sunken Fields), so each one has to be named with the discovery that opens it rather than
         // passing because the walk never looked.
+        //
+        // Every map is read, not only MapType.Zone. A ZoneExit authored on a region board is a usable door:
+        // travel only changes maps on a node carrying a TargetMapId, and the walk stops expanding at exactly those
+        // nodes, so "can a character at Arrival stand on this door?" is the same question on a board as on a zone
+        // map. Filtering to zone maps would leave a board door uncounted and unwalked, which is a green pin over
+        // content nobody can use.
         await using var db = CreateDbContext();
 
         await MapGraphSeeder.SeedAsync(db);
@@ -148,7 +154,6 @@ public class MapGraphSeederTests
             .Include(m => m.Nodes)
             .Include(m => m.Edges)
             .AsNoTracking()
-            .Where(m => m.MapType == MapType.Zone)
             .ToListAsync();
 
         var doors = maps
@@ -157,7 +162,9 @@ public class MapGraphSeederTests
                 .Select(node => (Map: map, Door: node)))
             .ToList();
 
-        doors.Should().HaveCount(23, "the seeder authors 23 ZoneExit nodes across the zone maps");
+        doors.Should().HaveCount(23, "the seeder authors 23 ZoneExit nodes, all of them on zone maps today, so this " +
+            "list is 23 doors over every map in the graph; a door added or removed moves the number, and a new " +
+            "door on a region board is counted and walked here like any other");
         doors.Should().OnlyContain(
             entry => !entry.Door.IsHidden,
             "a hidden exit is not drawn on the map and this walk never enters a hidden node, so hiding a door takes " +
