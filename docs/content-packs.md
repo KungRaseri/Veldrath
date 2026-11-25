@@ -177,7 +177,7 @@ tables with no pack family are skipped for the same structural reason — none o
 importer's `FindBySlugAsync` has nothing to match. That covers `ZoneLocationConnection`, a join
 table keyed by `FromLocationSlug`/`ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's
 `Map`/`MapNode`/`MapEdge` — a map document whose maps and nodes are keyed by authored string ids
-(`ContentModelConfiguration.cs:310`, `:328`), while each directed edge is keyed by a generated `uuid` and identified at
+(`ContentModelConfiguration.cs:308`, `:328`), while each directed edge is keyed by a generated `uuid` and identified at
 authoring time by its natural slot `(MapId, FromNodeId, Direction)` (`:345`, `:352`) — and the vocabulary and
 configuration tables, `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` and `GameConfig`, which are not
 per-entity content at all.
@@ -250,7 +250,7 @@ so `FindBySlugAsync` has nothing to match. Their identity is not uniform, and th
 migration:
 
 - a **map** is keyed by its authored string id (`zone:tolvaren`, `region:saltcliff`), and `(MapType, OwnerId)` is
-  unique (`ContentModelConfiguration.cs:310`);
+  unique (`ContentModelConfiguration.cs:308`, `:315`);
 - a **node** is keyed by its authored string id (`zone:tolvaren:exit:zone:sunken-name`) and belongs to exactly one map
   (`:328`);
 - an **edge** is keyed by a generated `uuid`, and identified for authoring by its **natural slot** — `(MapId,
