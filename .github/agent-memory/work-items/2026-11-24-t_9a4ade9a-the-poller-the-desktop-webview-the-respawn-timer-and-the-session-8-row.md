@@ -42,7 +42,7 @@ under the review when #314 landed and touches neither the combat nor the announc
 - `combat-loop-plan.md`'s `Scope:` bullet now scopes work to `Veldrath (Server/Contracts)`, with the client
   deletion dated and the SvelteKit app named as the client.
 - `combat-loop-plan.md` no longer presents `ScheduleRespawn` as the implementation. It is nowhere in the source
-  (`git grep ScheduleRespawn --include=*.cs` returns nothing); the only surviving mentions are records of its
+  (`git grep ScheduleRespawn -- '*.cs'` returns nothing); the only surviving mentions are records of its
   removal, and the note now points at a new "Enemy respawn — what ships (no per-enemy timer)" section: death is
   one conditional `UPDATE` in `TryMarkDeadAsync` that stamps `RespawnAt` from `EnemyWorldOptions.RespawnDelay`;
   `EnemyRespawnService`
@@ -69,8 +69,8 @@ over the six files finds only records of their removal — struck-through lines,
 say the thing went with the client.
 
 Round-1 review corrections, all applied: the `Scope:` bullet is named rather than cited by line number (its number
-moves with every edit above it); the grep claim reads "nowhere in the source (`git grep --include=*.cs` returns
-nothing)" instead of "nowhere in the tree"; and the three nits — `ServerStatusService` is qualified as the client's
+moves with every edit above it); the grep claim reads "nowhere in the source (`git grep ScheduleRespawn -- '*.cs'`
+returns nothing)" instead of "nowhere in the tree"; and the three nits — `ServerStatusService` is qualified as the client's
 (the Discord bot still ships a class of that name in `Veldrath.Discord/Services/ServerStatusService.cs`), the
 announcements line says "no client calls it — only the endpoint's own integration tests do", and the respawn
 heading says "no per-enemy timer" so it does not sit oddly above a `PeriodicTimer` sweeper.
