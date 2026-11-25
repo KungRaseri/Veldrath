@@ -161,7 +161,9 @@ public class EfCoreZoneInstanceService : IZoneInstanceService
         var run = await _db.ZoneInstances
             .FirstOrDefaultAsync(instance => instance.Id == instanceId, cancellationToken);
 
-        if (run is null || run.State == ZoneInstanceState.Purging)
+        // Only an open run may be joined. An empty one has already spent its grace and is waiting for the next
+        // sweep to delete it, so reporting a successful join would seat the character in a group about to vanish.
+        if (run is null || run.State != ZoneInstanceState.Open)
             return false;
 
         await TouchAndJoinAsync(run, characterId, cancellationToken);
@@ -179,13 +181,22 @@ public class EfCoreZoneInstanceService : IZoneInstanceService
                 row => row.ZoneInstanceId == instanceId && row.CharacterId == characterId,
                 cancellationToken);
 
-        if (participant?.LeftAt is null)
-        {
-            if (participant is not null)
-                participant.LeftAt = DateTimeOffset.UtcNow;
+        if (participant?.LeftAt is not null)
+            return;
 
-            await _db.SaveChangesAsync(cancellationToken);
-        }
+        if (participant is not null)
+            participant.LeftAt = DateTimeOffset.UtcNow;
+
+        // The emptiness grace starts at the departure, not at the last join: a run held for an hour would
+        // otherwise be swept on the first tick after its last member disconnected, giving a reconnecting
+        // player no window to resume into it.
+        var run = await _db.ZoneInstances
+            .FirstOrDefaultAsync(instance => instance.Id == instanceId, cancellationToken);
+
+        if (run is not null && run.State == ZoneInstanceState.Open)
+            run.LastOccupiedAt = DateTimeOffset.UtcNow;
+
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />

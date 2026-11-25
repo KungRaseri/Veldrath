@@ -206,6 +206,53 @@ public class ZoneInstanceServiceTests
     }
 
     [Fact]
+    public async Task Join_RefusesARunThatHasEmptied()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db);
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+        run.State = ZoneInstanceState.Empty;
+        await db.SaveChangesAsync();
+
+        (await service.JoinAsync(run.Id, solo.Id)).Should().BeFalse(
+            "an emptied run is waiting for the next sweep to delete it, so the join must not report success");
+    }
+
+    [Fact]
+    public async Task Leave_StartsTheDisconnectGraceAtTheDeparture()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db, resumable: Room());
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+
+        // The run was held for an hour. Measuring the grace from the last join would sweep it on the first tick
+        // after the sole member disconnects, so the reconnect would find an empty run and no resume.
+        run.LastOccupiedAt = DateTimeOffset.UtcNow.AddHours(-1);
+        await db.SaveChangesAsync();
+
+        await service.LeaveAsync(run.Id, solo.Id);
+        await service.SweepAsync(TimeSpan.FromMinutes(1));
+
+        var resumed = await service.FindResumableAsync(ZoneId, VaultSlug, solo.Id);
+        resumed.Should().NotBeNull("the grace starts at the departure, so a relog inside it still rejoins the run");
+        resumed!.Id.Should().Be(run.Id);
+
+        // Once the grace itself has passed with nobody back, the run empties and the resume falls away.
+        run.LastOccupiedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        await db.SaveChangesAsync();
+        await service.SweepAsync(TimeSpan.FromMinutes(1));
+
+        (await service.FindResumableAsync(ZoneId, VaultSlug, solo.Id)).Should().BeNull(
+            "a run that stayed empty past the grace is waiting to be purged, not to be resumed");
+    }
+
+    [Fact]
     public async Task Sweep_PurgesARunNobodyIsInside_AndKeepsAnOccupiedOne()
     {
         using var factory = new TestDbContextFactory();

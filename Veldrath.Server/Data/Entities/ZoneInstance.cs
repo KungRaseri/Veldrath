@@ -66,8 +66,9 @@ public class ZoneInstance
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// Gets or sets the last time a session was seen inside the run (UTC). The purge only considers runs whose
-    /// last occupancy is older than the disconnect grace, so a relog rejoins the run instead of finding a new one.
+    /// Gets or sets the last time the run was seen occupied (UTC). It is refreshed on a join and again on a
+    /// departure, so the disconnect grace starts when the last member leaves rather than at the last join. The purge
+    /// only considers runs older than that grace, so a relog rejoins the run instead of finding a new one.
     /// </summary>
     public DateTimeOffset LastOccupiedAt { get; set; } = DateTimeOffset.UtcNow;
 

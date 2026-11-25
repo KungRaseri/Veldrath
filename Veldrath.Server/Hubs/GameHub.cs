@@ -944,15 +944,17 @@ public class GameHub : Hub
 
         // Resume the run, not a stored pointer: the session row — and the pointer with it — left when the
         // connection dropped, so nothing on disk remembers the run. The run itself survives while anyone is
-        // still inside it, keyed by the party (or the solo character), so asking for the character's open run
-        // at the location they stood on is what puts a reconnecting player back inside their attempt.
+        // still inside it, and after the last member leaves for the disconnect grace their departure started,
+        // keyed by the party (or the solo character) — so asking for the character's open run at the location
+        // they stood on is what puts a reconnecting player back inside their attempt.
         ZoneInstance? resumedRun = null;
         if (resumingHere && _zoneInstances is not null && !string.IsNullOrWhiteSpace(resumeLocationSlug))
         {
             var candidate = await _zoneInstances.FindResumableAsync(zoneId, resumeLocationSlug, characterId);
 
-            // A run swept between the lookup and the join must not be re-entered: joining reports it, and the
-            // character stays in the shared zone rather than in a group nothing else will ever join.
+            // A run swept between the lookup and the join must not be re-entered: joining only accepts an open
+            // run and reports anything else, so the character stays in the shared zone rather than in a group
+            // nothing else will ever join.
             if (candidate is not null && await _zoneInstances.JoinAsync(candidate.Id, characterId))
                 resumedRun = candidate;
         }

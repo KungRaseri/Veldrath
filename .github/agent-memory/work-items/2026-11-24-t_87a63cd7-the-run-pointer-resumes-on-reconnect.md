@@ -20,7 +20,7 @@ comments. I built it, because the comments were not the source of the promise �
 - `IPlayerSessionRepository.SetZoneInstanceAsync`'s doc said the pointer "is also what a reconnect resumes into".
 
 Correcting the two summaries would have written a bug down as the design. Verified at `development@dee6b0ad`
-(one commit past the card's `a92ff353`); nothing in the claim had moved.
+(36 commits past the card's `a92ff353`, 16 of them merges); nothing in the claim had moved.
 
 **The pointer cannot be read back, and that is the whole reason the old comments were wrong.** An unexpected
 disconnect reaches `GameHub.OnDisconnectedAsync` → `LeaveCurrentZoneAsync`, which *deletes* the session row and
@@ -49,6 +49,22 @@ by `(zoneId, OwnerPartyId)` for a party and `(zoneId, CreatedByCharacterId)` for
   `SetZoneInstanceAsync`'s summary, `EnterZone`'s summary (which also said it sends `ZoneState`; it sends
   `ZoneEntered`).
 
+**Round 1 review found two defects in that mechanism; both are fixed here.**
+
+- *The grace was measured from the last join.* `LeaveAsync` never touched `ZoneInstance.LastOccupiedAt`, so the
+  5 s sweep emptied a run on the first tick after its last member disconnected: after a run held for an hour, the
+  ordinary reconnect lost the race and the resume never fired. `LeaveAsync` now refreshes `LastOccupiedAt` at the
+  departure, so the grace starts when the run empties rather than at the last join.
+  `Leave_StartsTheDisconnectGraceAtTheDeparture` holds the line — an hour-old run, one leave, one sweep, still
+  resumable; past the grace and a sweep, not.
+- *`JoinAsync` accepted an `Empty` run*, so "joining reports it" was false for exactly the swept run the guard
+  exists for. It now refuses anything but `Open`, and `Join_RefusesARunThatHasEmptied` proves it.
+
+**Reachability, stated plainly.** No seeder sets `Traits.IsInstanced`, so on shipped content every room is in the
+shared zone and this resume never fires; [`docs/design/content/wound-spine.md`](../../../docs/design/content/wound-spine.md)
+records the same gap for the clear→unlock path. This is live code with tests, not live behaviour, until content
+marks a room instanced.
+
 **Decisions the card asked for**
 
 - *Why `EnterZone` and not `SelectCharacter`.* `SelectCharacter`'s session is a region-map row (`ZoneId = null`) that
@@ -64,14 +80,15 @@ by `(zoneId, OwnerPartyId)` for a party and `(zoneId, CreatedByCharacterId)` for
   their party" is **not** what happens, and it never was: `TravelToNode` → `ResolveScopeAsync` →
   `FindOrCreateAsync` is keyed by the party, so a walk back in rejoins the party's open run and only opens a new one
   once the old one has emptied. The real defect was narrower and worse: the resumed player stood on a room node in
-  the shared scope, seeing the shared chests, loot and chat, until they moved.
+  the shared scope, seeing the shared chests, loot and chat, until they moved to a node whose arrival itself
+  resolves into a run — a move to a shared location leaves them in the shared scope for good.
 
 **Tests** — `ZoneInstanceServiceTests`: party run found, solo run found, another party's run refused, emptied run
 refused, shared location refused, other-zone slug refused, missing location refused, and no run opened by a resume
-(8). `GameHubZoneTests`: the resumed session carries the pointer, joins the run group (not `zone:crestfall`), has a
-live participation row and a run-scoped occupant list that excludes a stranger in the same zone; an emptied run
-leaves the pointer null and the shared group (2). `HubHarness.Create` grew an optional location catalog so a test
-can make a location instanced.
+(8), plus the departure grace and an `Empty` join refused (2). `GameHubZoneTests`: the resumed session carries the
+pointer, joins the run group (not `zone:crestfall`), has a live participation row and a run-scoped occupant list
+that excludes a stranger in the same zone; an emptied run leaves the pointer null and the shared group (2).
+`HubHarness.Create` grew an optional location catalog so a test can make a location instanced.
 
 **Still open, and deliberately not this card** (a follow-up card is filed): `plans/dungeons.md` also says a
 character whose run was swept "wakes in the dungeon's lobby with a message". Today they resume at the room node in

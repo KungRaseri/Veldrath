@@ -57,16 +57,25 @@ public interface IZoneInstanceService
     /// <summary>
     /// Records that a character is inside a run, clearing an earlier departure if they came back.
     /// </summary>
+    /// <remarks>
+    /// Only an <see cref="ZoneInstanceState.Open"/> run can be joined: an empty run has already spent its grace
+    /// and is waiting for the sweep to delete it, so seating a character in it would put them in a group that is
+    /// about to vanish.
+    /// </remarks>
     /// <param name="instanceId">Run id.</param>
     /// <param name="characterId">Character inside it.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><see langword="false"/> when the run no longer exists.</returns>
+    /// <returns><see langword="false"/> when the run no longer exists or is no longer open.</returns>
     Task<bool> JoinAsync(Guid instanceId, Guid characterId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Records that a character has left a run. The run itself stays open: the party may still be inside, and
     /// backtracking to the lobby must not lose the attempt.
     /// </summary>
+    /// <remarks>
+    /// The departure starts the run's emptiness grace, so a run that was held for hours is not swept on the
+    /// first tick after its last member disconnects — a reconnecting player still gets the grace to resume.
+    /// </remarks>
     /// <param name="instanceId">Run id.</param>
     /// <param name="characterId">Character leaving it.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

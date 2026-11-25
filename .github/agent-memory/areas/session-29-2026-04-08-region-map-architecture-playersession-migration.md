@@ -53,8 +53,19 @@ re-entered with `JoinAsync` (which clears the participant's `LeftAt`), becomes t
 and `Context.Items["CurrentZoneInstanceId"]`, and its `ZoneGroup` replaces the shared group; the `ZoneEntered`
 occupant list is then the run's sessions (`GetByZoneInstanceAsync`), not the whole zone's. A run that has emptied is
 `ZoneInstanceState.Empty` and is deliberately not returned, so the character resumes in the shared zone instead of a
-group nothing else will join. Cleared rooms stay cleared, because resuming is the same run: `GetClearedLocationsAsync`
-still answers for it, and only a fresh run resets the attempt. `ZoneSession` exists nowhere.
+group nothing else will join. A run only survives the disconnect because leaving starts its emptiness grace:
+`EfCoreZoneInstanceService.LeaveAsync` refreshes `LastOccupiedAt` at the departure, so the sweep (every 5 s, grace
+`EnemyWorldOptions.SessionGraceSeconds`, default 60) does not empty a run that was held for hours on the first tick
+after its last member drops; `JoinAsync` likewise refuses anything but an `Open` run, so a resume that loses the race
+stays in the shared zone instead of joining a group about to be purged. Cleared rooms stay cleared, because resuming
+is the same run: `GetClearedLocationsAsync` still answers for it, and only a fresh run resets the attempt.
+`ZoneSession` exists nowhere.
+
+**None of the instance path is reachable on shipped content yet.** No seeder sets `Traits.IsInstanced`, so every
+seeded location is in the shared zone and `TravelToNode` never resolves a run; the resume-is-wired claim above is
+true of the code and its tests, not of what a player can currently do. The same gap is recorded for the
+clear→unlock path in [`docs/design/content/wound-spine.md`](../../../docs/design/content/wound-spine.md). Setting the
+flag on a room is a content change, and it is what turns this path on.
 
 ### IPlayerSessionRepository (in `IZoneRepository.cs`)
 Replaces `IZoneSessionRepository`. Same core methods plus new:
