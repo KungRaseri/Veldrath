@@ -1,10 +1,13 @@
 # Dialogue depth (E4) — options, requirements, consequences
 
-> Opened 2026-11-20. This is the last unshipped phase of [`ui-depth.md`](ui-depth.md), and the
-> only one whose prerequisites were **content**, not UI. Two of the three have since shipped:
-> NPCs are placed ([`LocationNpc`](../Veldrath.Server/Data/Entities/LocationNpc.cs)) and talking
-> to one works (`TalkToNpc` answers with an authored greeting and advances `talk:<slug>`). What
-> is still missing is the part that makes a conversation a *decision*.
+> **Status: E4 shipped in PR #94 and PR #98 — this plan is complete; P1–P4 all landed.** Opened
+> 2026-11-20 as the last unshipped phase of [`ui-depth.md`](ui-depth.md), and the only one whose
+> prerequisites were **content**, not UI. Two of the three had already shipped then: NPCs are placed
+> ([`LocationNpc`](../Veldrath.Server/Data/Entities/LocationNpc.cs)) and talking to one works
+> (`TalkToNpc` answers with an authored greeting and advances `talk:<slug>`). What this plan added was
+> the part that makes a conversation a *decision* — the option, requirement and consequence vocabulary,
+> the one-shot record, the two bridges and the panel — and it is in the tree. What remains is content:
+> the conversations are authored in Foundry (§4), so a speaker with no authored entry says so.
 
 ## 1. What exists, measured
 

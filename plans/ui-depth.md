@@ -252,6 +252,35 @@ produce a surface with no decisions in it — the exact failure mode this milest
 > specified in [`dialogue-depth.md`](dialogue-depth.md), including the one-shot rule that stops a
 > gold-bearing option being farmed.
 
+> **Update 2026-11-24 — E4 shipped, so the "what remains" list above is history.** The dialogue
+> structure and the panel both landed. `DialogueOption` lives inside the existing `Dialogue` content row
+> with `Key`, `Label`, `Response`, `NextSlug`, `OneShot`, `Requires` and `Grants`
+> ([`Dialogue.cs`](../RealmEngine.Data/Entities/Content/Dialogue.cs:36)), read through
+> `DialogueOptionGrammar` and authored through the **Options** group in
+> [`ContentSchema.cs`](../Veldrath.Contracts/Content/ContentSchema.cs:784) — no new content type, and the
+> options ride in the JSON column that already existed. The two bridges are
+> [`GetNpcDialogueHubCommand`](../Veldrath.Server/Features/Characters/Npcs/DialogueHubCommands.cs:49)
+> (handler :369), which returns every option already evaluated against the character with its
+> `BlockedReason` and consequence preview, and
+> [`ChooseNpcOptionHubCommand`](../Veldrath.Server/Features/Characters/Npcs/DialogueHubCommands.cs:70)
+> (handler :443), which re-validates the choice and records the one-shot in `CharacterDialogueChoices`
+> (migration `20261120154921_AddCharacterDialogueChoices`).
+> [`GameHub.GetNpcDialogue`](../Veldrath.Server/Hubs/GameHub.cs:1518) sends `NpcDialogue` (:1543) and
+> `NpcDialogueOptionDto` carries `BlockedReason` beside `Consequences`
+> ([`DialogueHubCommands.cs`](../Veldrath.Server/Features/Characters/Npcs/DialogueHubCommands.cs:21));
+> `ChooseNpcOption` (:1562) answers with the next node. The panel is
+> [`DialogueOverlay.svelte`](../web/client/src/lib/game/DialogueOverlay.svelte), mounted from
+> [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:295) and driven by
+> [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:440) (`GetNpcDialogue`, with
+> `ChooseNpcOption` at :451); the blocked reason and the consequence line come from
+> [`dialogue.ts`](../web/client/src/lib/game/dialogue.ts:20). Both landed in PR #94 and PR #98 (merges
+> `1700168d` and `6beeb0b6`), so the remains list is wrong on every item: the structure carries prose,
+> options, a requirement and a consequence per option, and the panel is more than cheap — it is shipped.
+> What the list never covered is still outstanding and is not a phase of E: **the conversations
+> themselves are content**, authored in Foundry, and the seeded townspeople still carry greeting lines
+> only ([`dialogue-depth.md`](dialogue-depth.md) §4), so a speaker with no authored entry says so
+> instead of showing an empty panel.
+
 **Work (when the two prerequisites land).**
 
 1. Server: a real `TalkToNpc` that resolves the NPC and returns its opening node — speaker display name,
