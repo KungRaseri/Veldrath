@@ -22,7 +22,8 @@ namespace Veldrath.Server.Features.Characters.Combat;
 /// </para>
 /// <para>
 /// Death is owned entirely by <see cref="TryMarkDeadAsync"/>: <see cref="SaveAsync"/> only syncs health and
-/// participants, so two players landing the killing blow cannot both award rewards.
+/// participants, so two players landing the killing blow cannot both award rewards — and the transition also
+/// reports the participants it credits, so they cannot both advance the same kill objectives either.
 /// </para>
 /// <para>
 /// Respawns are applied lazily when a location is read (<see cref="SettleLocationAsync"/>), which keeps the world
@@ -249,9 +250,16 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
     }
 
     /// <inheritdoc />
-    public async Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Guid>?> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default)
     {
         var respawnAt = DateTimeOffset.UtcNow + _options.RespawnDelay;
+
+        // The transition and the participant read are one unit of work, and that is what makes the credit
+        // exactly-once. The conditional UPDATE holds a row lock until this commits, and a concurrent SaveAsync
+        // changes that same row in the transaction that inserts its participants — so no participant can appear
+        // between the two statements. Whoever wins therefore reports the set the kill credits, once; every other
+        // caller gets null instead of a second copy of it.
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
 
         // Single conditional UPDATE: exactly one caller flips IsAlive, so rewards are distributed once.
         var affected = await _db.EnemyInstances
@@ -267,7 +275,20 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         // row as it now is.
         DetachTracked([enemyId]);
 
-        return affected == 1;
+        if (affected != 1)
+        {
+            // Nothing was written, so there is nothing to commit — the `await using` rolls the empty unit back.
+            return null;
+        }
+
+        var participants = await _db.EnemyParticipants
+            .Where(participant => participant.EnemyInstanceId == enemyId)
+            .Select(participant => participant.CharacterId)
+            .ToListAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return participants;
     }
 
     /// <inheritdoc />

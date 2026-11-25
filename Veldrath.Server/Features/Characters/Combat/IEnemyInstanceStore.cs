@@ -64,14 +64,23 @@ public interface IEnemyInstanceStore
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically flips a living enemy to dead and schedules its return using the configured respawn delay.
-    /// Exactly one caller can win, so rewards are distributed once even when several players land the killing blow
-    /// at the same moment.
+    /// Atomically flips a living enemy to dead, schedules its return using the configured respawn delay, and reports
+    /// who the kill credits: the participants committed when the transition was applied.
     /// </summary>
+    /// <remarks>
+    /// Exactly one caller can win, so rewards are distributed once even when several players land the killing blow
+    /// at the same moment. The participant set travels with the transition on purpose, and is read inside the same
+    /// unit of work as the conditional update: a caller holding a <see cref="SpawnedEnemy"/> that was materialised
+    /// while the enemy was alive cannot credit a set the kill never had, and a participant committed by a
+    /// concurrent turn is credited even when the winner loaded the enemy before that turn.
+    /// </remarks>
     /// <param name="enemyId">Enemy instance id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><see langword="true"/> when this call performed the death transition.</returns>
-    Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default);
+    /// <returns>
+    /// The character ids the kill credits, or <see langword="null"/> when another caller already performed the
+    /// transition — and therefore already took the credit, the rewards and the room.
+    /// </returns>
+    Task<IReadOnlyList<Guid>?> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Revives up to <paramref name="batchSize"/> dead enemies whose respawn time has passed, clearing their

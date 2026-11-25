@@ -48,7 +48,8 @@ public record UseAbilityInCombatHubResult
     /// <summary>Gets the remaining HP of the enemy after the ability (if it dealt damage).</summary>
     public int EnemyRemainingHealth { get; init; }
 
-    /// <summary>Gets whether the enemy was defeated by this ability.</summary>
+    /// <summary>Gets whether this turn left the enemy dead. On a shared fight another caller's blow may be the one
+    /// that killed it; either way this caller's fight is over.</summary>
     public bool EnemyDefeated { get; init; }
 
     /// <summary>Gets the enemy's display name, used to advance legacy kill objectives.</summary>
@@ -92,21 +93,25 @@ public record UseAbilityInCombatHubResult
 
     /// <summary>
     /// Gets every character credited with the kill — the caster and every other participant of the shared fight,
-    /// including a party member who joined it but never landed a hit. Empty unless <see cref="EnemyDefeated"/>
-    /// is <see langword="true"/>.
+    /// including a party member who joined it but never landed a hit. Empty unless this caller won the death
+    /// transition.
     /// </summary>
     /// <remarks>
     /// This is the credited-participant set, not the released-session set (<see cref="ReleasedCombatCharacterIds"/>),
     /// which also holds a defender who has a fight pointed at the enemy but never engaged it. The hub advances the
     /// kill objective once per id here, so a shared kill credits the same characters an ability or a melee blow
     /// landed. A participant who never acted earns no XP or gold — only the progress.
+    /// <para>
+    /// One kill credits its participants once. The set is read by the store's death transition, so only the caller
+    /// that won it reports ids; a caller whose stale copy also saw the enemy die reports none, because the winner
+    /// already credited everyone.
+    /// </para>
     /// </remarks>
     public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
 
     /// <summary>
     /// Gets every character whose combat session this kill released — the caster and anyone else engaged with the
-    /// same enemy, including a defender who never landed a hit. Empty unless <see cref="EnemyDefeated"/> is
-    /// <see langword="true"/>.
+    /// same enemy, including a defender who never landed a hit. Empty unless this caller won the death transition.
     /// </summary>
     /// <remarks>
     /// The enemy row is shared, so killing it ends every fight pointed at it, not only this one. The hub sends
@@ -317,35 +322,14 @@ public class UseAbilityInCombatHubCommandHandler
             entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
             await _characterRepo.UpdateAsync(entity, cancellationToken);
 
-            CombatRewardShare? myReward = null;
-            IReadOnlyList<Guid> released = [];
-
-            // The credited set is the enemy's participant set, the same one a melee kill credits: this enemy row is
-            // shared, so a party member who engaged it is owed the kill progress even when another's blow landed.
-            // Read under the enemy lock and before the death transition, so a concurrent kill cannot change what
-            // this turn credits and a caller that loses the reward race still credits its participants.
-            IReadOnlyList<Guid> participants;
-            lock (enemy.SyncRoot)
-            {
-                participants = enemy.Participants.ToList();
-            }
-
-            // Only the caller that wins the death transition distributes rewards.
-            if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
-            {
-                var distribution = await CombatHelpers.DistributeRewardsAsync(
-                    enemy, _characterRepo, _classRepo, _sessions, cancellationToken, _logger);
-                myReward = distribution.Rewards.FirstOrDefault(r => r.CharacterId == request.CharacterId);
-                released = distribution.ReleasedCharacterIds;
-            }
-
-            // A kill is a kill whichever blow landed: roll the same table and record the same room clear a melee
-            // kill does, through the same helpers, so the two death paths cannot drift apart again.
-            var droppedItems = await CombatHelpers.RollLootAsync(
-                enemy, entity, _lootTables, _characterRepo, _random, cancellationToken, _logger);
-
-            var cleared = await CombatHelpers.ResolveRoomClearAsync(
-                enemy, request.CharacterId, _enemies, _instances, cancellationToken);
+            // One kill, settled once, through the same helper a melee blow uses: the caller that wins the death
+            // transition credits the participants, pays the rewards, rolls the loot and records the room clear.
+            // A caller holding a stale copy — this enemy row is shared and each read materialises its own view —
+            // still ends its own fight, but takes none of it. Crediting the participants from both callers was what
+            // advanced every one of their kill objectives twice for a single kill.
+            var settlement = await CombatHelpers.SettleKillAsync(
+                enemy, entity, request.CharacterId, _enemies, _characterRepo, _classRepo, _sessions,
+                _lootTables, _instances, _random, cancellationToken, _logger);
 
             return new UseAbilityInCombatHubResult
             {
@@ -359,17 +343,17 @@ public class UseAbilityInCombatHubCommandHandler
                 EnemyName = enemy.Name,
                 EnemyArchetypeSlug = enemy.ArchetypeSlug,
                 PlayerRemainingHealth = player.Health,
-                XpEarned = myReward?.Xp ?? 0,
-                GoldEarned = myReward?.Gold ?? 0,
-                Progression = myReward?.Progression,
-                ParticipantIds = participants,
-                ReleasedCombatCharacterIds = released,
-                ClearedInstanceId = cleared?.InstanceId,
-                ClearedLocationSlug = cleared?.LocationSlug,
-                FirstClearOfRun = cleared?.FirstClearOfRun ?? false,
-                FirstClearForCharacter = cleared?.FirstClearForCharacter ?? false,
-                UnlockedLocationSlugs = cleared?.UnlockedLocationSlugs ?? [],
-                ItemsDropped = droppedItems,
+                XpEarned = settlement.Reward?.Xp ?? 0,
+                GoldEarned = settlement.Reward?.Gold ?? 0,
+                Progression = settlement.Reward?.Progression,
+                ParticipantIds = settlement.ParticipantIds,
+                ReleasedCombatCharacterIds = settlement.ReleasedCombatCharacterIds,
+                ClearedInstanceId = settlement.Clear?.InstanceId,
+                ClearedLocationSlug = settlement.Clear?.LocationSlug,
+                FirstClearOfRun = settlement.Clear?.FirstClearOfRun ?? false,
+                FirstClearForCharacter = settlement.Clear?.FirstClearForCharacter ?? false,
+                UnlockedLocationSlugs = settlement.Clear?.UnlockedLocationSlugs ?? [],
+                ItemsDropped = settlement.ItemsDropped,
             };
         }
 

@@ -2597,9 +2597,14 @@ public class GameHub : Hub
     /// both the archetype slug and the display name are advanced: content objectives are authored with slugs, while
     /// older journals may hold names.
     /// </summary>
+    /// <remarks>
+    /// The set is the one the winning death transition reported, so a shared kill advances each participant once.
+    /// A caller whose stale copy also saw the enemy die arrives here with no ids, because the winner already
+    /// credited everyone.
+    /// </remarks>
     /// <param name="enemyArchetypeSlug">The defeated enemy's archetype slug, or <see langword="null"/> when unknown.</param>
     /// <param name="enemyName">The defeated enemy's display name, or <see langword="null"/> when unknown.</param>
-    /// <param name="participantIds">Characters the caller credits with the kill.</param>
+    /// <param name="participantIds">Characters the caller credits with the kill; empty when it lost the death transition.</param>
     /// <param name="killerId">Character whose connection definitely exists (the caller).</param>
     private async Task AdvanceKillObjectivesAsync(
         string? enemyArchetypeSlug,

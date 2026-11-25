@@ -210,11 +210,42 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
         var firstWin = await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None);
         var secondWin = await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None);
 
-        firstWin.Should().BeTrue("the killing blow must be able to award rewards");
-        secondWin.Should().BeFalse("a second caller must not award the same kill again");
+        firstWin.Should().NotBeNull("the killing blow must be able to award rewards and credit the participants");
+        secondWin.Should().BeNull("a second caller must not award the same kill again");
 
         var alive = await store.GetAliveOrSpawnAsync("zone:c", "square", _ => Task.FromResult(new List<SpawnedEnemy>()));
         alive.Should().BeEmpty("a dead enemy is not part of the living roster");
+    }
+
+    [Fact]
+    public async Task TryMarkDeadAsync_Credits_The_Participants_Committed_At_The_Transition()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var store = CreateStore(db);
+        var enemy = await SeedEnemyAsync(store, "zone:credit", "square");
+        var latecomer = await SeedCharacterAsync(db);
+
+        // The winner's own view of the row, materialised before the other turn landed.
+        var winnerView = await store.TryGetAsync(enemy.Id);
+        winnerView.Should().NotBeNull();
+        winnerView!.Participants.Should().BeEmpty();
+
+        // The other fighter's turn commits its participation after that view was taken — the window in which a
+        // snapshot held by the eventual winner would miss them.
+        var otherTurnView = await store.TryGetAsync(enemy.Id);
+        otherTurnView!.Participants.Add(latecomer.Id);
+        otherTurnView.DamageContributions[latecomer.Id] = 7;
+        await store.SaveAsync(otherTurnView, "zone:credit", "square", CancellationToken.None);
+
+        winnerView.Participants.Should().BeEmpty("the winner's copy is older than the kill and knows nobody");
+
+        var credited = await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None);
+
+        credited.Should().BeEquivalentTo([latecomer.Id],
+            "the credit is read by the transition, so a participant whose turn committed while the winner was "
+            + "loading is still credited — pulling it from the winner's stale copy would drop them");
+        (await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None)).Should()
+            .BeNull("the kill is credited once, to the caller that won the transition");
     }
 
     [Fact]

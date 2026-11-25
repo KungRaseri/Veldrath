@@ -97,9 +97,16 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
         return existing.Where(enemy => enemy.IsAlive).ToList();
     }
 
+    /// <summary>
+    /// Gets snapshots <see cref="TryGetAsync"/> hands out before it falls back to the stored row. The EF store
+    /// materialises a fresh <see cref="SpawnedEnemy"/> per read, so two callers racing on one kill each hold their own
+    /// copy loaded while the enemy was alive; a queue lets a single-threaded test reproduce that.
+    /// </summary>
+    public Queue<SpawnedEnemy> PendingReads { get; } = new();
+
     /// <inheritdoc />
     public Task<SpawnedEnemy?> TryGetAsync(Guid enemyId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Find(enemyId));
+        Task.FromResult(PendingReads.Count > 0 ? PendingReads.Dequeue() : Find(enemyId));
 
     /// <inheritdoc />
     public Task SaveAsync(
@@ -114,8 +121,22 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     }
 
     /// <inheritdoc />
-    public Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(_rows.ContainsKey(enemyId) && _dead.Add(enemyId));
+    /// <remarks>
+    /// Like the EF store, the credited participants are read from the stored row at the transition, not from the
+    /// caller's own copy — a caller that brings a stale snapshot still gets the durable set.
+    /// </remarks>
+    public Task<IReadOnlyList<Guid>?> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default)
+    {
+        if (!_rows.TryGetValue(enemyId, out var row) || !_dead.Add(enemyId))
+        {
+            return Task.FromResult<IReadOnlyList<Guid>?>(null);
+        }
+
+        lock (row.Enemy.SyncRoot)
+        {
+            return Task.FromResult<IReadOnlyList<Guid>?>(row.Enemy.Participants.ToList());
+        }
+    }
 
     /// <inheritdoc />
     public Task<IReadOnlyList<EnemyRespawnedEvent>> SweepExpiredRespawnsAsync(
