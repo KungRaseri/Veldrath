@@ -64,10 +64,15 @@ public record AllocateAttributePointsHubResult
 /// <para>
 /// The attributes take effect where combat reads them: <c>Strength</c> raises player damage, <c>Constitution</c>
 /// reduces incoming damage (<c>CombatHelpers.CalculateEnemyDamage</c>) and <c>Intelligence</c> raises magic damage.
-/// <c>Wisdom</c>, <c>Dexterity</c> and <c>Charisma</c> have no server-side reader yet, so a point there is inert until
-/// a rule consumes it. The client's health bar is the stored <c>MaxHealth</c>, so allocating <c>Constitution</c> does
-/// not move the bar — that is the recorded decision, not a regression. The facts in
-/// <c>AllocateAttributePointsHubCommandTests</c> pin it.
+/// <c>Dexterity</c> and <c>Charisma</c> have no reader yet, so a point there is inert until a rule consumes it;
+/// <c>Wisdom</c> is not inert, because it feeds the engine's no-class-row mana fallback on a level-up and the
+/// starting mana <c>CharacterEndpoints</c> derives from <c>GetMaxMana</c>. No regular-play rule consumes a point
+/// spent in <c>Dexterity</c>, <c>Wisdom</c> or <c>Charisma</c> today, so the web level-up panel keeps those three
+/// visible but withholds their spending controls until one is deliberately designed and records the reason on each
+/// row. That is a client-side panel policy, not validation here: it neither changes the stored value or the stored
+/// pools on an allocation nor refunds a point already spent. The client's health bar is the stored
+/// <c>MaxHealth</c>, so allocating <c>Constitution</c> does not move the bar — that is the recorded decision, not a
+/// regression. The facts in <c>AllocateAttributePointsHubCommandTests</c> pin it.
 /// </para>
 /// </remarks>
 public class AllocateAttributePointsHubCommandHandler

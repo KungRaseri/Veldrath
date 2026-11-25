@@ -343,13 +343,13 @@ describe('attribute allocation', () => {
 		render(GameOverlays, { session: game });
 
 		const dialog = screen.getByRole('dialog', { name: 'Attributes' });
-		await fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Wisdom' }));
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Intelligence' }));
 		expect(within(dialog).getByText('+1')).toBeTruthy();
-		await fireEvent.click(within(dialog).getByRole('button', { name: 'Decrease Wisdom' }));
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Decrease Intelligence' }));
 
 		expect(within(dialog).queryByText('+1')).toBeNull();
 		expect(
-			(within(dialog).getByRole('button', { name: 'Decrease Wisdom' }) as HTMLButtonElement)
+			(within(dialog).getByRole('button', { name: 'Decrease Intelligence' }) as HTMLButtonElement)
 				.disabled
 		).toBe(true);
 	});
