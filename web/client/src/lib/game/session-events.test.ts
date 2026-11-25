@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
 	InventoryItem,
+	MapGraph,
+	MapNode,
 	PartyMemberView,
 	PartySnapshot,
 	QuestLogEntry,
@@ -135,6 +137,55 @@ function party(overrides: Partial<PartySnapshot> = {}): PartySnapshot {
 		...overrides
 	};
 }
+
+function mapNode(id: string, overrides: Partial<MapNode> = {}): MapNode {
+	return {
+		id,
+		mapId: 'map-1',
+		nodeType: 'Location',
+		refId: id,
+		displayName: id,
+		description: '',
+		isEntryPoint: false,
+		isExitPoint: false,
+		isHidden: false,
+		sortOrder: 0,
+		...overrides
+	};
+}
+
+/** A zone map with the gate the character entered by and one room, the node the character wakes on. */
+function halrowMap(): MapGraph {
+	return {
+		id: 'map-1',
+		mapType: 'Zone',
+		ownerId: 'zone-halrow',
+		name: 'The Halrow',
+		description: '',
+		entryNodeId: 'node-gate',
+		nodes: [
+			mapNode('node-gate', {
+				nodeType: 'EntryPoint',
+				refId: 'the-halrow',
+				displayName: 'Halrow Gate',
+				isEntryPoint: true
+			}),
+			mapNode('node-cellars', {
+				refId: 'rootbound-cellars',
+				displayName: 'Rootbound Cellars'
+			})
+		],
+		edges: []
+	};
+}
+
+const warden = {
+	id: 'warden',
+	name: 'Rootbound Warden',
+	level: 7,
+	currentHealth: 40,
+	maxHealth: 40
+};
 
 let hub: FakeHub;
 
@@ -565,6 +616,82 @@ describe('GameSession map and location events', () => {
 		});
 
 		expect(session.enemies.map((enemy: SpawnedEnemy) => enemy.id)).toEqual(['warden']);
+	});
+
+	it('makes the room a resumed session woke in usable, so Engage can name it', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterSelected', {
+			id: 'char-1',
+			currentZoneId: 'the-halrow',
+			currentNodeId: 'node-cellars'
+		});
+		await flush();
+
+		// The resume burst: the graph names the node the character woke on, then the roster names its room.
+		hub.emit('MapGraphReceived', {
+			success: true,
+			map: halrowMap(),
+			currentNodeId: 'node-cellars'
+		});
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [warden]
+		});
+
+		// The roster alone lists the enemies; the room object is what the header, `canRest` and Engage read. Its
+		// name comes from the node the shell stands on, because the roster carries only the slug.
+		expect(session.location).toEqual({
+			locationSlug: 'rootbound-cellars',
+			locationDisplayName: 'Rootbound Cellars',
+			typeKey: 'Location',
+			spawnedEnemies: [warden]
+		});
+
+		// The interaction the card restores: without the location, `engageEnemy` returns and the button is dead.
+		await session.engageEnemy('warden');
+		expect(hub.lastCall('EngageEnemy')).toEqual([
+			{ locationSlug: 'rootbound-cellars', enemyId: 'warden' }
+		]);
+	});
+
+	it('does not rebuild a room from a roster that arrives after walking out of it', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterSelected', {
+			id: 'char-1',
+			currentZoneId: 'the-halrow',
+			currentNodeId: 'node-cellars'
+		});
+		await flush();
+		hub.emit('MapGraphReceived', {
+			success: true,
+			map: halrowMap(),
+			currentNodeId: 'node-cellars'
+		});
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [warden]
+		});
+		expect(session.location?.locationSlug).toBe('rootbound-cellars');
+
+		// Walking out onto the entry point clears the location; a roster read still in flight for the room must not
+		// put it back. The node the shell now stands on is what makes that judgement — there is no location left.
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			nodeId: 'node-gate',
+			nodeType: 'EntryPoint',
+			locationSlug: null,
+			spawnedEnemies: []
+		});
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [warden]
+		});
+
+		expect(session.location).toBeNull();
+		expect(session.enemies).toEqual([]);
 	});
 
 	it('leaves the enemy being fought out of the location roster', async () => {

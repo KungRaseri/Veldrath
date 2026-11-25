@@ -853,21 +853,35 @@ export class GameSession {
 		});
 
 		hub.on('LocationRoster', (payload: LocationRosterPayload) => {
+			const slug = payload.locationSlug ?? null;
+
 			// The read can outlive a move: a roster for a room the character has already left must not replace the
-			// one they are standing in. On resume there is no location yet, and this is exactly the answer that
-			// fills it in, so an unmatched slug is applied.
-			if (
-				this.location &&
-				payload.locationSlug &&
-				this.location.locationSlug !== payload.locationSlug
-			)
-				return;
+			// one they are standing in. The node the graph draws the character on is the durable answer to "which
+			// room is this?" — it has already changed after a move — and a node that is not a Location (an entry
+			// point, a zone exit, a region node) is a place to stand, not a room that can hold a roster.
+			const standingNode = this.currentNode;
+			const standingSlug = this.location?.locationSlug ?? standingNode?.refId ?? null;
+			const standingInRoom = !standingNode || standingNode.nodeType === 'Location';
+			if (slug && (!standingInRoom || (standingSlug !== null && standingSlug !== slug))) return;
 
 			// The enemy already being fought belongs to the combat panel, not the location list — the same filter
 			// `LocationEntered` applies, so a fight resumed after a reconnect does not appear twice.
 			const engagedEnemyId = this.combat.enemy?.id;
 			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
-			if (this.location) this.location.spawnedEnemies = this.enemies;
+
+			// A resumed character woke inside this room and has no location object at all — the roster is the only
+			// thing that names it. Build it the way `LocationEntered` does, or the room name stays off the map
+			// header, `canRest` stays false and `engageEnemy` has no slug to key the enemy row with (it returns).
+			if (!this.location && slug) {
+				this.location = {
+					locationSlug: slug,
+					locationDisplayName: standingNode?.displayName ?? slug,
+					typeKey: standingNode?.nodeType ?? 'Location',
+					spawnedEnemies: this.enemies
+				};
+			} else if (this.location) {
+				this.location.spawnedEnemies = this.enemies;
+			}
 		});
 
 		hub.on('NpcTalked', (payload: NpcTalkedPayload) => {
@@ -1431,16 +1445,21 @@ export class GameSession {
 		// as the character is selected instead of waiting for a manual refresh.
 		await this.openInventory();
 
-		if (payload.currentZoneId) {
-			await this.enterZone(payload.currentZoneId);
+		if (payload.currentZoneId) await this.enterZone(payload.currentZoneId);
 
+		// The graph comes first: the roster names its room by slug only, and the location object a resumed session
+		// builds from that answer takes the room's name and type from the node the character wakes on. It is asked
+		// for after `EnterZone` because the resume may have moved the character (a swept run wakes them in the
+		// lobby), and the node the server just wrote is the one the graph has to report.
+		await this.requestMapGraph(null);
+
+		if (payload.currentZoneId) {
 			// `EnterZone` has just put the character back on the node they logged out on (or in the zone's lobby when
 			// their run was swept), but the roster is only ever pushed with a travel result: without this the room
 			// they resumed into renders empty until their next move. The server reads the position it just wrote, so
 			// no node is sent from here.
 			void this.requestLocationRoster();
 		}
-		await this.requestMapGraph(null);
 
 		// A resumed character already stands somewhere, and the location lists are only pushed on a *move*: ask
 		// for them once here so the panel is right on arrival instead of after the player walks to a neighbour.
