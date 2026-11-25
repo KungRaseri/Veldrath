@@ -1,6 +1,8 @@
 # Plan: Combat Loop + Multiplayer Architecture (2026-03-30)
 
-> **Status**: Reviewed and current as of Session-39 (2026-06-27).
+> **Status**: the tick-based action-queue design below was never built (see the note under it). The ACTUAL
+> IMPLEMENTATION section records what ships; it has been amended for the D2 world-state move (2026-10-25) and the
+> session-68 deletion of the Avalonia client.
 
 ## ⚠️ IMPORTANT — ACTUAL IMPLEMENTATION NOTE
 

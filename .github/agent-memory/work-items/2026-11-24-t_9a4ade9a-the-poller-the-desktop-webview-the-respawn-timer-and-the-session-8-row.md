@@ -52,12 +52,12 @@ above it.
   column's creator is `Veldrath.Server/Migrations/20260416172040_InitialCreate.cs:267`, and the corrected
   `areas/equipment-blob-schema-session-8.md` already records that there is no `AddEquipmentBlob` migration.
 
-One edit beyond the card's six items, made because the new respawn section would otherwise contradict text twenty
-lines above it in the same file: `combat-loop-plan.md`'s session-39 "ACTUAL IMPLEMENTATION" section carries a banner
-saying `ZoneLocationEnemyStore` and `CombatSessionStore` were deleted by D2 (`EfCoreEnemyInstanceStore` over
-`EnemyInstances`, `EfCoreCombatSessionStore` over `CombatSessions`), that `SpawnedEnemy.cs`,
-`ActiveCombatSession.cs` and `CombatCharacterHydrator.cs` survive, and that "Client Build Status" refers to the
-deleted Avalonia build.
+Two edits beyond the card's six items, both in `combat-loop-plan.md` and both to stop the file contradicting itself:
+its header no longer claims to be "current as of Session-39", and the session-39 "ACTUAL IMPLEMENTATION" section
+carries a banner saying `ZoneLocationEnemyStore` and `CombatSessionStore` were deleted by D2
+(`EfCoreEnemyInstanceStore` over `EnemyInstances`, `EfCoreCombatSessionStore` over `CombatSessions`), that
+`SpawnedEnemy.cs`, `ActiveCombatSession.cs` and `CombatCharacterHydrator.cs` survive, and that "Client Build Status"
+refers to the deleted Avalonia build — without it the new respawn section contradicted text twenty lines above it.
 
 **Verified:** `node scripts/memory/memory-index.mjs --write` then `--check` exit 0,
 `node scripts/check-markdown-links.mjs` exits 0, `veldrath-memory.md` untouched (it is the template verbatim since
