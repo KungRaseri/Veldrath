@@ -295,7 +295,7 @@ public class LootChestsTests : IDisposable
                     command.Source == $"Chest:{chest.ChestId}"),
                 It.IsAny<CancellationToken>()),
             Times.Once,
-            "gold lives in the attributes blob and has exactly one writer");
+            "gold lives in the attributes blob and an award goes through the command that owns the key");
     }
 
     [Fact]

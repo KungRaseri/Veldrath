@@ -1590,8 +1590,9 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("NpcOptionChosen", result);
 
-            // Dialogue gold is paid server-side through the single gold writer, so the new total is announced
-            // from the handler's figures rather than left for the client to infer from the Applied line.
+            // Dialogue gold is awarded server-side through AddGoldHubCommand rather than written by the hub, so the
+            // new total is announced from the handler's figures rather than left for the client to infer from the
+            // Applied line.
             if (result.GoldAwarded > 0 && result.NewGoldTotal is int dialogueGoldTotal)
             {
                 await Clients.Caller.SendAsync("GoldChanged",
@@ -2452,9 +2453,9 @@ public class GameHub : Hub
                 Amount = result.GoldReward,
             });
 
-            // Quest gold is paid through the single gold writer, so the purse is announced from the writer's
-            // own figures rather than from the reward the toast names: GoldChanged carries the total the
-            // server actually stored, and gold is private, so it goes to the caller alone.
+            // Quest gold is awarded through AddGoldHubCommand rather than written by the hub, so the purse is
+            // announced from the handler's own figures rather than from the reward the toast names: GoldChanged
+            // carries the total the server actually stored, and gold is private, so it goes to the caller alone.
             if (goldResult.Success && goldResult.GoldAdded > 0)
             {
                 await Clients.Caller.SendAsync("GoldChanged",

@@ -218,8 +218,9 @@ public class OpenChestHubCommandHandler(
         int? newGoldTotal = null;
         if (roll.Gold > 0)
         {
-            // Gold lives in the attributes blob and has exactly one writer, so go through it rather than
-            // re-implementing the key and the clamp here.
+            // Gold lives in the attributes blob, and an award goes through the command that owns the key and the
+            // refusals rather than re-implementing them here. The handler is the award path, not the key's only
+            // writer: rest costs, shop trades, combat loot and GM /setgold write it directly too.
             var award = await sender.Send(
                 new AddGoldHubCommand
                 {
