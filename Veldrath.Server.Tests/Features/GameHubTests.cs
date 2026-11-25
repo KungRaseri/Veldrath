@@ -270,8 +270,8 @@ public class GameHubTests : IDisposable
             {
                 Success = true,
                 EnemyDefeated = true,
-                EnemyName = "Goblin",
-                EnemyArchetypeSlug = "goblin",
+                EnemyName = "Goblin Scout",
+                EnemyArchetypeSlug = "goblin-scout",
                 ParticipantIds = [character.Id, ally.Id],
             });
         mediator
@@ -291,10 +291,65 @@ public class GameHubTests : IDisposable
             .ToList();
 
         advances.Should().BeEquivalentTo([
-            (character.Id, "goblin"),
-            (character.Id, "Goblin"),
-            (ally.Id, "goblin"),
-            (ally.Id, "Goblin"),
+            (character.Id, "goblin-scout"),
+            (character.Id, "Goblin Scout"),
+            (ally.Id, "goblin-scout"),
+            (ally.Id, "Goblin Scout"),
+        ]);
+    }
+
+    [Fact]
+    public async Task AttackEnemy_Advances_A_Case_Colliding_Archetype_Once_Per_Participant()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var allyAccountId = await SeedAccountAsync(db);
+        var ally = await SeedCharacterAsync(db, allyAccountId);
+
+        db.Worlds.Add(new World { Id = "world-1", Name = "Test world" });
+        db.Regions.Add(new Region { Id = "region-1", Name = "Test region", WorldId = "world-1" });
+        db.PlayerSessions.Add(new PlayerSession
+        {
+            CharacterId = ally.Id,
+            CharacterName = ally.Name,
+            ConnectionId = "conn-ally",
+            RegionId = "region-1",
+        });
+        await db.SaveChangesAsync();
+
+        var mediator = new Mock<ISender>();
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<AttackEnemyHubCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AttackEnemyHubResult
+            {
+                Success = true,
+                EnemyDefeated = true,
+                // The journal matches keys OrdinalIgnoreCase, so these two are the same objective.
+                EnemyName = "Cinderling",
+                EnemyArchetypeSlug = "cinderling",
+                ParticipantIds = [character.Id, ally.Id],
+            });
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<AdvanceQuestObjectivesHubCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1, Quests = [] });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediator.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AttackEnemy();
+
+        var advances = mediator.Invocations
+            .Where(invocation => invocation.Method.Name == nameof(ISender.Send))
+            .Select(invocation => invocation.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(command => (command.CharacterId, command.Key))
+            .ToList();
+
+        advances.Should().BeEquivalentTo([
+            (character.Id, "cinderling"),
+            (ally.Id, "cinderling"),
         ]);
     }
 

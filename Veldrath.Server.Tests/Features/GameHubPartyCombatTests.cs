@@ -646,8 +646,8 @@ public class GameHubPartyCombatTests : IDisposable
         {
             Success = true,
             EnemyDefeated = true,
-            EnemyName = "Goblin",
-            EnemyArchetypeSlug = "goblin",
+            EnemyName = "Goblin Scout",
+            EnemyArchetypeSlug = "goblin-scout",
             ParticipantIds = [killer.Id, ally.Id],
         });
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1 });
@@ -662,10 +662,10 @@ public class GameHubPartyCombatTests : IDisposable
             .Select(c => (c.CharacterId, c.Key))
             .ToList();
         advances.Should().BeEquivalentTo([
-            (killer.Id, "goblin"),
-            (killer.Id, "Goblin"),
-            (ally.Id, "goblin"),
-            (ally.Id, "Goblin"),
+            (killer.Id, "goblin-scout"),
+            (killer.Id, "Goblin Scout"),
+            (ally.Id, "goblin-scout"),
+            (ally.Id, "Goblin Scout"),
         ]);
 
         clients.Connection("conn-ally").SentMessages.Should()
@@ -1046,8 +1046,8 @@ public class GameHubPartyCombatTests : IDisposable
             Success = true,
             AbilityId = "fireball",
             EnemyDefeated = true,
-            EnemyName = "Goblin",
-            EnemyArchetypeSlug = "goblin",
+            EnemyName = "Goblin Scout",
+            EnemyArchetypeSlug = "goblin-scout",
         });
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
 
@@ -1063,9 +1063,42 @@ public class GameHubPartyCombatTests : IDisposable
             .Select(c => (c.CharacterId, c.Kind, c.Key))
             .ToList();
         advances.Should().BeEquivalentTo([
-            (characterId, "kill", "goblin"),
-            (characterId, "kill", "Goblin"),
+            (characterId, "kill", "goblin-scout"),
+            (characterId, "kill", "Goblin Scout"),
         ]);
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_A_Kill_Advances_A_Case_Colliding_Archetype_Once()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+
+        // Cinderling's display name and slug differ only by case, and the journal matches objective keys
+        // OrdinalIgnoreCase, so advancing both would credit the same objective twice for one kill.
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyDefeated = true,
+            EnemyName = "Cinderling",
+            EnemyArchetypeSlug = "cinderling",
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        clients.OthersInGroupNamed("zone:crestfall").SentMessages.Should()
+            .ContainSingle(m => m.Method == "EnemyDefeated");
+
+        var advances = mediator.Invocations.Select(i => i.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(c => (c.CharacterId, c.Kind, c.Key))
+            .ToList();
+        advances.Should().BeEquivalentTo([(characterId, "kill", "cinderling")]);
     }
 
     [Fact]

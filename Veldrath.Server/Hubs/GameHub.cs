@@ -2566,13 +2566,13 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Advances the kill objective for every character credited with a kill — not only the one that landed the
-    /// killing blow — because a shared enemy is one fight. Both the archetype slug and the display name are
-    /// advanced: content objectives are authored with slugs, while older journals may hold names.
+    /// Advances the kill objective for each character the caller credits with a kill. Melee credits every
+    /// participant of a shared fight; an ability kill credits the caster only. Both the archetype slug and the
+    /// display name are advanced: content objectives are authored with slugs, while older journals may hold names.
     /// </summary>
     /// <param name="enemyArchetypeSlug">The defeated enemy's archetype slug, or <see langword="null"/> when unknown.</param>
     /// <param name="enemyName">The defeated enemy's display name, or <see langword="null"/> when unknown.</param>
-    /// <param name="participantIds">Characters credited with the kill.</param>
+    /// <param name="participantIds">Characters the caller credits with the kill.</param>
     /// <param name="killerId">Character whose connection definitely exists (the caller).</param>
     private async Task AdvanceKillObjectivesAsync(
         string? enemyArchetypeSlug,
@@ -2591,7 +2591,11 @@ public class GameHub : Hub
                 connectionId = session?.ConnectionId;
             }
 
-            foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key)).Distinct())
+            // The journal matches keys OrdinalIgnoreCase, so the slug and the display name collapse when they
+            // differ only by case (cinderling/Cinderling): dedupe the same way or one kill advances the
+            // objective twice.
+            foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key))
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 // A legacy journal naming the display name keeps progressing; say so once per kill at Debug level.
                 if (!string.Equals(key, enemyArchetypeSlug, StringComparison.OrdinalIgnoreCase))
