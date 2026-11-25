@@ -745,9 +745,12 @@ public class GameHubTests : IDisposable
 
     // Progression is server-side: the hub must not expose a method that lets a client award itself experience,
     // gold or skill experience, nor one that lets it apply its own damage. Experience and skill experience are
-    // awarded by server-side commands and handlers; gold is paid by AddGoldHubCommand (quest turn-in, chest loot,
-    // dialogue) and written directly by combat loot and the death penalty in CombatHelpers and by GM /setgold.
-    // None of those is a client-callable hub method.
+    // awarded by server-side commands and handlers. Gold is awarded through AddGoldHubCommand (quest turn-in,
+    // chest loot, dialogue), but that handler is not the key's only writer: shop trades (Buy/SellItemHubCommand),
+    // rest costs (RestAtLocationHubCommand), combat loot and the death penalty (CombatHelpers), character creation
+    // (CharacterEndpoints, CharacterCreationSessionEndpoints) and the GM-only /setgold in SendChatMessage write
+    // the attributes blob directly. None of them is a gold-award method a client can call: /setgold is a chat
+    // command behind Permissions.GiveItems, and the rest never touch the hub.
     [Fact]
     public void GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods()
     {
