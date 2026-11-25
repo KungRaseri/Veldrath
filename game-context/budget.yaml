@@ -26,6 +26,8 @@
 #   "12 … 18" examples were stale. No band value moved.
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
+# bands[].seeded_archetypes lists seeded hostile non-boss archetypes by MinLevel (inclusive levels).
+# It is not a pool or the D1/D6 authored roster; MaxLevel overlap and boss ceiling anchors do not count.
 
 schema_version: 6
 status: >-
@@ -68,7 +70,7 @@ bands:
     gold: [1, 15]
     drop_chance: [0.30, 0.60]
     intended_for: "the-droveway L1, ashlen-wood L1, grevenmire L3"
-    seeded_archetypes: [giant-rat, goblin-scout, forest-wolf, bandit-ruffian]
+    seeded_archetypes: [giant-rat, goblin-scout, drove-cur, peat-adder, forest-wolf, bandit-ruffian]
 
   - id: b4-6
     levels: [4, 6]
@@ -78,7 +80,7 @@ bands:
     gold: [5, 20]
     drop_chance: [0.25, 0.55]
     intended_for: "the-halrow L4 dungeon, drowning-pits L4 dungeon; aldenmere L5 is a town"
-    seeded_archetypes: [moor-wight]
+    seeded_archetypes: [sump-crawler, mire-boar, moor-wight]
     note: "bandit-captain is boss-tier here — see bosses.hp_multiplier"
 
   - id: b7-10
@@ -89,7 +91,7 @@ bands:
     gold: [8, 30]
     drop_chance: [0.20, 0.50]
     intended_for: "pale-moor L7, soddenfen L9; tolvaren L10 is a town"
-    seeded_archetypes: [cairn-haunt, fen-lurker]
+    seeded_archetypes: [barrow-bear, moor-tollman, cairn-haunt, fen-lurker, burrow-worm, bog-lantern]
 
   - id: b11-14
     levels: [11, 14]
@@ -99,7 +101,7 @@ bands:
     gold: [12, 45]
     drop_chance: [0.15, 0.45]
     intended_for: "barrow-deeps L11 dungeon, tidewrack-flats L12, saltcliff-heights L14"
-    seeded_archetypes: [drowned-revenant, gull-rider-brute]
+    seeded_archetypes: [drowned-revenant, tide-strider, gull-rider-skirmisher, gull-rider-brute]
 
   - id: b15-18
     levels: [15, 18]
@@ -109,7 +111,7 @@ bands:
     gold: [20, 55]
     drop_chance: [0.12, 0.40]
     intended_for: "sunken-name L16 dungeon; skarhold L18 is a town"
-    seeded_archetypes: [storm-harrower]
+    seeded_archetypes: [storm-harrower, cliff-breaker, undertow]
 
   - id: b19-22
     levels: [19, 22]
@@ -119,7 +121,7 @@ bands:
     gold: [25, 60]
     drop_chance: [0.10, 0.35]
     intended_for: "ashfields L20, first Cinderplain zone"
-    seeded_archetypes: [cinderling]
+    seeded_archetypes: [cinderling, drowned-cantor, ash-jack, forge-deserter]
 
   - id: b23-26
     levels: [23, 26]
@@ -129,7 +131,7 @@ bands:
     gold: [30, 75]
     drop_chance: [0.08, 0.30]
     intended_for: "smoldering-reach L23, kaldrek-maw L26 dungeon — b27-30 is the ladder's top band"
-    seeded_archetypes: [pyreling]
+    seeded_archetypes: [pyreling, vent-stalker, crust-crawler, ash-picker, ash-eater]
     note: "fire-ancient is boss-tier here — see bosses"
 
   - id: b27-30
@@ -140,10 +142,10 @@ bands:
     gold: [35, 90]
     drop_chance: [0.06, 0.25]
     intended_for: "kaldrek-maw only — fire-ancients-chamber L26-30 and kaldreks-heart L28-30; no other zone reaches level 27"
-    seeded_archetypes: [fire-ancient]
+    seeded_archetypes: [maw-serpent]
     basis:
       - "hp min 340 = b23-26 min 300 + 40, the step b19-22's 260 -> b23-26's 300 took."
-      - "hp max 450 = fire-ancient 900 / 2, so the only seeded archetype at 27-30 sits exactly on the floor of bosses.hp_multiplier."
+      - "hp max 450 = fire-ancient's seeded 900 HP / 2; C4 used fire-ancient as the ceiling anchor at the floor of bosses.hp_multiplier."
       - "damage min 34 = 30 + 4, the step b19-22's 26 -> b23-26's 30 took; max 48 = 44 + the same 4, not the +14 that stretched b23-26's max to reach fire-ancient's 42."
       - "damage max stays above fire-ancient's authored 42 because bosses multiply HP, XP and gold — never damage (see bosses)."
       - "xp: both ends take the +30/+80 step b19-22's [150, 300] -> b23-26's [180, 380] took; fire-ancient's 1200 is 2.6x the ceiling, inside bosses.xp_multiplier."
