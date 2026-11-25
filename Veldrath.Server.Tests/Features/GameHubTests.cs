@@ -748,9 +748,9 @@ public class GameHubTests : IDisposable
     // awarded by server-side commands and handlers. Gold is awarded through AddGoldHubCommand (quest turn-in,
     // chest loot, dialogue), but that handler is not the key's only writer: shop trades (Buy/SellItemHubCommand),
     // rest costs (RestAtLocationHubCommand), combat loot and the death penalty (CombatHelpers), character creation
-    // (CharacterEndpoints, CharacterCreationSessionEndpoints) and the GM-only /setgold in SendChatMessage write
-    // the attributes blob directly. None of them is a gold-award method a client can call: /setgold is a chat
-    // command behind Permissions.GiveItems, and the rest never touch the hub.
+    // (CharacterEndpoints, CharacterCreationSessionEndpoints) and GM /setgold all write the attributes blob
+    // directly. None is a gold-award method a client can call: /setgold is a chat command in
+    // HandleChatCommandAsync behind Permissions.GiveItems, and the rest never touch the hub.
     [Fact]
     public void GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods()
     {
