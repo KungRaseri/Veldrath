@@ -102,6 +102,43 @@ public class GameHubZoneTests : IDisposable
     }
 
     [Fact]
+    public async Task EnterZone_Roster_In_The_Shared_Scope_Excludes_Characters_Inside_A_Run()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        // Two neighbours stand in the same zone: one in the shared market, one mid-delve. The delver is in the
+        // run's own SignalR group, so the arriving shared character can neither see nor chat with them.
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "crestfall");
+
+        var delverAccount = await HubHarness.SeedAccountAsync(db);
+        var delver = await HubHarness.SeedCharacterAsync(db, delverAccount.Id);
+        var delverSession = await HubHarness.SeedSessionAsync(db, delver, "conn-delver", "crestfall");
+        delverSession.ZoneInstanceId = Guid.NewGuid();
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(db, account.Id, connectionId: "conn-shared");
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+        ctx.Items["DifficultyMode"] = "normal";
+
+        await hub.EnterZone("crestfall");
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Occupants = new[]
+            {
+                new { CharacterId = resident.Id, CharacterName = resident.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "the shared roster is the shared scope, and the delver is in a group the caller cannot reach");
+    }
+
+    [Fact]
     public async Task EnterZone_Scopes_Wilderness_Groups_By_Difficulty()
     {
         await using var db = _factory.CreateContext();
@@ -937,6 +974,96 @@ public class GameHubZoneTests : IDisposable
             Occupants = new[] { new { CharacterId = resident.Id, CharacterName = resident.Name } },
         });
         ctx.Items["CurrentZoneId"].Should().Be("the-droveway");
+    }
+
+    [Fact]
+    public async Task TravelToNode_Crossing_A_Border_Lists_Only_The_Shared_Scope()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        // The destination zone holds one neighbour in its shared rooms and one party mid-delve. The walk keeps
+        // the arriving connection in the shared scope, so the snapshot must not name the party.
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
+
+        var delverAccount = await HubHarness.SeedAccountAsync(db);
+        var delver = await HubHarness.SeedCharacterAsync(db, delverAccount.Id);
+        var delverSession = await HubHarness.SeedSessionAsync(db, delver, "conn-delver", "the-droveway");
+        delverSession.ZoneInstanceId = Guid.NewGuid();
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id, connectionId: "conn-crossing");
+        ctx.EnterZoneState(character.Id, character.Name);
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:the-droveway",
+            NodeId = "zone:the-droveway:entry",
+            ZoneId = "the-droveway",
+            ZoneGroup = "zone:the-droveway",
+            ZoneInstanceId = null,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("region:varenmark", "the-droveway"));
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Occupants = new[] { new { CharacterId = resident.Id, CharacterName = resident.Name } },
+        }, "a walk into the shared zone arrives in the shared scope, so the party inside a run is invisible here");
+    }
+
+    [Fact]
+    public async Task TravelToNode_Crossing_A_Border_Into_A_Run_Lists_Only_The_Run()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        // The destination is instanced: the arrival joins the run's own group, so its roster is the run's
+        // members — never the characters standing in the zone's shared rooms.
+        var partyAccount = await HubHarness.SeedAccountAsync(db);
+        var partyMember = await HubHarness.SeedCharacterAsync(db, partyAccount.Id);
+
+        var run = new ZoneInstance
+        {
+            ZoneId = "the-droveway",
+            CreatedByCharacterId = partyMember.Id,
+            ZoneGroup = $"zone:the-droveway#i1:{Guid.NewGuid():D}",
+        };
+        db.ZoneInstances.Add(run);
+
+        var partySession = await HubHarness.SeedSessionAsync(db, partyMember, "conn-party", "the-droveway");
+        partySession.ZoneInstanceId = run.Id;
+
+        var outsiderAccount = await HubHarness.SeedAccountAsync(db);
+        var outsider = await HubHarness.SeedCharacterAsync(db, outsiderAccount.Id);
+        await HubHarness.SeedSessionAsync(db, outsider, "conn-outsider", "the-droveway");
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id, connectionId: "conn-descending");
+        ctx.EnterZoneState(character.Id, character.Name);
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:the-droveway",
+            NodeId = "zone:the-droveway:location:rootbound-cellars",
+            ZoneId = "the-droveway",
+            ZoneGroup = run.ZoneGroup,
+            ZoneInstanceId = run.Id,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("region:varenmark", "the-droveway"));
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Occupants = new[] { new { CharacterId = partyMember.Id, CharacterName = partyMember.Name } },
+        }, "the run is the scope, so the zone's shared occupant is outside the group the arrival just joined");
+        ctx.Items["CurrentZoneInstanceId"].Should().Be(run.Id);
     }
 
     [Fact]

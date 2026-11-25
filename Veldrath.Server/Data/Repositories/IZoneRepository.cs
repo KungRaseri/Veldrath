@@ -22,7 +22,21 @@ public interface IZoneRepository
 public interface IPlayerSessionRepository
 {
     /// <summary>Returns all active sessions currently inside the specified zone.</summary>
+    /// <remarks>
+    /// This is the whole zone's population: it includes characters inside an instance run, which is what the
+    /// public zone counts publish. Never use it for a roster the caller has to reach — a run is its own
+    /// SignalR group, so use <see cref="GetByZoneInstanceAsync"/> inside a run and
+    /// <see cref="GetOnSharedScopeAsync"/> in the shared zone.
+    /// </remarks>
     Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId);
+
+    /// <summary>
+    /// Returns the zone's shared-scope sessions — everyone standing in the zone who is not inside an instance
+    /// run. Characters in a run are in a different SignalR group they can neither see nor chat with, so a
+    /// shared-scope roster must not name them.
+    /// </summary>
+    /// <param name="zoneId">Zone whose shared scope to read.</param>
+    Task<List<PlayerSession>> GetOnSharedScopeAsync(string zoneId);
 
     /// <summary>
     /// Returns the sessions pointing at one instance run — the run's own occupants, which excludes everyone

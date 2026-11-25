@@ -35,6 +35,9 @@ internal sealed class FakePlayerSessionRepository : IPlayerSessionRepository
     public Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId) => Task.FromResult(new List<PlayerSession>());
 
     /// <inheritdoc />
+    public Task<List<PlayerSession>> GetOnSharedScopeAsync(string zoneId) => Task.FromResult(new List<PlayerSession>());
+
+    /// <inheritdoc />
     public Task<List<PlayerSession>> GetByZoneInstanceAsync(Guid instanceId) =>
         throw new NotSupportedException("Presence fake used in a test that reads run occupants");
 
