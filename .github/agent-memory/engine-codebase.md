@@ -650,8 +650,10 @@ for them, and the Avalonia `GameViewModel` it once mirrored is retired too.
   (`ContentPackImporter.cs:275-306`), so there is nothing to key a stock row by. (The other tables that carry no pack
   family are ruled out by that same shape test, not by that reason: none of them is a `ContentBase`, so
   `FindBySlugAsync` has nothing to match — `ZoneLocationConnection`, a join table keyed by `FromLocationSlug`/
-  `ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's `Map`/`MapNode`/`MapEdge`, a map
-  document, its nodes and its edges, keyed by authored string ids rather than slugs. The
+  `ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's `Map`/`MapNode`/`MapEdge` — a map
+  document, its nodes and its edges: maps and nodes keyed by authored string ids rather than slugs, while an edge is
+  keyed by a generated uuid and identified by its natural slot `(MapId, FromNodeId, Direction)`
+  (`ContentModelConfiguration.cs:345`, `:352`). The
   support tables — `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` at `ContentDbContext.cs:19`, `:21`, `:89` —
   and `GameConfig` are not `ContentBase` rows either; they are vocabulary and configuration rather than per-entity
   content, so no pack family addresses them.)
@@ -662,6 +664,18 @@ for them, and the Avalonia `GameViewModel` it once mirrored is retired too.
   missing on the next start. The procedure and the verification query live in
   [`docs/content-packs.md`](../../docs/content-packs.md). **Do not make the seeder reconcile**: it would silently
   delete a row another authoring surface owns, which is the failure this decision exists to prevent.
+- **A map-graph edit is also a data migration, but its seeder cannot be made to reconcile at all.** `MapGraphSeeder`
+  is bootstrap-only — it returns as soon as `Maps` has a row (`MapGraphSeeder.cs:21-22`) — and the server migrates the
+  content database before seeding (`Program.cs:409`, `:416`), so a seeded database keeps its graph until a reviewed,
+  data-only `ContentDbContext` migration patches it. Maps and nodes are keyed by authored string ids; an edge is keyed
+  by a generated `uuid` but identified by its natural slot `(MapId, FromNodeId, Direction)`, which is unique
+  (`ContentModelConfiguration.cs:345`, `:352`) — the same authored graph seeded twice has the same slots and different
+  uuids. Freeze the rows as literals, patch only active seed-owned maps, keep an equivalent node or slot untouched
+  (text, layout, uuid and label included), abort on an incompatible id/slot/target instead of picking another
+  direction, bump `Version`/`UpdatedAt` once per changed map, and leave `Down` empty (backup restore or a reviewed
+  compensating migration). A seed-time walk the new door displaces may be re-homed only when declared and verified —
+  #270 moves Aldenmere's market walk East to North. Procedure, conflict rules and rollout proof:
+  [`docs/content-packs.md`](../../docs/content-packs.md); executable gate: `scripts/verify-map-graph-upgrade.sh`.
 
 ### Placed actor instances (A2, 2026-11-20)
 
