@@ -27,6 +27,10 @@ public class PlayerSessionRepository(ApplicationDbContext db) : IPlayerSessionRe
     public Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId) =>
         db.PlayerSessions.Where(s => s.ZoneId == zoneId).ToListAsync();
 
+    /// <inheritdoc/>
+    public Task<List<PlayerSession>> GetByZoneInstanceAsync(Guid instanceId) =>
+        db.PlayerSessions.Where(s => s.ZoneInstanceId == instanceId).ToListAsync();
+
     public Task<List<PlayerSession>> GetByRegionIdAsync(string regionId) =>
         db.PlayerSessions.Where(s => s.RegionId == regionId).ToListAsync();
 

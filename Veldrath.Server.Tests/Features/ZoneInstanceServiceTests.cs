@@ -56,12 +56,16 @@ public class ZoneInstanceServiceTests
 
     private static EfCoreZoneInstanceService Service(
         ApplicationDbContext db,
-        IReadOnlyList<RealmEngine.Shared.Models.ZoneLocationEntry>? hidden = null)
+        IReadOnlyList<RealmEngine.Shared.Models.ZoneLocationEntry>? hidden = null,
+        RealmEngine.Shared.Models.ZoneLocationEntry? resumable = null)
     {
         var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
         locations
             .Setup(repo => repo.GetHiddenByZoneIdAsync(It.IsAny<string>()))
             .ReturnsAsync((hidden ?? []).ToList());
+        locations
+            .Setup(repo => repo.GetBySlugAsync(It.IsAny<string>()))
+            .ReturnsAsync(resumable);
 
         return new(
             db,
@@ -70,6 +74,14 @@ public class ZoneInstanceServiceTests
             locations.Object,
             NullLogger<EfCoreZoneInstanceService>.Instance);
     }
+
+    private const string VaultSlug = "ancestor-vault";
+
+    private static RealmEngine.Shared.Models.ZoneLocationEntry Room(
+        string slug = VaultSlug,
+        string zoneId = ZoneId,
+        bool isInstanced = true) =>
+        new(slug, slug, "dungeons", zoneId, 30, 11, 14, IsInstanced: isInstanced);
 
     private static RealmEngine.Shared.Models.ZoneLocationEntry HiddenRoom(string slug, string unlockKey) =>
         new(
@@ -191,6 +203,53 @@ public class ZoneInstanceServiceTests
         await db.SaveChangesAsync();
 
         (await service.JoinAsync(run.Id, solo.Id)).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Join_RefusesARunThatHasEmptied()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db);
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+        run.State = ZoneInstanceState.Empty;
+        await db.SaveChangesAsync();
+
+        (await service.JoinAsync(run.Id, solo.Id)).Should().BeFalse(
+            "an emptied run is waiting for the next sweep to delete it, so the join must not report success");
+    }
+
+    [Fact]
+    public async Task Leave_StartsTheDisconnectGraceAtTheDeparture()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db, resumable: Room());
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+
+        // The run was held for an hour. Measuring the grace from the last join would sweep it on the first tick
+        // after the sole member disconnects, so the reconnect would find an empty run and no resume.
+        run.LastOccupiedAt = DateTimeOffset.UtcNow.AddHours(-1);
+        await db.SaveChangesAsync();
+
+        await service.LeaveAsync(run.Id, solo.Id);
+        await service.SweepAsync(TimeSpan.FromMinutes(1));
+
+        var resumed = await service.FindResumableAsync(ZoneId, VaultSlug, solo.Id);
+        resumed.Should().NotBeNull("the grace starts at the departure, so a relog inside it still rejoins the run");
+        resumed!.Id.Should().Be(run.Id);
+
+        // Once the grace itself has passed with nobody back, the run empties and the resume falls away.
+        run.LastOccupiedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        await db.SaveChangesAsync();
+        await service.SweepAsync(TimeSpan.FromMinutes(1));
+
+        (await service.FindResumableAsync(ZoneId, VaultSlug, solo.Id)).Should().BeNull(
+            "a run that stayed empty past the grace is waiting to be purged, not to be resumed");
     }
 
     [Fact]
@@ -316,5 +375,127 @@ public class ZoneInstanceServiceTests
 
         outcome.Cleared.Should().BeFalse();
         outcome.UnlockedLocationSlugs.Should().BeEmpty();
+    }
+
+    // ── Resume ───────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task FindResumable_ReturnsThePartysOpenRun()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var leader = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Thornwarden");
+        var second = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Mirelle");
+        await SeedPartyAsync(db, leader.Id, second.Id);
+
+        var run = await Service(db).FindOrCreateAsync(ZoneId, leader.Id);
+
+        var resumed = await Service(db, resumable: Room()).FindResumableAsync(ZoneId, VaultSlug, second.Id);
+
+        resumed.Should().NotBeNull();
+        resumed!.Id.Should().Be(run.Id);
+    }
+
+    [Fact]
+    public async Task FindResumable_ReturnsTheSoloRun()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var run = await Service(db).FindOrCreateAsync(ZoneId, solo.Id);
+
+        var resumed = await Service(db, resumable: Room()).FindResumableAsync(ZoneId, VaultSlug, solo.Id);
+
+        resumed.Should().NotBeNull();
+        resumed!.Id.Should().Be(run.Id);
+    }
+
+    [Fact]
+    public async Task FindResumable_IgnoresAnotherPartysRun()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var theirs = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Thornwarden");
+        var mine = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Mirelle");
+        await SeedPartyAsync(db, theirs.Id);
+
+        await Service(db).FindOrCreateAsync(ZoneId, theirs.Id);
+
+        var resumed = await Service(db, resumable: Room()).FindResumableAsync(ZoneId, VaultSlug, mine.Id);
+
+        resumed.Should().BeNull("a character never resumes into a run that is not theirs");
+    }
+
+    [Fact]
+    public async Task FindResumable_IgnoresARunThatIsNoLongerOpen()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db);
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+        run.State = ZoneInstanceState.Empty;
+        await db.SaveChangesAsync();
+
+        var resumed = await Service(db, resumable: Room()).FindResumableAsync(ZoneId, VaultSlug, solo.Id);
+
+        resumed.Should().BeNull("an emptied run is waiting to be purged, not to be resumed");
+    }
+
+    [Fact]
+    public async Task FindResumable_IgnoresASharedLocation()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        await Service(db).FindOrCreateAsync(ZoneId, solo.Id);
+
+        var resumed = await Service(db, resumable: Room(isInstanced: false))
+            .FindResumableAsync(ZoneId, VaultSlug, solo.Id);
+
+        resumed.Should().BeNull("a shared location has no run to be inside");
+    }
+
+    [Fact]
+    public async Task FindResumable_IgnoresALocationFromAnotherZone()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        await Service(db).FindOrCreateAsync(ZoneId, solo.Id);
+
+        var resumed = await Service(db, resumable: Room(zoneId: "drowning-pits"))
+            .FindResumableAsync(ZoneId, VaultSlug, solo.Id);
+
+        resumed.Should().BeNull("a slug that matches in another zone must not hand over a run");
+    }
+
+    [Fact]
+    public async Task FindResumable_DoesNotOpenARun()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var resumed = await Service(db, resumable: Room()).FindResumableAsync(ZoneId, VaultSlug, solo.Id);
+
+        resumed.Should().BeNull();
+        (await db.ZoneInstances.CountAsync()).Should().Be(0, "a resume only ever re-enters an existing attempt");
+    }
+
+    [Fact]
+    public async Task FindResumable_IgnoresAMissingLocation()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var resumed = await Service(db).FindResumableAsync(ZoneId, "no-such-room", solo.Id);
+
+        resumed.Should().BeNull();
     }
 }
