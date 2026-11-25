@@ -329,6 +329,10 @@ public class GameHubZoneTests : IDisposable
                  .ReturnsAsync(new ZoneLocationEntry(
                      "vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14,
                      IsInstanced: true));
+        // No safe location in the zone, so the lobby the character would otherwise wake in does not exist and the
+        // saved node stands — the fallback has its own case below.
+        locations.Setup(repo => repo.GetByZoneIdAsync("crestfall"))
+                 .ReturnsAsync(new List<ZoneLocationEntry>());
 
         var (hub, _, groups, ctx, _, _) =
             HubHarness.Create(db, account.Id, connectionId: "conn-resumed", locations: locations.Object);
@@ -341,6 +345,199 @@ public class GameHubZoneTests : IDisposable
             .Should().BeNull("a swept run is not resumed");
         groups.AddedGroups.Should().Contain("zone:crestfall");
         ctx.Items["CurrentZoneInstanceId"].Should().BeNull();
+    }
+
+    /// <summary>
+    /// The zone map a swept run wakes on: the entry, the instanced room the character stood on, and the zone's
+    /// lobby beside it.
+    /// </summary>
+    /// <returns>The graph the hub reads for the zone.</returns>
+    private static MapGraph SweptRunMap() => new(
+        "zone:crestfall", MapType.Zone, "crestfall", "Crestfall", string.Empty,
+        "zone:crestfall:entry",
+        [
+            new MapNodeEntry(
+                "zone:crestfall:entry", "zone:crestfall", MapNodeType.EntryPoint, null, "Arrival",
+                string.Empty, null, null, null, true, false, null, null, false, null, null, null, 0),
+            new MapNodeEntry(
+                "zone:crestfall:location:vault-of-echoes", "zone:crestfall", MapNodeType.Location,
+                "vault-of-echoes", "The Vault of Echoes", string.Empty, null, null, null, false, false, null, null,
+                false, null, null, null, 10),
+            new MapNodeEntry(
+                "zone:crestfall:location:town-square", "zone:crestfall", MapNodeType.Location,
+                "town-square", "Crestfall Square", string.Empty, null, null, null, false, false, null, null,
+                false, null, null, null, 20),
+        ],
+        []);
+
+    /// <summary>
+    /// The catalog around a dungeon room and the zone's lobby: the room is instanced, the square is the zone's
+    /// safe location, and nothing else is either.
+    /// </summary>
+    /// <param name="withLobby">Whether the zone has a safe location at all, so a test can drop it.</param>
+    /// <param name="roomIsInstanced">Whether the room the character stood on is an instance at all.</param>
+    /// <returns>The catalog the hub is built with.</returns>
+    private static Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository> SweptRunLocations(
+        bool withLobby = true,
+        bool roomIsInstanced = true)
+    {
+        var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
+        locations.Setup(repo => repo.GetBySlugAsync("vault-of-echoes"))
+                 .ReturnsAsync(new ZoneLocationEntry(
+                     "vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14,
+                     IsInstanced: roomIsInstanced));
+        locations.Setup(repo => repo.GetByZoneIdAsync("crestfall"))
+                 .ReturnsAsync(withLobby
+                     ? new List<ZoneLocationEntry>
+                     {
+                         new("vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14, IsInstanced: roomIsInstanced),
+                         new("town-square", "Crestfall Square", "locations", "crestfall", 10, null, null, IsSafeRespawn: true),
+                     }
+                     : new List<ZoneLocationEntry>());
+
+        return locations;
+    }
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Wakes_In_The_Zones_Lobby_When_The_Run_Emptied()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        // The run emptied while the character was away: still on disk, past its grace, deliberately not resumed.
+        db.ZoneInstances.Add(new ZoneInstance
+        {
+            ZoneId = "crestfall",
+            CreatedByCharacterId = character.Id,
+            ZoneGroup = $"zone:crestfall#i1:{Guid.NewGuid():D}",
+            State = ZoneInstanceState.Empty,
+        });
+        await db.SaveChangesAsync();
+
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("crestfall", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(SweptRunMap());
+
+        var (hub, clients, groups, ctx, _, _) = HubHarness.Create(
+            db, account.Id, connectionId: "conn-woken", mapRepo: mapRepo, locations: SweptRunLocations().Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be(
+            "zone:crestfall:location:town-square",
+            "a swept run does not hand the room back, so the character wakes in the zone's safe location");
+        stored.CurrentZoneLocationSlug.Should().Be("town-square", "the persisted location is where they now stand");
+
+        var entered = clients.Caller.SentMessages.Single(message => message.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new { CurrentNodeId = "zone:crestfall:location:town-square" });
+
+        // The plan promises the wake-up is explained, once — the same sentence the respawn path says.
+        var messages = clients.Caller.SentMessages.Where(message => message.Method == "SystemMessage").ToList();
+        messages.Should().ContainSingle().Which.Args[0].Should()
+            .Be("The instance you were in has closed. You wake in the shared zone.");
+
+        db.PlayerSessions.Local.Single(session => session.CharacterId == character.Id).ZoneInstanceId
+            .Should().BeNull("the run is gone, so nothing points at it");
+        groups.AddedGroups.Should().Contain("zone:crestfall");
+    }
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Wakes_In_The_Lobby_When_The_Run_Was_Purged()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        // Swept *and* deleted: there is no run row left to read, so the resume cannot depend on finding one.
+        db.ZoneInstances.Should().BeEmpty();
+
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("crestfall", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(SweptRunMap());
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id, connectionId: "conn-purged", mapRepo: mapRepo, locations: SweptRunLocations().Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be("zone:crestfall:location:town-square");
+        stored.CurrentZoneLocationSlug.Should().Be("town-square");
+
+        clients.Caller.SentMessages.Where(message => message.Method == "SystemMessage").Should()
+            .ContainSingle("one wake-up, one explanation")
+            .Which.Args[0].Should().Be("The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Keeps_The_Saved_Node_When_The_Zone_Has_No_Lobby()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("crestfall", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(SweptRunMap());
+
+        // Instanced room, no run left, and no safe location to wake in: a login must not fail, and it must not
+        // move the character somewhere the zone does not have.
+        var locations = SweptRunLocations(withLobby: false);
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id, connectionId: "conn-nolobby", mapRepo: mapRepo, locations: locations.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be(
+            "zone:crestfall:location:vault-of-echoes", "with no lobby the saved node is the only true position");
+        stored.CurrentZoneLocationSlug.Should().Be("vault-of-echoes");
+
+        clients.Caller.SentMessages.Should().NotContain(
+            message => message.Method == "SystemMessage",
+            "nothing moved, so there is nothing to explain");
+    }
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Stays_In_A_Room_That_Was_Never_Instanced()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("crestfall", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(SweptRunMap());
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id, connectionId: "conn-shared", mapRepo: mapRepo,
+            locations: SweptRunLocations(roomIsInstanced: false).Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be(
+            "zone:crestfall:location:vault-of-echoes",
+            "a shared room is not an instance, so there is no run to have been swept and no lobby to wake in");
+        clients.Caller.SentMessages.Should().NotContain(message => message.Method == "SystemMessage");
     }
 
     // ── TravelToNode: walking out of a run ───────────────────────────────────

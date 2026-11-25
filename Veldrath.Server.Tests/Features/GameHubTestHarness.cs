@@ -314,7 +314,8 @@ internal static class HubHarness
                 new CharacterUnlockedLocationRepository(db),
                 locations ?? new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
                 NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
-            random);
+            random,
+            locations);
 
         var clients = new RecordingHubClients();
         var groups = new FakeGroupManager();
