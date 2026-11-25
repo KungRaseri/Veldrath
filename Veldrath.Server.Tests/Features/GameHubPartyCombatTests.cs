@@ -1034,7 +1034,7 @@ public class GameHubPartyCombatTests : IDisposable
     }
 
     [Fact]
-    public async Task UseAbilityInCombat_On_A_Kill_Announces_It_And_Advances_The_Kill_Objective()
+    public async Task UseAbilityInCombat_On_A_Kill_Advances_The_Kill_Objective_By_Slug_And_Display_Name()
     {
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
@@ -1047,6 +1047,7 @@ public class GameHubPartyCombatTests : IDisposable
             AbilityId = "fireball",
             EnemyDefeated = true,
             EnemyName = "Goblin",
+            EnemyArchetypeSlug = "goblin",
         });
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
 
@@ -1054,10 +1055,17 @@ public class GameHubPartyCombatTests : IDisposable
 
         clients.OthersInGroupNamed("zone:crestfall").SentMessages.Should()
             .ContainSingle(m => m.Method == "EnemyDefeated");
-        var advance = mediator.Invocations.Select(i => i.Arguments[0])
-            .OfType<AdvanceQuestObjectivesHubCommand>().Single();
-        advance.Kind.Should().Be("kill");
-        advance.Key.Should().Be("Goblin");
+
+        // Same contract as a melee kill: the slug is what content authors, the display name keeps a legacy
+        // journal progressing, and neither key is advanced twice.
+        var advances = mediator.Invocations.Select(i => i.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(c => (c.CharacterId, c.Kind, c.Key))
+            .ToList();
+        advances.Should().BeEquivalentTo([
+            (characterId, "kill", "goblin"),
+            (characterId, "kill", "Goblin"),
+        ]);
     }
 
     [Fact]
