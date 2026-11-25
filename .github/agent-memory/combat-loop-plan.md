@@ -1,6 +1,8 @@
 # Plan: Combat Loop + Multiplayer Architecture (2026-03-30)
 
-> **Status**: Reviewed and current as of Session-39 (2026-06-27).
+> **Status**: the tick-based action-queue design below was never built (see the note under it). The ACTUAL
+> IMPLEMENTATION section records what ships; it has been amended for the D2 world-state move (2026-10-25) and the
+> session-68 deletion of the Avalonia client.
 
 ## ⚠️ IMPORTANT — ACTUAL IMPLEMENTATION NOTE
 
@@ -27,6 +29,14 @@ When resuming, read the ACTUAL IMPLEMENTATION section first — it supersedes al
 
 Built as a simplified system where any player can engage any live enemy; each hub call = one combat turn.
 All server code lives in `Veldrath.Server/Features/Characters/Combat/`.
+
+> **The flow below is the one that ships, but two of the files it lists are gone.** Live enemy and combat-session
+> state has been database-backed since the D2 world-state move (2026-10-25, `plans/server-first-world-state.md` §2):
+> `EfCoreEnemyInstanceStore` over the `EnemyInstances` table replaced `ZoneLocationEnemyStore`, and
+> `EfCoreCombatSessionStore` over `CombatSessions` replaced `CombatSessionStore`. `SpawnedEnemy.cs`,
+> `ActiveCombatSession.cs` and `CombatCharacterHydrator.cs` are still in the tree, and the hub methods and
+> `…HubCommand` handlers below still exist. "Client Build Status" is history as well: the Avalonia client was
+> deleted in session-68 (2026-10-25) and the web build is `cd web && npm run build`.
 
 ### Server Build Status: ✅ CLEAN (0 warnings, 0 errors)
 ### Client Build Status: ✅ CLEAN (0 warnings, 0 errors)
@@ -73,8 +83,40 @@ Static helpers shared by all hub command handlers.
 - `CalculateEnemyDamage(enemy, attrs, isDefending)` — CON-based defense; damage halved when defending
 - `RollEnemyAbility(enemy, player)` — 30% chance; **`Power.BaseDamage` is `string?`** → uses `int.TryParse(ability.BaseDamage, out var d)`
 - `DistributeRewardsAsync` — locks `enemy.SyncRoot`, distributes proportional XP/gold based on `DamageContributions`; updates `character.Experience` (long entity field, NOT attrs blob) and `attrs["Gold"]`
-- `ScheduleRespawn` — fire-and-forget `Task.Delay(60s)` → creates scope, calls `ActorPoolResolver.SpawnRosterAsync`, adds to store, broadcasts `EnemySpawned` to zone group
+- ~~`ScheduleRespawn`~~ — **deleted with the world-state move (D2, 2026-10-25); this class respawns nothing.** See "Enemy respawn — what ships" below.
 - `HandleDeathIfNeededAsync` — HC: `entity.DeletedAt = DateTimeOffset.UtcNow`; Normal: `entity.Experience -= xpPenalty` (long), 10% gold penalty, `CurrentHealth = 1`
+
+### Enemy respawn — what ships (no per-enemy timer)
+
+The `ScheduleRespawn` fire-and-forget timer is gone; the pending respawn is a column, so a restart mid-countdown
+continues it instead of losing it.
+
+- **Death is one conditional UPDATE.** `IEnemyInstanceStore.TryMarkDeadAsync(enemyId)` runs
+  `UPDATE EnemyInstances SET IsAlive = false, RespawnAt = now + <respawn delay>, Version = Version + 1
+  WHERE Id = … AND IsAlive`, and returns true to exactly the one caller that flipped the row — the flag
+  `AttackEnemyHubCommand` uses to decide who distributes rewards. The delay is `EnemyWorldOptions.RespawnDelay`,
+  bound from the `Enemies` section (`RespawnDelaySeconds`, default 60), not a hardcoded 60 s.
+- **A background sweeper brings them back.** `EnemyRespawnService : BackgroundService`
+  (`Veldrath.Server/Features/Characters/Combat/EnemyRespawnService.cs`, registered
+  `builder.Services.AddHostedService<EnemyRespawnService>()` at `Veldrath.Server/Program.cs:197`) ticks on a
+  `PeriodicTimer` every `Enemies:SweepIntervalSeconds` (default 5). Each tick calls
+  `SweepExpiredRespawnsAsync(RespawnBatchSize, ct)` — on PostgreSQL the batch is claimed with
+  `FOR UPDATE SKIP LOCKED`, so several instances never revive the same row — which sets `IsAlive = true`,
+  `CurrentHealth = MaxHealth`, `RespawnAt = null` and deletes the row's `EnemyParticipants`. After the commit the
+  service broadcasts `EnemySpawned` with `{ Id, Name, Level, CurrentHealth, MaxHealth }` to `enemy.ZoneGroup`, so a
+  missed broadcast is a cosmetic delay, not lost state. The same tick prunes expired combat sessions and sweeps
+  zone-instance runs.
+- **Reads self-heal too.** `GetAliveOrSpawnAsync` calls `SettleLocationAsync` before loading, which marks
+  zero-health-but-alive rows dead with a fresh `RespawnAt` and revives rows whose `RespawnAt` has passed — the lazy
+  path that keeps a location correct without waiting for a tick.
+- **A cleared room waits longer.** When `CountAliveAsync` reaches zero, `AttackEnemyHubCommand` calls
+  `ExtendClearedRespawnsAsync`, which pushes each row's `RespawnAt` out to at least
+  `now + ClearedRoomRespawnDelay` (`ClearedRoomRespawnMultiplier`, default 3 × the normal window).
+- **No `SpawnRosterAsync` in the respawn path.** The revived row already carries its archetype, level and stats;
+  `ActorPoolResolver` is used when a location has no rows yet, in `GetAliveOrSpawnAsync`'s caller-supplied
+  `spawnRoster`. Recorded in
+  [`work-items/2026-10-25-d2-the-live-world-moved-into-postgres-33.md`](work-items/2026-10-25-d2-the-live-world-moved-into-postgres-33.md)
+  and `plans/server-first-world-state.md` §2.
 
 ### New Server Hub Command Files
 
@@ -84,7 +126,7 @@ Static helpers shared by all hub command handlers.
 - Returns: enemy stats + `Template.Abilities` list for client display
 
 #### `AttackEnemyHubCommand.cs`
-Guard: has session + enemy exists (nullable) + alive → load entity+attrs → hydrate → calc damage → `lock(enemy.SyncRoot)` apply → if dead: `DistributeRewardsAsync` + `ScheduleRespawn` + early return with victory result → counter-attack via `RollEnemyAbility` → persist → `HandleDeathIfNeededAsync`
+Guard: has session + enemy exists (nullable) + alive → load entity+attrs → hydrate → calc damage → `lock(enemy.SyncRoot)` apply → if dead: `TryMarkDeadAsync` (the conditional UPDATE that stamps `RespawnAt`; only the caller that won it calls `DistributeRewardsAsync`) → early return with victory result → counter-attack via `RollEnemyAbility` → persist → `HandleDeathIfNeededAsync`
 
 #### `DefendActionHubCommand.cs`
 Same flow as Attack but `session.WithDefending(true)`, no player attack, enemy damage halved.
@@ -186,7 +228,7 @@ Implemented as [`CombatPanel.svelte`](../../web/client/src/lib/game/CombatPanel.
 - ZoneLocation: `ActorPool` JSON column (list of {ArchetypeSlug, Weight}); procedural fallback if empty.
 - ICombatSettings extracted from ISaveGameService; DifficultySettings implements it.
 - Rescue fund: per-zone (RescueFundTotal on Zone) + global (GlobalStat table).
-- Scope: Engine (Core/Shared/Data) + Veldrath (Server/Client/Contracts) ONLY.
+- Scope: Engine (Core/Shared/Data) + Veldrath (Server/Contracts) ONLY — `Veldrath.Client` was deleted in session-68 (2026-10-25); the client is the SvelteKit app in `web/`.
 
 ---
 

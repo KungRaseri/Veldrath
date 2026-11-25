@@ -7,6 +7,19 @@ title: "SvelteKit Migration — Phase 5 Desktop WebView (Session-60, 2026-10-23)
 
 ## SvelteKit Migration — Phase 5 Desktop WebView (Session-60, 2026-10-23)
 
+> **Closed record: the desktop host this note describes no longer exists.** `Veldrath.Client`, `Veldrath.Client.Tests`,
+> `HostedWeb/DesktopUiServer`, the `/desktop` route, `VELDRATH_DESKTOP_UI`, `web/client/build-desktop`,
+> `npm run build:desktop` and the `adapter-static` desktop mode were all deleted with the Avalonia client in
+> session-68 (2026-10-25) — see
+> [`work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md`](../work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md).
+> Checked against `development` when this banner was written: `web/client/package.json` builds with
+> `@sveltejs/adapter-node` only, `vite.config.ts` has no desktop mode, there is no `build-desktop` directory and no
+> `/desktop` route under `web/client/src/routes/`.
+> One artefact named here survives where it always lived: `GameScreen.svelte` is now
+> [`web/client/src/lib/game/GameScreen.svelte`](../../../web/client/src/lib/game/GameScreen.svelte) and is rendered by
+> the single `/play/[id]` route — the second route it was shared with went with the shell.
+> Everything below is kept as the record of how that shell worked; do not read any path in it as current.
+
 **Architecture (complete on build/test path)**
 - `Veldrath.Client/HostedWeb/DesktopUiServer` replaces `HostedGameServer` (deleted). It:
   - binds Kestrel to `127.0.0.1:0` and serves the static Svelte build with
