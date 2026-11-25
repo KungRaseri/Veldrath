@@ -371,7 +371,7 @@ file the repository can diff, so it is recorded here and applied by
 | `push_whitelist_usernames` | `[]` | `["kungraseri"]` | The bypass is one named account — see below |
 | `push_whitelist_teams` | `[]` | `[]` | Account-only: no team inherits the push path |
 | `push_whitelist_deploy_keys` | `false` | `false` | A deploy key is not a second break-glass path |
-| `required_approvals` | `1` | `1` | One approving review, from an account that is not the author's: the review identity signs in as `dev-reviewer`, a separate account from the coder identities (`dev-developer`). Read back with an admin token from `GET /api/v1/repos/Veldrath/Veldrath/branch_protections` (2026-11-24); `scripts/apply-branch-protection.sh` still sends `0` (tracked in `t_d642cb38`) |
+| `required_approvals` | `1` | `1` | One approving review, from an account that is not the author's: every agent profile publishes under its own account, and the review profile signs as `sela`, so an approval always comes from an account other than the author's. Read back with an admin token from `GET /api/v1/repos/Veldrath/Veldrath/branch_protections` (2026-11-25); `scripts/apply-branch-protection.sh` sends the same `1` |
 | `apply_to_admins` | `false` | `false` | The administrator exemption was removed on request — see below |
 | `block_on_outdated_branch` | `false` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
 | `require_signed_commits` | `false` | `false` | Commits here are not signed |
@@ -393,11 +393,9 @@ branch main`); enabling push for one account is a separate switch.
 What each exception costs, stated plainly:
 
 - `apply_to_admins: false` hands *repository* admins the `force_merge` override that
-  `CheckPullMergeable` already gives an instance admin. The instance has exactly one *admin*
-  account, `kungraseri`; every other account — `dev-designer`, `dev-developer`, `dev-reviewer`
-  and the `hermes` service account at the 2026-11-24 read-back of `GET /api/v1/admin/users` —
-  is not an admin, so the exemption changes nothing for them. It is a one-admin switch, and it
-  matters the day a second admin exists.
+  `CheckPullMergeable` already gives an instance admin. Exactly one account on the instance is
+  an *admin*, `kungraseri`; every other account is not, so the exemption changes nothing for
+  them. It is a one-admin switch, and it matters the day a second admin exists.
 - `main` accepts pushes from exactly one account, `kungraseri`. Every other identity, and
   every push to `development`, is still refused by the pre-receive hook. A direct push to
   `main` skips the status checks, so it is for repairing a broken deployment, never for
@@ -537,7 +535,7 @@ The alternatives were measured against the tree instead of argued:
 | Alternative | Why not |
 |---|---|
 | Add root-config paths to an existing list | The set is not three files: 36 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
-| Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
+| Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: `CheckPullMergeable` clears the protection error for any token holding instance-admin rights, so documenting it would make "whoever holds the admin token certifies their own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
 The job lints the workflow definitions; it builds nothing. Its rules are the failure modes this
@@ -591,10 +589,11 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
   `apply_to_admins` is now `false` a *repository* admin gets the same override. That is the
   break-glass path — a stuck `pending` status must never lock the only operator out — and
   it is why this rule is a review contract, not a lock. The override follows the token, not the
-  person at the keyboard: whoever runs a job under `kungraseri` can set `force_merge`, and today
-  that includes worker profiles still using the shared admin token, so the override is reachable
-  by an agent and not only by the human. The gate is enforced by discipline, and a worker that
-  runs `force_merge` is self-certifying. Use it to unblock, never to land a red change.
+  person at the keyboard: any token holding instance-admin rights can set `force_merge`, and the
+  one admin credential lives in the automation host's environment file beside the worker
+  credentials, so the override is reachable by an agent and not only by the human. The gate is
+  enforced by discipline, and a worker that runs `force_merge` is self-certifying. Use it to
+  unblock, never to land a red change.
 - **Direct pushes to `main`.** Exactly one account, `kungraseri`, may push there; `development`
   refuses every push, and that refusal was exercised: `git push` to it answers
   `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The
