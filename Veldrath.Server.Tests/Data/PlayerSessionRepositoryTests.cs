@@ -79,6 +79,33 @@ public class PlayerSessionRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task GetOnSharedScopeAsync_ReadsTheSharedScopeWhileTheZoneCountStillSeesRunMembers()
+    {
+        await using var db = _factory.CreateContext();
+        var resident = await SeedCharacterAsync(db, "Aria");
+        var delver = await SeedCharacterAsync(db, "Bran");
+        var elsewhere = await SeedCharacterAsync(db, "Cass");
+
+        var delverSession = Session(delver, "conn-delving", "crestfall");
+        delverSession.ZoneInstanceId = Guid.NewGuid();
+        db.PlayerSessions.AddRange(
+            Session(resident, "conn-shared", "crestfall"),
+            delverSession,
+            Session(elsewhere, "conn-other-zone", "the-droveway"));
+        await db.SaveChangesAsync();
+        var repo = new PlayerSessionRepository(db);
+
+        var shared = await repo.GetOnSharedScopeAsync("crestfall");
+        var wholeZone = await repo.GetByZoneIdAsync("crestfall");
+
+        shared.Should().ContainSingle().Which.ConnectionId.Should().Be(
+            "conn-shared", "a character inside a run is in another SignalR group, so not in the shared roster");
+        wholeZone.Select(s => s.ConnectionId).Should().BeEquivalentTo(
+            ["conn-shared", "conn-delving"],
+            "the public zone count publishes the whole zone's population, run members included");
+    }
+
+    [Fact]
     public async Task UpdateMapPositionAsync_MovesTheSessionOntoTheNodeAndZone()
     {
         await using var db = _factory.CreateContext();

@@ -1036,10 +1036,12 @@ public class GameHub : Hub
             ZoneId = zoneId,
         });
 
-        // Send current zone occupants back to caller. Inside a run the run is the boundary, so the list is its
-        // members — the shared zone's occupants may include another party the caller must not see.
+        // Send current zone occupants back to caller. The roster describes the caller's own scope, because a
+        // run is a SignalR group of its own: inside one the list is the run's members, and in the shared zone it
+        // is the zone's shared occupants. A party mid-delve is in another group the connection can neither see
+        // nor chat with, so naming them here would advertise a reach the caller does not have.
         var occupants = (resumedRun is null
-                ? await _playerSessionRepo.GetByZoneIdAsync(zoneId)
+                ? await _playerSessionRepo.GetOnSharedScopeAsync(zoneId)
                 : await _playerSessionRepo.GetByZoneInstanceAsync(resumedRun.Id))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
@@ -3611,7 +3613,17 @@ public class GameHub : Hub
         if (zone is null)
             return;
 
-        var occupants = (await _playerSessionRepo.GetByZoneIdAsync(result.ZoneId!))
+        // The snapshot describes the caller's own scope, exactly as EnterZone's does. ApplyArrivalGroupAsync has
+        // already recorded the run this arrival belongs to, so a walk that crossed into a run lists its members
+        // and a walk that stayed in the shared zone lists the zone's shared occupants. The zone's whole
+        // population would name the parties inside runs, whom the connection can neither see nor chat with.
+        var instanceId = Context.Items.TryGetValue("CurrentZoneInstanceId", out var instance) && instance is Guid run
+            ? run
+            : (Guid?)null;
+
+        var occupants = (instanceId is { } arrivingRun
+                ? await _playerSessionRepo.GetByZoneInstanceAsync(arrivingRun)
+                : await _playerSessionRepo.GetOnSharedScopeAsync(result.ZoneId!))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
         await Clients.Caller.SendAsync("ZoneEntered", new
