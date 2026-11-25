@@ -32,7 +32,14 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
             Mock.Of<IPowerRepository>(),
             _enemies,
             _sessions,
+            new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
+                db,
+                new CharacterRepository(db),
+                new CharacterUnlockedLocationRepository(db),
+                Mock.Of<IZoneLocationRepository>(),
+                NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             Options.Create(new DeathPenaltyOptions()),
+            Mock.Of<ILootTableRepository>(),
             NullLogger<UseAbilityInCombatHubCommandHandler>.Instance);
 
     private static async Task<Character> SeedCharacterAsync(

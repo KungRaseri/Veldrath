@@ -114,6 +114,31 @@ public record UseAbilityInCombatHubResult
     /// already dropped and their next action is answered "Not in combat".
     /// </remarks>
     public IReadOnlyList<Guid> ReleasedCombatCharacterIds { get; init; } = [];
+
+    /// <summary>Gets the run whose room this kill cleared, or <see langword="null"/> when it cleared nothing.</summary>
+    public Guid? ClearedInstanceId { get; init; }
+
+    /// <summary>Gets the room slug that was cleared, or <see langword="null"/>.</summary>
+    public string? ClearedLocationSlug { get; init; }
+
+    /// <summary>Gets whether this kill is what cleared the room in this run.</summary>
+    public bool FirstClearOfRun { get; init; }
+
+    /// <summary>Gets whether this is the first time this character has ever cleared the room.</summary>
+    public bool FirstClearForCharacter { get; init; }
+
+    /// <summary>Gets the hidden locations this clear unlocked for the character.</summary>
+    public IReadOnlyList<string> UnlockedLocationSlugs { get; init; } = [];
+
+    /// <summary>
+    /// Gets what the defeated enemy dropped into the caster's bag. Empty when the archetype names no loot table or
+    /// nothing rolled, which is the normal case for most kills.
+    /// </summary>
+    /// <remarks>
+    /// An ability that lands the killing blow rolls the archetype's table exactly as a melee blow does — both go
+    /// through <see cref="CombatHelpers.RollLootAsync"/> — so a fireball kill is worth what a sword kill is worth.
+    /// </remarks>
+    public IReadOnlyList<CombatLootDrop> ItemsDropped { get; init; } = [];
 }
 
 /// <summary>
@@ -132,8 +157,10 @@ public class UseAbilityInCombatHubCommandHandler
     private readonly IPowerRepository _powerRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
+    private readonly Veldrath.Server.Features.Zones.IZoneInstanceService _instances;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<UseAbilityInCombatHubCommandHandler> _logger;
+    private readonly ILootTableRepository _lootTables;
     private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
@@ -144,7 +171,9 @@ public class UseAbilityInCombatHubCommandHandler
     /// <param name="powerRepo">Repository for resolving ability costs and effects from the content database.</param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
+    /// <param name="instances">Instance-run service, used to record a cleared room.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
+    /// <param name="lootTables">Loot-table catalog, rolled when the ability lands the killing blow.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public UseAbilityInCombatHubCommandHandler(
@@ -153,7 +182,9 @@ public class UseAbilityInCombatHubCommandHandler
         IPowerRepository powerRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
+        Veldrath.Server.Features.Zones.IZoneInstanceService instances,
         IOptions<DeathPenaltyOptions> penalty,
+        ILootTableRepository lootTables,
         ILogger<UseAbilityInCombatHubCommandHandler> logger,
         IRandomSource? randomSource = null)
     {
@@ -162,7 +193,9 @@ public class UseAbilityInCombatHubCommandHandler
         _powerRepo = powerRepo;
         _enemies = enemies;
         _sessions = sessions;
+        _instances = instances;
         _penalty = penalty;
+        _lootTables = lootTables;
         _logger = logger;
         _random = randomSource ?? SystemRandomSource.Shared;
     }
@@ -306,6 +339,14 @@ public class UseAbilityInCombatHubCommandHandler
                 released = distribution.ReleasedCharacterIds;
             }
 
+            // A kill is a kill whichever blow landed: roll the same table and record the same room clear a melee
+            // kill does, through the same helpers, so the two death paths cannot drift apart again.
+            var droppedItems = await CombatHelpers.RollLootAsync(
+                enemy, entity, _lootTables, _characterRepo, _random, cancellationToken, _logger);
+
+            var cleared = await CombatHelpers.ResolveRoomClearAsync(
+                enemy, request.CharacterId, _enemies, _instances, cancellationToken);
+
             return new UseAbilityInCombatHubResult
             {
                 Success = true,
@@ -323,6 +364,12 @@ public class UseAbilityInCombatHubCommandHandler
                 Progression = myReward?.Progression,
                 ParticipantIds = participants,
                 ReleasedCombatCharacterIds = released,
+                ClearedInstanceId = cleared?.InstanceId,
+                ClearedLocationSlug = cleared?.LocationSlug,
+                FirstClearOfRun = cleared?.FirstClearOfRun ?? false,
+                FirstClearForCharacter = cleared?.FirstClearForCharacter ?? false,
+                UnlockedLocationSlugs = cleared?.UnlockedLocationSlugs ?? [],
+                ItemsDropped = droppedItems,
             };
         }
 
