@@ -64,8 +64,10 @@ const NO_WEB_CALLER: Record<string, string> = {
 	GetActiveCharacters:
 		'Multi-client diagnostic; the roster is server-rendered, so the UI never needs the live list.',
 
-	// Deferred features: the hub bridge exists, the UI does not. See the plan file.
-	EnterDungeon: 'Deferred: dungeon UI does not exist yet.',
+	// Dungeons are entered on foot: the map graph moves the character into the dungeon zone, so the
+	// dedicated bridge is unused even though DungeonPanel ships. See plans/dungeons.md.
+	EnterDungeon:
+		'Dungeons are entered on foot through the map graph, so the client never calls EnterDungeon.',
 
 	// Navigation is fully covered by the map graph.
 	NavigateToLocation:

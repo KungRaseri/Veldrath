@@ -40,12 +40,13 @@ function subscriptions(): string[] {
 /**
  * Broadcasts with no subscriber, and why.
  *
- * The deferred entries belong to the features listed as deferred in
- * `plans/web-feature-parity-and-coverage.md`; the other three are deliberate client design.
+ * `DungeonEntered` is unused because the shipped dungeon panel reads the zone and the cleared
+ * locations the session already holds; the rest are deliberate client design.
  */
 const NO_SUBSCRIBER: Record<string, string> = {
-	// Deferred features: the server broadcasts, the UI that would consume it does not exist.
-	DungeonEntered: 'Deferred: dungeon UI does not exist yet.',
+	// The panel renders from the zone, map and cleared locations the session already applies.
+	DungeonEntered:
+		'DungeonPanel reads the zone and cleared locations, so the entry payload has nothing to render.',
 
 	// Deliberate: nothing for this client to render.
 	EnemyEngaged:
