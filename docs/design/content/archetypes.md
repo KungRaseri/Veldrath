@@ -512,16 +512,25 @@ two.
 
 ### The tail roster
 
-| slug | name | one-line identity | level band | faction tie | zones it belongs to | hostile? | combat role |
-|---|---|---|---|---|---|---|---|
-| `vent-stalker` | Vent Stalker | Long-legged and the colour of cooled crust; it crosses the vent field under the noise of a blow and is gone before the air clears. | 23–26 (`b23-26`) | none recorded (Cinderplain fauna) | `smoldering-reach` — `vent-fields` | yes | ambusher, melee |
-| `crust-crawler` | Crust Crawler | Dens under the floor of the pyreling den and surfaces where the heat has thinned the crust. | 23–26 (`b23-26`) | none recorded (Cinderplain fauna) | `smoldering-reach` — `vent-fields`, `pyreling-den` | yes | burrowing ambusher |
-| `ash-picker` | Ash Picker | Breaks the cooled flow and the battlefield ash for glass and iron, and treats a claim on either as a debt owed. | 23–26 (`b23-26`) | none recorded (independent vent-claimants — no organisation) | `ashfields` — `scorched-battlefield`; `smoldering-reach` — `vent-fields` | yes | melee, disengages |
-| `ash-eater` | Ash Eater | Works the chamber for what the fire leaves and has grown too heavy to leave with it. | 26–30 (spans `b23-26` and `b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `fire-ancients-chamber` | yes | bruiser |
-| `maw-serpent` | Maw Serpent | Lies in the seam under the Maw's last floor, where the heat comes up, and does not need to move until something else does. | 28–30 (`b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `kaldreks-heart` (The Heart of the Maw) | yes | melee, reach |
+| slug | name | one-line identity | level band | faction tie | zones it belongs to | hostile? | combat role | class |
+|---|---|---|---|---|---|---|---|---|
+| `vent-stalker` | Vent Stalker | Long-legged and the colour of cooled crust; it crosses the vent field under the noise of a blow and is gone before the air clears. | 23–26 (`b23-26`) | none recorded (Cinderplain fauna) | `smoldering-reach` — `vent-fields` | yes | ambusher, melee | beast |
+| `crust-crawler` | Crust Crawler | Dens under the floor of the pyreling den and surfaces where the heat has thinned the crust. | 23–26 (`b23-26`) | none recorded (Cinderplain fauna) | `smoldering-reach` — `vent-fields`, `pyreling-den` | yes | burrowing ambusher | beast |
+| `ash-picker` | Ash Picker | Breaks the cooled flow and the battlefield ash for glass and iron, and treats a claim on either as a debt owed. | 23–26 (`b23-26`) | none recorded (independent vent-claimants — no organisation) | `ashfields` — `scorched-battlefield`; `smoldering-reach` — `vent-fields` | yes | melee, disengages | humanoid |
+| `ash-eater` | Ash Eater | Works the chamber for what the fire leaves and has grown too heavy to leave with it. | 26–30 (spans `b23-26` and `b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `fire-ancients-chamber` | yes | bruiser | spirit |
+| `maw-serpent` | Maw Serpent | Lies in the seam under the Maw's last floor, where the heat comes up, and does not need to move until something else does. | 28–30 (`b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `kaldreks-heart` (The Heart of the Maw) | yes | melee, reach | beast |
 
 No row is a boss. No row carries a stat number. Roster totals including the tail: **32 hostile, 17
 non-hostile** (49 rows) — the totals table above is left as approved for 1–20 and is not rewritten.
+
+**The ninth column is the silhouette class, appended 2026-11-25** on Josh's decision (card
+`t_21bf1ee4`), recorded as decision 6 under [`## Tail decisions`](#tail-decisions): three `beast`
+rows, one `humanoid`, one `spirit`. It is what [`archetype-visuals.md`](archetype-visuals.md) §2 R1
+draws proportion and facing from and §2 R2 draws the outline break from, and §4.1c there repeats the
+five with the reason for each. **`ash-eater` is `spirit`, not `beast`, and is not to be corrected
+back to one:** a fire-touched thing that has grown too heavy to leave the chamber is drawn as one
+non-limbed mass — no neck, no narrow waist, no feet — with R2's single break a column, plume or
+funnel in the 70°–110° sector.
 
 ### Band coverage — tail only
 
@@ -667,7 +676,8 @@ Run against the seeder and this document, not by eye: every new slug against
 `^[a-z0-9]+(-[a-z0-9]+)*$` and against `ArchetypeSeeder.cs` for collision (five fresh, zero
 collisions); every zone and location slug named here against `ZoneLocationsSeeder.cs` with its
 seeded level range; every row's range against every location's range using the seeder's own overlap
-rule; the tail table against a no-stat-digits and eight-column check; `kaldreks-heart` resolved to two
+rule; the tail table against a no-stat-digits check and its column count as it stood then (eight
+columns at the D6 landing; nine since decision 6's `class` column); `kaldreks-heart` resolved to two
 non-boss entries; and `git diff` confirming the change is an append with zero lines removed above it.
 The markdown link check runs over the whole file. Results are quoted on card `t_98def8d8`.
 
@@ -712,3 +722,13 @@ section above; where the two disagree, this block governs.
    reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md` §3, the
    `kaldrek-maw` / `fire-ancients-chamber` row), corrected in `a857dcf0` (C4). The obligation this
    decision carried is discharged.
+6. **The five rows carry a silhouette class, decided 2026-11-25 by Josh (card `t_21bf1ee4`).** The
+   *tail roster* gains a ninth column, `class`, after `combat role`; the eight columns decision 1
+   approved are unchanged and in order. `vent-stalker` and `crust-crawler` and `maw-serpent` are
+   **beast**; `ash-picker` is **humanoid**; `ash-eater` is **spirit**. The classes are drawn from
+   `archetype-visuals.md` §2 R1's five, and §4.1c there repeats each with its reason. **`ash-eater`
+   is `spirit` deliberately, and the earlier reading of it as `beast` is superseded:** it has grown
+   too heavy to leave the chamber, so it is drawn as one non-limbed mass — no neck, no narrow waist,
+   no feet — taking R2's spirit break, a column, plume or funnel in the 70°–110° sector. A later
+   `beast` read is a redraw of the row, not a correction of it. **No portrait is requested here**:
+   which request the five join is a §5 request decision in `archetype-visuals.md`.
