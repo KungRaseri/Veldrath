@@ -744,8 +744,13 @@ public class GameHubTests : IDisposable
     }
 
     // Progression is server-side: the hub must not expose a method that lets a client award itself experience,
-    // gold or skill experience, nor one that lets it apply its own damage. All four are dispatch-only commands
-    // now (quest rewards, loot/chest and dialogue gold, crafting skill experience, combat handlers).
+    // gold or skill experience, nor one that lets it apply its own damage. Experience and skill experience are
+    // awarded by server-side commands and handlers. Gold is awarded through AddGoldHubCommand (quest turn-in,
+    // chest loot, dialogue), but that handler is not the key's only writer: shop trades (Buy/SellItemHubCommand),
+    // rest costs (RestAtLocationHubCommand), combat loot and the death penalty (CombatHelpers), character creation
+    // (CharacterEndpoints, CharacterCreationSessionEndpoints) and GM /setgold all write the attributes blob
+    // directly. None is a gold-award method a client can call: /setgold is a chat command in
+    // HandleChatCommandAsync behind Permissions.GiveItems, and the rest never touch the hub.
     [Fact]
     public void GameHub_Does_Not_Expose_ClientCallableProgression_Or_Damage_Methods()
     {
@@ -759,7 +764,7 @@ public class GameHubTests : IDisposable
 
         hubMethods.Should().NotContain("GainExperience", "experience is awarded by server-side commands only");
         hubMethods.Should().NotContain("TakeDamage", "damage is applied by the combat handlers only");
-        hubMethods.Should().NotContain("AddGold", "gold is awarded by the quest, chest and dialogue commands only");
+        hubMethods.Should().NotContain("AddGold", "gold awards reach the hub through server-side commands, not a client-callable method");
         hubMethods.Should().NotContain("AwardSkillXp", "skill experience is awarded by the crafting command only");
     }
 
