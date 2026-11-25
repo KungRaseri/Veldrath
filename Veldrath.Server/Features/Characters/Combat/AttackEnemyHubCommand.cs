@@ -36,7 +36,8 @@ public record AttackEnemyHubResult
     /// <summary>Gets the remaining HP of the enemy after the player's attack.</summary>
     public int EnemyRemainingHealth { get; init; }
 
-    /// <summary>Gets whether the enemy was defeated this turn.</summary>
+    /// <summary>Gets whether this turn left the enemy dead. On a shared fight another caller's blow may be the one
+    /// that killed it; either way this caller's fight is over.</summary>
     public bool EnemyDefeated { get; init; }
 
     /// <summary>Gets the defeated enemy's display name, used to advance kill objectives.</summary>
@@ -79,15 +80,19 @@ public record AttackEnemyHubResult
     public string? EnemyArchetypeSlug { get; init; }
 
     /// <summary>
-    /// Gets every character credited with the kill, including party members who joined the fight but never landed a hit.
-    /// Only populated when <see cref="EnemyDefeated"/> is <see langword="true"/>.
+    /// Gets every character credited with the kill, including party members who joined the fight but never landed a
+    /// hit. Empty unless this caller won the death transition.
     /// </summary>
+    /// <remarks>
+    /// One kill credits its participants once. The set is read by the store's death transition, so only the caller
+    /// that won it reports ids; a caller whose stale copy also saw the enemy die reports none, because the winner
+    /// already credited everyone.
+    /// </remarks>
     public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
 
     /// <summary>
     /// Gets every character whose combat session this kill released — the killer and anyone else engaged with the
-    /// same enemy, including a defender who never landed a hit. Empty unless <see cref="EnemyDefeated"/> is
-    /// <see langword="true"/>.
+    /// same enemy, including a defender who never landed a hit. Empty unless this caller won the death transition.
     /// </summary>
     /// <remarks>
     /// The enemy row is shared, so killing it ends every fight pointed at it, not only this one. The hub sends
@@ -266,26 +271,17 @@ public class AttackEnemyHubCommandHandler
         // --- Enemy defeated ---
         if (!enemy.IsAlive)
         {
-            CombatRewardShare? myReward = null;
-            IReadOnlyList<Guid> released = [];
-            IReadOnlyList<Guid> participants;
-            lock (enemy.SyncRoot)
-            {
-                participants = enemy.Participants.ToList();
-            }
-
-            // Only the caller that wins the death transition distributes rewards.
-            if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
-            {
-                var distribution = await CombatHelpers.DistributeRewardsAsync(
-                    enemy, _characterRepo, _classRepo, _sessions, cancellationToken, _logger);
-                myReward = distribution.Rewards.FirstOrDefault(r => r.CharacterId == request.CharacterId);
-                released = distribution.ReleasedCharacterIds;
-            }
+            // One kill, settled once: the caller that wins the death transition takes the credit, the rewards, the
+            // loot and the room clear. A caller holding a stale copy (this enemy row is shared, and each read
+            // materialises its own view) still ends its own fight, but must not credit the same kill again — that
+            // advanced every participant's kill objective twice and dropped a second copy of the loot.
+            var settlement = await CombatHelpers.SettleKillAsync(
+                enemy, entity, request.CharacterId, _enemies, _characterRepo, _classRepo, _sessions,
+                _lootTables, _instances, _random, cancellationToken, _logger);
 
             _logger.LogInformation(
                 "Enemy {EnemyName} defeated by {CharacterIdPrefix} with {ParticipantCount} participant(s)",
-                enemy.Name, request.CharacterId.ToString()[..8], participants.Count);
+                enemy.Name, request.CharacterId.ToString()[..8], settlement.ParticipantIds.Count);
 
             // Rewards were written straight to the character row, so re-read before writing the cooldowns back:
             // saving the pre-reward attribute blob here would silently undo the gold that was just awarded.
@@ -298,16 +294,6 @@ public class AttackEnemyHubCommandHandler
                 await _characterRepo.UpdateAsync(rewarded, cancellationToken);
             }
 
-            // The kill is the only moment the archetype's loot table means anything: it is wired in the seed, but
-            // until this ran nothing ever rolled it. Shared with the ability death path so the two cannot drift.
-            var droppedItems = await CombatHelpers.RollLootAsync(
-                enemy, entity, _lootTables, _characterRepo, _random, cancellationToken, _logger);
-
-            // Clearing the floor is a location fact, not a combat fact: the helper asks the store how many are
-            // still standing rather than trusting this one death.
-            var cleared = await CombatHelpers.ResolveRoomClearAsync(
-                enemy, request.CharacterId, _enemies, _instances, cancellationToken);
-
             return new AttackEnemyHubResult
             {
                 Success = true,
@@ -316,18 +302,18 @@ public class AttackEnemyHubCommandHandler
                 EnemyDefeated = true,
                 EnemyName = enemy.Name,
                 EnemyArchetypeSlug = enemy.ArchetypeSlug,
-                ParticipantIds = participants,
-                ReleasedCombatCharacterIds = released,
+                ParticipantIds = settlement.ParticipantIds,
+                ReleasedCombatCharacterIds = settlement.ReleasedCombatCharacterIds,
                 PlayerRemainingHealth = player.Health,
-                XpEarned = myReward?.Xp ?? 0,
-                GoldEarned = myReward?.Gold ?? 0,
-                Progression = myReward?.Progression,
-                ClearedInstanceId = cleared?.InstanceId,
-                ClearedLocationSlug = cleared?.LocationSlug,
-                FirstClearOfRun = cleared?.FirstClearOfRun ?? false,
-                FirstClearForCharacter = cleared?.FirstClearForCharacter ?? false,
-                UnlockedLocationSlugs = cleared?.UnlockedLocationSlugs ?? [],
-                ItemsDropped = droppedItems,
+                XpEarned = settlement.Reward?.Xp ?? 0,
+                GoldEarned = settlement.Reward?.Gold ?? 0,
+                Progression = settlement.Reward?.Progression,
+                ClearedInstanceId = settlement.Clear?.InstanceId,
+                ClearedLocationSlug = settlement.Clear?.LocationSlug,
+                FirstClearOfRun = settlement.Clear?.FirstClearOfRun ?? false,
+                FirstClearForCharacter = settlement.Clear?.FirstClearForCharacter ?? false,
+                UnlockedLocationSlugs = settlement.Clear?.UnlockedLocationSlugs ?? [],
+                ItemsDropped = settlement.ItemsDropped,
             };
         }
 

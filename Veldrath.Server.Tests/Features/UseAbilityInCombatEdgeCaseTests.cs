@@ -212,7 +212,7 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         SetSession(character.Id, enemy.Id);
         // A racing request already claimed the death transition for this enemy.
         (await _enemies.TryMarkDeadAsync(enemy.Id, CancellationToken.None))
-            .Should().BeTrue("arranging the lost-transition precondition");
+            .Should().NotBeNull("arranging the lost-transition precondition");
 
         var result = await MakeHandler(db).Handle(
             new UseAbilityInCombatHubCommand(character.Id, "fireball"), CancellationToken.None);

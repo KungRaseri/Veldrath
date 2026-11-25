@@ -221,6 +221,48 @@ internal static class CombatHelpers
             cleared.UnlockedLocationSlugs);
     }
 
+    // Settles a death exactly once, whichever blow landed it. The caller that wins the store's death transition is
+    // the one that takes everything the death produces: the credited participants, the rewards, the loot and the
+    // room clear. Every other caller that walked into the same dead enemy still reports the death to its own client
+    // (its fight is over) but takes none of it — a second credit would advance every participant's kill objective
+    // twice for one kill, and a second loot roll would hand out a second drop.
+    //
+    // The participant set comes from the transition itself rather than from the caller's SpawnedEnemy copy: the EF
+    // store materialises a fresh view per read, so the copy can be older than the kill. Reading it at the
+    // transition credits a participant whose turn committed while the winner was still loading, which the winner's
+    // own snapshot would have missed.
+    //
+    // Lives here so the ability and melee death paths cannot disagree about any of that again.
+    internal static async Task<CombatKillSettlement> SettleKillAsync(
+        SpawnedEnemy enemy,
+        ServerCharacter entity,
+        Guid characterId,
+        IEnemyInstanceStore enemies,
+        ICharacterRepository characters,
+        ICharacterClassRepository classes,
+        ICombatSessionStore sessions,
+        ILootTableRepository lootTables,
+        IZoneInstanceService instances,
+        IRandomSource random,
+        CancellationToken ct,
+        ILogger? logger = null)
+    {
+        var credited = await enemies.TryMarkDeadAsync(enemy.Id, ct);
+        if (credited is null)
+        {
+            return CombatKillSettlement.Uncredited;
+        }
+
+        var distribution = await DistributeRewardsAsync(enemy, characters, classes, sessions, ct, logger);
+
+        return new CombatKillSettlement(
+            credited,
+            distribution.Rewards.FirstOrDefault(share => share.CharacterId == characterId),
+            distribution.ReleasedCharacterIds,
+            await RollLootAsync(enemy, entity, lootTables, characters, random, ct, logger),
+            await ResolveRoomClearAsync(enemy, characterId, enemies, instances, ct));
+    }
+
     // Splits the enemy's XP and gold across its contributors, awards each share and releases their combat
     // sessions. The shares always add up to the enemy's configured rewards — see CombatRewards.Split.
     // Returns one CombatRewardShare per credited participant, carrying what the award left them at, plus the ids
@@ -441,3 +483,27 @@ internal sealed record CombatRoomClear(
     bool FirstClearOfRun,
     bool FirstClearForCharacter,
     IReadOnlyList<string> UnlockedLocationSlugs);
+
+/// <summary>
+/// What the caller that won an enemy's death transition took from the kill: the participants it credits, its own
+/// share of the rewards, the sessions the kill released, the loot it rolled and the room clear it recorded.
+/// </summary>
+/// <remarks>
+/// One kill is settled once. A caller that loses the transition gets <see cref="Uncredited"/> — the death still
+/// travels on its result (its own fight is over), but it credits nobody, rolls nothing and clears nothing.
+/// </remarks>
+/// <param name="ParticipantIds">Characters the kill credits; empty when this caller lost the transition.</param>
+/// <param name="Reward">This caller's share of the kill, or <see langword="null"/> when it earned none.</param>
+/// <param name="ReleasedCombatCharacterIds">Characters whose combat session the kill removed.</param>
+/// <param name="ItemsDropped">Loot rolled into the caller's bag.</param>
+/// <param name="Clear">The room clear this kill recorded, or <see langword="null"/> when it cleared nothing.</param>
+internal sealed record CombatKillSettlement(
+    IReadOnlyList<Guid> ParticipantIds,
+    CombatRewardShare? Reward,
+    IReadOnlyList<Guid> ReleasedCombatCharacterIds,
+    IReadOnlyList<CombatLootDrop> ItemsDropped,
+    CombatRoomClear? Clear)
+{
+    /// <summary>The settlement of a caller that lost the death transition to another caller.</summary>
+    public static CombatKillSettlement Uncredited { get; } = new([], null, [], [], null);
+}
