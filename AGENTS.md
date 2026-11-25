@@ -355,15 +355,20 @@ When you discover something new about the codebase that future sessions should k
 `.github/agent-memory/work-items/<yyyy-mm-dd>-<card>-<slug>.md` and write only that file; front matter is
 `kind: work-item`, `date`, `area`, `card`, `pr`, `title`. `area` is one of `content`, `engine`, `web`,
 `map`, `auth` or `infra`; `card` (`t_xxxxxxxx`) and `pr` are optional; the date in the file name and in
-`date:` agree, or both say `undated`. Never edit another work item's file, and never
-edit [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) — it is generated
-from `scripts/memory/veldrath-memory.template.md` and CI fails a hand edit to it. Adding a note touches
-**one new path and nothing else**: nothing is regenerated, so CI checks the note's front matter instead
-(`node scripts/memory/memory-index.mjs --check`, which names the file and the field when it fails).
+`date:` agree, or both say `undated`.
+
+**Never edit another work item's note.** Record a correction in the correcting card's own note,
+link to the original, and update the relevant stable reference if the correction changes a long-lived fact.
+
+Never hand-edit [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) —
+`node scripts/memory/memory-index.mjs` generates it from `scripts/memory/veldrath-memory.template.md`,
+and CI checks the result. Adding a note touches **one new path and nothing else**: nothing is regenerated,
+so CI checks the note's front matter instead (`node scripts/memory/memory-index.mjs --check`, which names
+the file and the field when it fails).
 
 **Stable reference keeps its file.** The other seven are edited in place; a topic that outgrows a session
 log becomes `.github/agent-memory/areas/<topic>.md`. Create a new reference file only when none of them
-fits.
+fits. A stable reference update alone does not require a work-item note.
 
 One file per work item is what keeps two cards from colliding: a new path cannot conflict, and adding a
 note regenerates nothing, so two branches that each add one merge without a conflict at all.
