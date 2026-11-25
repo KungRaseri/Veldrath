@@ -1048,6 +1048,7 @@ public class GameHubPartyCombatTests : IDisposable
             EnemyDefeated = true,
             EnemyName = "Goblin Scout",
             EnemyArchetypeSlug = "goblin-scout",
+            ParticipantIds = [characterId],
         });
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
 
@@ -1086,6 +1087,7 @@ public class GameHubPartyCombatTests : IDisposable
             EnemyDefeated = true,
             EnemyName = "Cinderling",
             EnemyArchetypeSlug = "cinderling",
+            ParticipantIds = [characterId],
         });
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
 
@@ -1099,6 +1101,54 @@ public class GameHubPartyCombatTests : IDisposable
             .Select(c => (c.CharacterId, c.Kind, c.Key))
             .ToList();
         advances.Should().BeEquivalentTo([(characterId, "kill", "cinderling")]);
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_A_Shared_Kill_Advances_The_Kill_Objective_For_Every_Participant()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var caster = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var allyAccount = await HubHarness.SeedAccountAsync(db);
+        var ally = await HubHarness.SeedCharacterAsync(db, allyAccount.Id);
+        await HubHarness.SeedSessionAsync(db, ally, "conn-ally");
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(caster.Id);
+
+        // The ally damaged the enemy but the caster landed the killing ability: the kill is one fight, so both are
+        // credited — the same credited set a melee kill passes. Crediting only the caster would leave the ally owed
+        // a kill objective the identical melee blow would have advanced.
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyDefeated = true,
+            EnemyName = "Goblin Scout",
+            EnemyArchetypeSlug = "goblin-scout",
+            ParticipantIds = [caster.Id, ally.Id],
+            ReleasedCombatCharacterIds = [caster.Id, ally.Id],
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1 });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        clients.OthersInGroupNamed("zone:crestfall").SentMessages.Should()
+            .ContainSingle(m => m.Method == "EnemyDefeated");
+
+        var advances = mediator.Invocations.Select(i => i.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(c => (c.CharacterId, c.Kind, c.Key))
+            .ToList();
+
+        // Once per participant per key: each fighter gets the slug and the legacy display name, and neither twice.
+        advances.Should().HaveCount(4);
+        advances.Should().BeEquivalentTo([
+            (caster.Id, "kill", "goblin-scout"),
+            (caster.Id, "kill", "Goblin Scout"),
+            (ally.Id, "kill", "goblin-scout"),
+            (ally.Id, "kill", "Goblin Scout"),
+        ]);
     }
 
     [Fact]

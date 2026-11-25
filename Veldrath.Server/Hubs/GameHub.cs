@@ -2566,9 +2566,10 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Advances the kill objective for each character the caller credits with a kill. Melee credits every
-    /// participant of a shared fight; an ability kill credits the caster only. Both the archetype slug and the
-    /// display name are advanced: content objectives are authored with slugs, while older journals may hold names.
+    /// Advances the kill objective for each character the caller credits with a kill. Both a melee blow and an
+    /// ability blow credit every participant of a shared fight, not only the one that landed the killing blow, and
+    /// both the archetype slug and the display name are advanced: content objectives are authored with slugs, while
+    /// older journals may hold names.
     /// </summary>
     /// <param name="enemyArchetypeSlug">The defeated enemy's archetype slug, or <see langword="null"/> when unknown.</param>
     /// <param name="enemyName">The defeated enemy's display name, or <see langword="null"/> when unknown.</param>
@@ -3160,12 +3161,13 @@ public class GameHub : Hub
                 // Same as a melee kill: the ability's killing blow ended every fight pointed at this enemy.
                 await EndReleasedFightsAsync(result.ReleasedCombatCharacterIds, characterId);
 
-                // An ability kill is a kill: it advances the same slug-plus-legacy keys a melee kill does, so
-                // content authored against kill:<archetype-slug> progresses whichever blow landed.
+                // An ability kill is a kill: it advances the same slug-plus-legacy keys a melee kill does, for the
+                // same credited participants, so content authored against kill:<archetype-slug> progresses whichever
+                // blow landed and whoever of the shared fight landed it.
                 await AdvanceKillObjectivesAsync(
                     result.EnemyArchetypeSlug,
                     result.EnemyName,
-                    [characterId],
+                    result.ParticipantIds,
                     characterId);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))

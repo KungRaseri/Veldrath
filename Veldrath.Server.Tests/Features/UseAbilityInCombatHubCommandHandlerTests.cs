@@ -171,4 +171,34 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
         _sessions.IsInCombat(caster.Id).Should().BeFalse();
         _sessions.IsInCombat(defender.Id).Should().BeFalse();
     }
+
+    [Fact]
+    public async Task Handle_Reports_Every_Participant_Credited_With_The_Kill()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var caster = await SeedCharacterAsync(db, """{"CurrentMana":50,"MaxMana":50}""");
+        var ally = await SeedCharacterAsync(db, """{"CurrentHealth":30,"MaxHealth":100}""");
+        var bystander = await SeedCharacterAsync(db, """{"CurrentHealth":30,"MaxHealth":100}""");
+
+        var (zg, loc, enemy) = AddEnemy(hp: 1);
+        // A party member joins the fight as a participant when the leader engages, with no session of its own. This
+        // one has damaged the enemy; it is the caster's ability that lands the killing blow.
+        enemy.Participants.Add(ally.Id);
+        enemy.DamageContributions[ally.Id] = 12;
+        SetSession(caster.Id, zg, loc, enemy.Id);
+        // The bystander has a fight pointed at the same enemy but never engaged it: releasing their session is a
+        // panel-closing fact, not a kill credit.
+        SetSession(bystander.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(
+            new UseAbilityInCombatHubCommand(caster.Id, "fireball"),
+            CancellationToken.None);
+
+        result.EnemyDefeated.Should().BeTrue();
+        // The credited set is the enemy's participant set — the same set a melee kill credits — so the ally is owed
+        // the kill objective even though the caster landed the blow.
+        result.ParticipantIds.Should().BeEquivalentTo([caster.Id, ally.Id]);
+        // The released set is wider by design and must stay its own answer: it carries a session-only defender.
+        result.ReleasedCombatCharacterIds.Should().BeEquivalentTo([caster.Id, bystander.Id]);
+    }
 }
