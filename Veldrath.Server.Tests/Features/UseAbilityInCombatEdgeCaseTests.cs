@@ -57,11 +57,12 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         return character;
     }
 
-    private SpawnedEnemy AddEnemy(int hp, int baseXp = 0, int goldReward = 0)
+    private SpawnedEnemy AddEnemy(int hp, int baseXp = 0, int goldReward = 0, string archetypeSlug = "golem")
     {
         var enemy = new SpawnedEnemy
         {
             Name = "Golem",
+            ArchetypeSlug = archetypeSlug,
             Level = 1,
             CurrentHealth = hp,
             MaxHealth = Math.Max(1, hp),
@@ -173,6 +174,7 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         result.AbilityDamage.Should().BeGreaterThan(0);
         result.EnemyRemainingHealth.Should().Be(0);
         result.EnemyName.Should().Be("Golem");
+        result.EnemyArchetypeSlug.Should().Be("golem", "the hub advances the kill objective by archetype slug, not just the display name");
         result.EnemyDamage.Should().Be(0, "a defeated enemy does not counter-attack");
         result.XpEarned.Should().Be(40, "a single contributor receives the enemy's whole XP pool");
         result.GoldEarned.Should().Be(25, "a single contributor receives the enemy's whole gold pool");

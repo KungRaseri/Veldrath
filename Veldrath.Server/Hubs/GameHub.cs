@@ -2566,17 +2566,23 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Advances the kill objective for every character credited with a kill — not only the one that landed the
-    /// killing blow — because a shared enemy is one fight. Both the archetype slug and the display name are
-    /// advanced: content objectives are authored with slugs, while older journals may hold names.
+    /// Advances the kill objective for each character the caller credits with a kill. Melee credits every
+    /// participant of a shared fight; an ability kill credits the caster only. Both the archetype slug and the
+    /// display name are advanced: content objectives are authored with slugs, while older journals may hold names.
     /// </summary>
-    /// <param name="result">The victory result carrying the participants and the enemy identity.</param>
+    /// <param name="enemyArchetypeSlug">The defeated enemy's archetype slug, or <see langword="null"/> when unknown.</param>
+    /// <param name="enemyName">The defeated enemy's display name, or <see langword="null"/> when unknown.</param>
+    /// <param name="participantIds">Characters the caller credits with the kill.</param>
     /// <param name="killerId">Character whose connection definitely exists (the caller).</param>
-    private async Task AdvanceKillObjectivesAsync(AttackEnemyHubResult result, Guid killerId)
+    private async Task AdvanceKillObjectivesAsync(
+        string? enemyArchetypeSlug,
+        string? enemyName,
+        IEnumerable<Guid> participantIds,
+        Guid killerId)
     {
-        string?[] keys = [result.EnemyArchetypeSlug, result.EnemyName];
+        string?[] keys = [enemyArchetypeSlug, enemyName];
 
-        foreach (var participantId in result.ParticipantIds.Distinct())
+        foreach (var participantId in participantIds.Distinct())
         {
             string? connectionId = Context.ConnectionId;
             if (participantId != killerId)
@@ -2585,10 +2591,14 @@ public class GameHub : Hub
                 connectionId = session?.ConnectionId;
             }
 
-            foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key)).Distinct())
+            // The journal matches keys OrdinalIgnoreCase, so the slug and the display name collapse when they
+            // differ only by case (cinderling/Cinderling): dedupe the same way or one kill advances the
+            // objective twice.
+            foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key))
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 // A legacy journal naming the display name keeps progressing; say so once per kill at Debug level.
-                if (!string.Equals(key, result.EnemyArchetypeSlug, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(key, enemyArchetypeSlug, StringComparison.OrdinalIgnoreCase))
                     _logger.LogDebug(
                         "Advancing a legacy display-name kill objective '{Key}' for character {CharacterId}; content should use the archetype slug",
                         key, participantId);
@@ -2941,7 +2951,11 @@ public class GameHub : Hub
                 // connection is about to hear about it from its own turn.
                 await EndReleasedFightsAsync(result.ReleasedCombatCharacterIds, characterId);
 
-                await AdvanceKillObjectivesAsync(result, characterId);
+                await AdvanceKillObjectivesAsync(
+                    result.EnemyArchetypeSlug,
+                    result.EnemyName,
+                    result.ParticipantIds,
+                    characterId);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
                 {
@@ -3146,7 +3160,13 @@ public class GameHub : Hub
                 // Same as a melee kill: the ability's killing blow ended every fight pointed at this enemy.
                 await EndReleasedFightsAsync(result.ReleasedCombatCharacterIds, characterId);
 
-                await AdvanceQuestObjectivesAsync(characterId, "kill", result.EnemyName);
+                // An ability kill is a kill: it advances the same slug-plus-legacy keys a melee kill does, so
+                // content authored against kill:<archetype-slug> progresses whichever blow landed.
+                await AdvanceKillObjectivesAsync(
+                    result.EnemyArchetypeSlug,
+                    result.EnemyName,
+                    [characterId],
+                    characterId);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
                 {

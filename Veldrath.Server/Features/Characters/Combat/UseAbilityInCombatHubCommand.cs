@@ -51,8 +51,11 @@ public record UseAbilityInCombatHubResult
     /// <summary>Gets whether the enemy was defeated by this ability.</summary>
     public bool EnemyDefeated { get; init; }
 
-    /// <summary>Gets the enemy's display name, used to advance kill objectives.</summary>
+    /// <summary>Gets the enemy's display name, used to advance legacy kill objectives.</summary>
     public string? EnemyName { get; init; }
+
+    /// <summary>Gets the archetype slug of the defeated enemy, used to advance kill objectives by slug.</summary>
+    public string? EnemyArchetypeSlug { get; init; }
 
     /// <summary>Gets the damage dealt by the enemy counter-attack (zero if enemy was defeated).</summary>
     public int EnemyDamage { get; init; }
@@ -290,6 +293,7 @@ public class UseAbilityInCombatHubCommandHandler
                 EnemyRemainingHealth = 0,
                 EnemyDefeated = true,
                 EnemyName = enemy.Name,
+                EnemyArchetypeSlug = enemy.ArchetypeSlug,
                 PlayerRemainingHealth = player.Health,
                 XpEarned = myReward?.Xp ?? 0,
                 GoldEarned = myReward?.Gold ?? 0,
