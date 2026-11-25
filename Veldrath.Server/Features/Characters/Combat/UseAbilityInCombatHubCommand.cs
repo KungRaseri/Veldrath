@@ -91,6 +91,19 @@ public record UseAbilityInCombatHubResult
     public CombatProgression? Progression { get; init; }
 
     /// <summary>
+    /// Gets every character credited with the kill — the caster and every other participant of the shared fight,
+    /// including a party member who joined it but never landed a hit. Empty unless <see cref="EnemyDefeated"/>
+    /// is <see langword="true"/>.
+    /// </summary>
+    /// <remarks>
+    /// This is the credited-participant set, not the released-session set (<see cref="ReleasedCombatCharacterIds"/>),
+    /// which also holds a defender who has a fight pointed at the enemy but never engaged it. The hub advances the
+    /// kill objective once per id here, so a shared kill credits the same characters an ability or a melee blow
+    /// landed. A participant who never acted earns no XP or gold — only the progress.
+    /// </remarks>
+    public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
+
+    /// <summary>
     /// Gets every character whose combat session this kill released — the caster and anyone else engaged with the
     /// same enemy, including a defender who never landed a hit. Empty unless <see cref="EnemyDefeated"/> is
     /// <see langword="true"/>.
@@ -274,6 +287,16 @@ public class UseAbilityInCombatHubCommandHandler
             CombatRewardShare? myReward = null;
             IReadOnlyList<Guid> released = [];
 
+            // The credited set is the enemy's participant set, the same one a melee kill credits: this enemy row is
+            // shared, so a party member who engaged it is owed the kill progress even when another's blow landed.
+            // Read under the enemy lock and before the death transition, so a concurrent kill cannot change what
+            // this turn credits and a caller that loses the reward race still credits its participants.
+            IReadOnlyList<Guid> participants;
+            lock (enemy.SyncRoot)
+            {
+                participants = enemy.Participants.ToList();
+            }
+
             // Only the caller that wins the death transition distributes rewards.
             if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
             {
@@ -298,6 +321,7 @@ public class UseAbilityInCombatHubCommandHandler
                 XpEarned = myReward?.Xp ?? 0,
                 GoldEarned = myReward?.Gold ?? 0,
                 Progression = myReward?.Progression,
+                ParticipantIds = participants,
                 ReleasedCombatCharacterIds = released,
             };
         }
