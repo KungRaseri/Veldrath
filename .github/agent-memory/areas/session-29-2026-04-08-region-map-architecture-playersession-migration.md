@@ -41,15 +41,20 @@ on entry, `LeftAt` set on leave), the run's chests and floor loot are scoped by 
 `GroundItemHubCommands`), `LeaveCurrentZoneAsync` reads it to close the character's participation, and admin counts
 occupants by it. Enemy rows carry the pointer so a run's roster cascades away when it is purged, but the roster
 itself is read by zone group and location slug (`EfCoreEnemyInstanceStore.LoadLocationAsync`). A reconnect does
-**not** carry it, in two steps: `onreconnected` calls `restoreSession()`, which calls `SelectCharacter`, and that
-removes the stale session and inserts a fresh one with `ZoneId = null` and no run pointer at
-`ResolveResumeNodeId`; the `CharacterSelected` reply then carries `Character.CurrentZoneId`, and the shell answers
-it with `if (payload.currentZoneId) await this.enterZone(...)` (`session.svelte.ts:1404`). `GameHub.EnterZone`
-replaces that session with one carrying `ZoneId` set, the saved location node and still no run pointer, so a
-character who dropped inside a zone comes back inside that zone in its shared scope; only one who stood on the
-region map stays there. Two doc comments still promise otherwise — the `ZoneInstanceId` summary in
-`PlayerSession.cs` and the summary above `ApplyArrivalGroupAsync` — and the bodies do not. `ZoneSession` exists
-nowhere.
+**not** read it back: the session row is deleted on disconnect (`LeaveCurrentZoneAsync` removes it and closes
+participation), so the pointer leaves with the connection. It is re-derived instead. `onreconnected` calls
+`restoreSession()` → `SelectCharacter`, the `CharacterSelected` reply carries `Character.CurrentZoneId`, and the
+shell answers it with `if (payload.currentZoneId) await this.enterZone(...)` (`session.svelte.ts:1404`). `GameHub.EnterZone`
+resumes the character at their saved location node and, when that node is an instanced location, asks
+`IZoneInstanceService.FindResumableAsync(zoneId, locationSlug, characterId)` for the run they belong in. That lookup
+never opens one: it returns the party's open run (a solo player's run, keyed by the character) and only for an
+instanced location in its own zone, so standing in a dungeon's lobby and coming back is not a resume. A found run is
+re-entered with `JoinAsync` (which clears the participant's `LeftAt`), becomes the new session's `ZoneInstanceId`
+and `Context.Items["CurrentZoneInstanceId"]`, and its `ZoneGroup` replaces the shared group; the `ZoneEntered`
+occupant list is then the run's sessions (`GetByZoneInstanceAsync`), not the whole zone's. A run that has emptied is
+`ZoneInstanceState.Empty` and is deliberately not returned, so the character resumes in the shared zone instead of a
+group nothing else will join. Cleared rooms stay cleared, because resuming is the same run: `GetClearedLocationsAsync`
+still answers for it, and only a fresh run resets the attempt. `ZoneSession` exists nowhere.
 
 ### IPlayerSessionRepository (in `IZoneRepository.cs`)
 Replaces `IZoneSessionRepository`. Same core methods plus new:
@@ -58,15 +63,17 @@ Replaces `IZoneSessionRepository`. Same core methods plus new:
 - `UpdatePositionAsync(Guid characterId, int tileX, int tileY)` — update tile coords only — **removed 2026-10-22**
 - `SetZoneAsync(Guid characterId, string? zoneId)` — enter/exit zone (null = back to region map) — **removed 2026-10-22**
 
-**The interface today**: `GetByZoneIdAsync`, `GetByRegionIdAsync`, `GetOnRegionMapAsync`, `GetByConnectionIdAsync`,
-`GetByCharacterIdAsync`, `GetByCharacterNameAsync`, `AddAsync`, `RemoveAsync`, `RemoveByConnectionIdAsync`,
-`UpdateMapPositionAsync(characterId, mapId, nodeId, zoneId, regionId)` and `SetZoneInstanceAsync(characterId, instanceId)`.
+**The interface today**: `GetByZoneIdAsync`, `GetByZoneInstanceAsync`, `GetByRegionIdAsync`, `GetOnRegionMapAsync`,
+`GetByConnectionIdAsync`, `GetByCharacterIdAsync`, `GetByCharacterNameAsync`, `AddAsync`, `RemoveAsync`,
+`RemoveByConnectionIdAsync`, `UpdateMapPositionAsync(characterId, mapId, nodeId, zoneId, regionId)` and
+`SetZoneInstanceAsync(characterId, instanceId)`.
 The position write is the map-graph pair; `SetZoneInstanceAsync` writes the run pointer, which scopes the run's
-chests and floor loot. A reconnect does not restore it: `SelectCharacter` builds the new session without it, and
-`EnterZone`, which the shell calls next because the reply carries `CurrentZoneId`, builds its session without it too.
+chests and floor loot, and `GetByZoneInstanceAsync` lists one run's sessions — the `ZoneEntered` occupant list when a
+character resumes inside a run. The pointer does not survive a disconnect, because the session row is deleted, so
+`EnterZone` re-derives the run through `IZoneInstanceService.FindResumableAsync` and writes it on the new session.
 
 ### Repository (`PlayerSessionRepository` in `ZoneRepository.cs`)
-Replaces `ZoneSessionRepository`. Implements all 11 interface methods.
+Replaces `ZoneSessionRepository`. Implements all 12 interface methods.
 
 ### ApplicationDbContext changes
 - `DbSet<PlayerSession> PlayerSessions` replaces `DbSet<ZoneSession> ZoneSessions`

@@ -260,6 +260,7 @@ internal static class HubHarness
     /// <param name="moderation">Moderation options.</param>
     /// <param name="connectionId">Caller connection id.</param>
     /// <param name="permissions">Permission claims granted to the caller.</param>
+    /// <param name="locations">Zone-location catalog, so a test can make a location instanced or a lobby safe.</param>
     /// <returns>The hub and the fakes around it.</returns>
     public static (
         GameHub Hub,
@@ -280,6 +281,7 @@ internal static class HubHarness
         IRandomSource? random = null,
         ModerationOptions? moderation = null,
         string connectionId = "conn-1",
+        IZoneLocationRepository? locations = null,
         params string[] permissions)
     {
         var sender = mediator ?? new Mock<ISender>();
@@ -305,7 +307,7 @@ internal static class HubHarness
                 db,
                 new CharacterRepository(db),
                 new CharacterUnlockedLocationRepository(db),
-                new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
+                locations ?? new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
                 NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             random);
 

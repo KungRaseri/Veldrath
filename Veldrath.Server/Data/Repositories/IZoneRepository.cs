@@ -24,6 +24,13 @@ public interface IPlayerSessionRepository
     /// <summary>Returns all active sessions currently inside the specified zone.</summary>
     Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId);
 
+    /// <summary>
+    /// Returns the sessions pointing at one instance run — the run's own occupants, which excludes everyone
+    /// else standing in the same zone inside a different run or in the shared scope.
+    /// </summary>
+    /// <param name="instanceId">Run id.</param>
+    Task<List<PlayerSession>> GetByZoneInstanceAsync(Guid instanceId);
+
     /// <summary>Returns all active sessions within the specified region (zone or region map).</summary>
     Task<List<PlayerSession>> GetByRegionIdAsync(string regionId);
 
@@ -61,7 +68,9 @@ public interface IPlayerSessionRepository
 
     /// <summary>
     /// Records the instance run the character is inside, or clears it when they are in the shared zone.
-    /// The run derives its occupants from this pointer, so it is also what a reconnect resumes into.
+    /// The run derives its occupants from this pointer, but the pointer does not outlive the connection: the
+    /// session row leaves with it, so a reconnect re-derives the run from the still-open run instead of
+    /// reading this value back.
     /// </summary>
     /// <param name="characterId">Character whose session to update.</param>
     /// <param name="instanceId">Run id, or <see langword="null"/> to leave the shared zone in place.</param>

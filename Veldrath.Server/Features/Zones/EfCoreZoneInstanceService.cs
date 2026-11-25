@@ -63,10 +63,7 @@ public class EfCoreZoneInstanceService : IZoneInstanceService
         if (characterId == Guid.Empty)
             throw new ArgumentException("A run needs a character.", nameof(characterId));
 
-        var partyId = await _db.PartyMembers
-            .Where(member => member.CharacterId == characterId)
-            .Select(member => (Guid?)member.PartyId)
-            .FirstOrDefaultAsync(cancellationToken);
+        var partyId = await FindPartyIdAsync(characterId, cancellationToken);
 
         var existing = await FindOpenAsync(zoneId, characterId, partyId, cancellationToken);
         if (existing is not null)
@@ -126,6 +123,34 @@ public class EfCoreZoneInstanceService : IZoneInstanceService
         _db.ZoneInstances
             .AsNoTracking()
             .FirstOrDefaultAsync(instance => instance.Id == instanceId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<ZoneInstance?> FindResumableAsync(
+        string zoneId,
+        string? locationSlug,
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(zoneId) ||
+            string.IsNullOrWhiteSpace(locationSlug) ||
+            characterId == Guid.Empty)
+        {
+            return null;
+        }
+
+        // Only an instanced location has a run behind it, and only in its own zone: a slug that happens to
+        // match elsewhere must never hand a character someone else's run.
+        var location = await _locations.GetBySlugAsync(locationSlug);
+        if (location is null ||
+            !location.IsInstanced ||
+            !string.Equals(location.ZoneId, zoneId, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var partyId = await FindPartyIdAsync(characterId, cancellationToken);
+        return await FindOpenAsync(zoneId, characterId, partyId, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<bool> JoinAsync(
@@ -305,6 +330,12 @@ public class EfCoreZoneInstanceService : IZoneInstanceService
             return [];
         }
     }
+
+    private async Task<Guid?> FindPartyIdAsync(Guid characterId, CancellationToken cancellationToken) =>
+        await _db.PartyMembers
+            .Where(member => member.CharacterId == characterId)
+            .Select(member => (Guid?)member.PartyId)
+            .FirstOrDefaultAsync(cancellationToken);
 
     private async Task<ZoneInstance?> FindOpenAsync(
         string zoneId,

@@ -39,7 +39,10 @@ public class PlayerSession
 
     /// <summary>
     /// The instance run the character is inside, or <see langword="null"/> when they are in the shared zone.
-    /// This is the membership pointer the run derives its occupants from, and what a reconnect resumes into.
+    /// This is the membership pointer the run derives its occupants from, and the scope its chests, floor loot
+    /// and participation rows are read by. It is also what a reconnect resumes into, but it is re-derived
+    /// rather than read back: the session row leaves with the connection, so <c>GameHub.EnterZone</c> looks up
+    /// the character's still-open run for the location they stood on and writes the pointer again.
     /// </summary>
     public Guid? ZoneInstanceId { get; set; }
 

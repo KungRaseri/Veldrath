@@ -231,6 +231,101 @@ public class GameHubZoneTests : IDisposable
             .Which.ConnectionId.Should().Be("conn-new");
     }
 
+    // ── EnterZone: reconnecting into a run ───────────────────────────────────
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Reattaches_The_Character_To_Their_Open_Run()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        // The reconnect path: the session row left with the connection, and the location slug on the character
+        // is the only record of where inside the zone they were standing.
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        var run = new ZoneInstance
+        {
+            ZoneId = "crestfall",
+            CreatedByCharacterId = character.Id,
+            ZoneGroup = $"zone:crestfall#i1:{Guid.NewGuid():D}",
+        };
+        db.ZoneInstances.Add(run);
+        await db.SaveChangesAsync();
+
+        // Someone else in the same zone, in the shared scope: they must not appear in this run's occupants.
+        var strangerAccount = await HubHarness.SeedAccountAsync(db);
+        var stranger = await HubHarness.SeedCharacterAsync(db, strangerAccount.Id);
+        await HubHarness.SeedSessionAsync(db, stranger, "conn-stranger", zoneId: "crestfall");
+
+        var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
+        locations.Setup(repo => repo.GetBySlugAsync("vault-of-echoes"))
+                 .ReturnsAsync(new ZoneLocationEntry(
+                     "vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14,
+                     IsInstanced: true));
+
+        var (hub, clients, groups, ctx, _, _) =
+            HubHarness.Create(db, account.Id, connectionId: "conn-resumed", locations: locations.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var stored = db.PlayerSessions.Local.Single(s => s.CharacterId == character.Id);
+        stored.ZoneInstanceId.Should().Be(run.Id, "the run is still open, so the pointer is written again");
+        groups.AddedGroups.Should().Contain(run.ZoneGroup).And.NotContain(
+            "zone:crestfall", "the shared scope would leave the character beside their party in the map only");
+        ctx.Items["CurrentZoneInstanceId"].Should().Be(run.Id);
+
+        var participant = await db.ZoneInstanceParticipants
+            .SingleAsync(row => row.ZoneInstanceId == run.Id && row.CharacterId == character.Id);
+        participant.LeftAt.Should().BeNull("coming back into the run reopens the participation");
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Occupants = new[] { new { CharacterId = character.Id, CharacterName = character.Name } },
+        });
+    }
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Keeps_The_Shared_Zone_When_The_Run_Has_Closed()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        // Emptied and waiting to be purged: joining it would put the character in a group nothing will join.
+        db.ZoneInstances.Add(new ZoneInstance
+        {
+            ZoneId = "crestfall",
+            CreatedByCharacterId = character.Id,
+            ZoneGroup = $"zone:crestfall#i1:{Guid.NewGuid():D}",
+            State = ZoneInstanceState.Empty,
+        });
+        await db.SaveChangesAsync();
+
+        var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
+        locations.Setup(repo => repo.GetBySlugAsync("vault-of-echoes"))
+                 .ReturnsAsync(new ZoneLocationEntry(
+                     "vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14,
+                     IsInstanced: true));
+
+        var (hub, _, groups, ctx, _, _) =
+            HubHarness.Create(db, account.Id, connectionId: "conn-resumed", locations: locations.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        db.PlayerSessions.Local.Single(s => s.CharacterId == character.Id).ZoneInstanceId
+            .Should().BeNull("a swept run is not resumed");
+        groups.AddedGroups.Should().Contain("zone:crestfall");
+        ctx.Items["CurrentZoneInstanceId"].Should().BeNull();
+    }
+
     // ── LeaveZone ────────────────────────────────────────────────────────────
 
     [Fact]

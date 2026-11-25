@@ -33,6 +33,28 @@ public interface IZoneInstanceService
     Task<ZoneInstance?> GetAsync(Guid instanceId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns the run a character would resume into at a location, without opening one.
+    /// </summary>
+    /// <remarks>
+    /// A dropped connection takes its session row with it, so the pointer that row carried is gone by the time
+    /// the character reconnects. The run itself survives — it stays open while anyone is still inside it and is
+    /// keyed by the party (or by a solo character) — which is why the same lookup a late joiner uses can re-find
+    /// it. A location that is not instanced has no run to resume, and a run that already emptied is deliberately
+    /// not returned: it is waiting to be purged, so the character belongs in the shared zone instead of a group
+    /// nothing else will join.
+    /// </remarks>
+    /// <param name="zoneId">Zone the character is resuming inside.</param>
+    /// <param name="locationSlug">Location the character stood on, or <see langword="null"/> when they were not on one.</param>
+    /// <param name="characterId">Character resuming.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The still-open run, or <see langword="null"/> when there is none to resume into.</returns>
+    Task<ZoneInstance?> FindResumableAsync(
+        string zoneId,
+        string? locationSlug,
+        Guid characterId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Records that a character is inside a run, clearing an earlier departure if they came back.
     /// </summary>
     /// <param name="instanceId">Run id.</param>

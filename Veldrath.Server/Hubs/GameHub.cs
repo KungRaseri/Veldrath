@@ -884,7 +884,9 @@ public class GameHub : Hub
     // Zone management
     /// <summary>
     /// Join a zone. Broadcasts <c>PlayerEntered</c> to all existing members of the zone,
-    /// and sends <c>ZoneState</c> (current occupants) back to the caller.
+    /// and sends <c>ZoneEntered</c> (current occupants) back to the caller.
+    /// Re-entering the zone the character was already inside resumes them at their saved node, and — when that
+    /// node is an instanced location whose run is still open — back inside that run.
     /// </summary>
     public async Task EnterZone(string zoneId)
     {
@@ -940,6 +942,21 @@ public class GameHub : Hub
         if (stale is not null && stale.ConnectionId != Context.ConnectionId)
             await _playerSessionRepo.RemoveAsync(stale);
 
+        // Resume the run, not a stored pointer: the session row — and the pointer with it — left when the
+        // connection dropped, so nothing on disk remembers the run. The run itself survives while anyone is
+        // still inside it, keyed by the party (or the solo character), so asking for the character's open run
+        // at the location they stood on is what puts a reconnecting player back inside their attempt.
+        ZoneInstance? resumedRun = null;
+        if (resumingHere && _zoneInstances is not null && !string.IsNullOrWhiteSpace(resumeLocationSlug))
+        {
+            var candidate = await _zoneInstances.FindResumableAsync(zoneId, resumeLocationSlug, characterId);
+
+            // A run swept between the lookup and the join must not be re-entered: joining reports it, and the
+            // character stays in the shared zone rather than in a group nothing else will ever join.
+            if (candidate is not null && await _zoneInstances.JoinAsync(candidate.Id, characterId))
+                resumedRun = candidate;
+        }
+
         // Create new session
         var session = new PlayerSession
         {
@@ -950,6 +967,7 @@ public class GameHub : Hub
             ZoneId = zoneId,
             CurrentMapId = zoneGraph?.Id,
             CurrentNodeId = resumeNodeId,
+            ZoneInstanceId = resumedRun?.Id,
         };
         await _playerSessionRepo.AddAsync(session);
 
@@ -972,10 +990,13 @@ public class GameHub : Hub
         Context.Items["CurrentMapId"] = zoneGraph?.Id;
         Context.Items["CurrentNodeId"] = resumeNodeId;
 
-        // Compute and store the zone group name based on zone type and difficulty
+        // Compute and store the zone group name based on zone type and difficulty. A resumed run already owns
+        // its scope — the group its other members are in — so re-composing the shared name here would put the
+        // character next to their party in the map and nowhere near them in chat, enemies or loot.
         var difficultyMode = Context.Items.TryGetValue("DifficultyMode", out var dm) && dm is string d ? d : "normal";
-        var zoneGroup = ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
+        var zoneGroup = resumedRun?.ZoneGroup ?? ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
         Context.Items["CurrentZoneGroupName"] = zoneGroup;
+        Context.Items["CurrentZoneInstanceId"] = resumedRun?.Id;
 
         // Join SignalR group
         await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup);
@@ -988,8 +1009,11 @@ public class GameHub : Hub
             ZoneId = zoneId,
         });
 
-        // Send current zone occupants back to caller
-        var occupants = (await _playerSessionRepo.GetByZoneIdAsync(zoneId))
+        // Send current zone occupants back to caller. Inside a run the run is the boundary, so the list is its
+        // members — the shared zone's occupants may include another party the caller must not see.
+        var occupants = (resumedRun is null
+                ? await _playerSessionRepo.GetByZoneIdAsync(zoneId)
+                : await _playerSessionRepo.GetByZoneInstanceAsync(resumedRun.Id))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
         await Clients.Caller.SendAsync("ZoneEntered", new
@@ -3526,8 +3550,10 @@ public class GameHub : Hub
 
     /// <summary>
     /// Moves the connection into the group the arrival belongs to when that differs from where it was, and
-    /// records the run on the session so a reconnect resumes inside it. A public arrival keeps the shared
-    /// zone scope and simply clears any run pointer.
+    /// records the run on the session so the run-scoped reads — chests, floor loot, participation — follow the
+    /// character. A public arrival keeps the shared zone scope and simply clears any run pointer. The pointer
+    /// is re-established on a reconnect the same way an arrival establishes it: by looking up the character's
+    /// still-open run, because the session row it is written to does not survive the disconnect.
     /// </summary>
     /// <param name="zoneGroup">Scope the arrival belongs to, or <see langword="null"/> when unchanged.</param>
     /// <param name="instanceId">Run the character is now inside, or <see langword="null"/> for the shared zone.</param>
