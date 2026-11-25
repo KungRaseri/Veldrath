@@ -80,10 +80,13 @@ function topLevelProperties(body: string): string[] {
 		.filter((name) => /^[A-Za-z_]\w*$/.test(name));
 }
 
-/** Every event the hub broadcasts with an anonymous-object payload, keyed by event name. */
-function readWirePayloads(): Map<string, string[]> {
+/**
+ * Every event the hub broadcasts with an anonymous-object payload, keeping each literal separately.
+ * Keyed by event name; each entry is one `SendAsync` call's top-level property names.
+ */
+function readWirePayloadVariants(): Map<string, string[][]> {
 	const source = stripComments(readRepoFile(HUB_SOURCE));
-	const shapes = new Map<string, string[]>();
+	const variants = new Map<string, string[][]>();
 
 	for (const match of source.matchAll(/SendAsync\(\s*"(\w+)"\s*,\s*([\w.]+)/g)) {
 		const eventName = match[1];
@@ -119,10 +122,22 @@ function readWirePayloads(): Map<string, string[]> {
 		const properties = topLevelProperties(body);
 		if (properties.length === 0) continue;
 
-		// One event can be broadcast with different shapes (CombatTurn sends one payload per
-		// action); the client must be able to describe every variant, so union them.
-		const existing = shapes.get(eventName) ?? [];
-		shapes.set(eventName, [...new Set([...existing, ...properties])]);
+		// One event can be broadcast with different shapes (CombatTurn sends one payload per action). Keep each
+		// literal separately so a variant that forgets a field another variant sends can be told apart: a union
+		// would hide it, which is how an ability kill silently stopped reporting its loot.
+		variants.set(eventName, [...(variants.get(eventName) ?? []), properties]);
+	}
+
+	return variants;
+}
+
+/** Every event the hub broadcasts with an anonymous-object payload, keyed by event name. */
+function readWirePayloads(): Map<string, string[]> {
+	const shapes = new Map<string, string[]>();
+
+	for (const [eventName, variants] of readWirePayloadVariants()) {
+		// The client must be able to describe every variant of an event, so its interface is the union of them.
+		shapes.set(eventName, [...new Set(variants.flat())]);
 	}
 
 	return shapes;
@@ -178,6 +193,23 @@ describe('hub payload contract', () => {
 		expect(
 			mismatches,
 			'Update web/client/src/lib/game/types.ts to match the payloads GameHub.cs broadcasts.'
+		).toEqual([]);
+	});
+
+	it('carries the kill loot on every CombatTurn variant that can report a kill', () => {
+		const variants = readWirePayloadVariants().get('CombatTurn') ?? [];
+		expect(variants.length, 'CombatTurn variants found in GameHub.cs').toBeGreaterThan(1);
+
+		// The shell re-reads the bag only when `itemsDropped` is non-empty, so a variant that reports a kill but
+		// omits the drop loses it silently — which is what an ability kill did while a melee kill did not.
+		const missing = variants
+			.map((properties, index) => ({ index, names: new Set(properties.map(normalize)) }))
+			.filter(({ names }) => names.has('enemydefeated') && !names.has('itemsdropped'))
+			.map(({ index }) => `CombatTurn variant #${index + 1}`);
+
+		expect(
+			missing,
+			'Every CombatTurn variant that can report EnemyDefeated must send result.ItemsDropped too.'
 		).toEqual([]);
 	});
 

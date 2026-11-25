@@ -2993,25 +2993,13 @@ public class GameHub : Hub
                 }
 
                 // A cleared room is a run-wide fact: everyone inside needs the progress, not just the killer.
-                if (result.ClearedLocationSlug is not null && TryGetCurrentZoneGroup(out var clearGroup))
-                {
-                    await Clients.Group(clearGroup).SendAsync("LocationCleared", new
-                    {
-                        CharacterId = characterId,
-                        InstanceId = result.ClearedInstanceId,
-                        LocationSlug = result.ClearedLocationSlug,
-                        FirstClearOfRun = result.FirstClearOfRun,
-                        FirstClearForCharacter = result.FirstClearForCharacter,
-                        UnlockedLocationSlugs = result.UnlockedLocationSlugs,
-                    });
-
-                    foreach (var unlocked in result.UnlockedLocationSlugs)
-                    {
-                        await Clients.Caller.SendAsync(
-                            "SystemMessage",
-                            $"Clearing the way has revealed something: {unlocked}.");
-                    }
-                }
+                await BroadcastLocationClearedAsync(
+                    characterId,
+                    result.ClearedInstanceId,
+                    result.ClearedLocationSlug,
+                    result.FirstClearOfRun,
+                    result.FirstClearForCharacter,
+                    result.UnlockedLocationSlugs);
             }
         }
         catch (Exception ex)
@@ -3175,6 +3163,9 @@ public class GameHub : Hub
                 MaxMana = result.Progression?.MaxMana,
                 CurrentMana = result.Progression?.CurrentMana,
                 UnspentAttributePoints = result.Progression?.UnspentAttributePoints,
+                // Loot is a consequence of the kill, so an ability kill reports it on the same turn a melee kill
+                // does — without it the client never re-reads the bag the drop landed in.
+                result.ItemsDropped,
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
@@ -3203,6 +3194,15 @@ public class GameHub : Hub
                         CharacterId = characterId,
                     });
                 }
+
+                // And it clears the room the same way: a room emptied by a fireball unlocks what a sword would.
+                await BroadcastLocationClearedAsync(
+                    characterId,
+                    result.ClearedInstanceId,
+                    result.ClearedLocationSlug,
+                    result.FirstClearOfRun,
+                    result.FirstClearForCharacter,
+                    result.UnlockedLocationSlugs);
             }
         }
         catch (Exception ex)
@@ -3260,6 +3260,49 @@ public class GameHub : Hub
     }
 
     // Helpers
+
+    /// <summary>
+    /// Broadcasts <c>LocationCleared</c> to the zone group when a killing blow cleared the room it died in, and
+    /// tells the killer about every hidden location the clear revealed.
+    /// </summary>
+    /// <remarks>
+    /// Both death paths report a clear through this one method — a melee blow and an ability blow are the same event
+    /// to a run — so a change to the payload cannot reach one and miss the other.
+    /// </remarks>
+    /// <param name="characterId">The character whose killing blow cleared the room.</param>
+    /// <param name="instanceId">The run the room belonged to, or <see langword="null"/> for a shared-zone room.</param>
+    /// <param name="locationSlug">The room that was cleared, or <see langword="null"/> when nothing was.</param>
+    /// <param name="firstClearOfRun">Whether this kill is what cleared the room in the run.</param>
+    /// <param name="firstClearForCharacter">Whether the character had ever cleared the room before.</param>
+    /// <param name="unlockedLocationSlugs">The hidden locations this clear made visible to the character.</param>
+    private async Task BroadcastLocationClearedAsync(
+        Guid characterId,
+        Guid? instanceId,
+        string? locationSlug,
+        bool firstClearOfRun,
+        bool firstClearForCharacter,
+        IReadOnlyList<string> unlockedLocationSlugs)
+    {
+        if (locationSlug is null || !TryGetCurrentZoneGroup(out var clearGroup)) return;
+
+        await Clients.Group(clearGroup).SendAsync("LocationCleared", new
+        {
+            CharacterId = characterId,
+            InstanceId = instanceId,
+            LocationSlug = locationSlug,
+            FirstClearOfRun = firstClearOfRun,
+            FirstClearForCharacter = firstClearForCharacter,
+            UnlockedLocationSlugs = unlockedLocationSlugs,
+        });
+
+        foreach (var unlocked in unlockedLocationSlugs)
+        {
+            await Clients.Caller.SendAsync(
+                "SystemMessage",
+                $"Clearing the way has revealed something: {unlocked}.");
+        }
+    }
+
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
     {
         var session = await _playerSessionRepo.GetByConnectionIdAsync(connectionId);

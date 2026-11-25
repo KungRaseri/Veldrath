@@ -242,6 +242,115 @@ public class GameHubTests : IDisposable
     // Shared combat (C3)
 
     [Fact]
+    public async Task UseAbilityInCombat_Forwards_The_Kills_Loot_On_The_Turn()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var mediator = new Mock<ISender>();
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<UseAbilityInCombatHubCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UseAbilityInCombatHubResult
+            {
+                Success = true,
+                AbilityId = "fireball",
+                EnemyDefeated = true,
+                ItemsDropped = [new CombatLootDrop("health-potion", 2)],
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediator.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        // The payload is anonymous, so the wire key is asserted by name: the client re-reads the bag on
+        // `payload.itemsDropped`, and an ability kill that never sent it dropped loot nobody could see.
+        var payload = clients.CallerProxy.SentMessages.Single(m => m.Method == "CombatTurn").Args[0];
+        payload.Should().BeEquivalentTo(new
+        {
+            Action = "ability",
+            ItemsDropped = new[] { new CombatLootDrop("health-potion", 2) },
+        });
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_Broadcasts_LocationCleared_When_The_Kill_Clears_The_Room()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+        var runId = Guid.NewGuid();
+
+        var mediator = new Mock<ISender>();
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<UseAbilityInCombatHubCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UseAbilityInCombatHubResult
+            {
+                Success = true,
+                AbilityId = "fireball",
+                EnemyDefeated = true,
+                ClearedInstanceId = runId,
+                ClearedLocationSlug = "ancestor-vault",
+                FirstClearOfRun = true,
+                FirstClearForCharacter = true,
+                UnlockedLocationSlugs = ["relic-chamber"],
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediator.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CurrentZoneGroupName"] = $"zone:the-halrow#i1:{runId:D}";
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        // A room a fireball emptied is cleared exactly as one a sword emptied: the run hears it, and the
+        // killer is told what the clear revealed.
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "LocationCleared")
+            .Which.Args[0].Should().BeEquivalentTo(new
+            {
+                CharacterId = character.Id,
+                InstanceId = runId,
+                LocationSlug = "ancestor-vault",
+                FirstClearOfRun = true,
+                FirstClearForCharacter = true,
+                UnlockedLocationSlugs = new[] { "relic-chamber" },
+            });
+
+        clients.CallerProxy.SentMessages
+            .Where(m => m.Method == "SystemMessage")
+            .Select(m => m.Args[0] as string)
+            .Should().Contain(message => message != null && message.Contains("relic-chamber"));
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_Reports_No_Clear_When_The_Turn_Cleared_Nothing()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var mediator = new Mock<ISender>();
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<UseAbilityInCombatHubCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UseAbilityInCombatHubResult
+            {
+                Success = true,
+                AbilityId = "fireball",
+                EnemyDefeated = true,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediator.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CurrentZoneGroupName"] = "zone:the-halrow#i1:any";
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        clients.GroupProxy.SentMessages.Should().NotContain(m => m.Method == "LocationCleared");
+        clients.CallerProxy.SentMessages.Should().NotContain(m => m.Method == "SystemMessage");
+    }
+
+    [Fact]
     public async Task AttackEnemy_Advances_The_Kill_Objective_For_Every_Participant_By_Slug_And_Name()
     {
         await using var db = _factory.CreateContext();

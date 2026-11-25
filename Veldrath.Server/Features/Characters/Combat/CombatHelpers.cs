@@ -6,6 +6,7 @@ using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.LevelUp;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Settings;
 using ServerCharacter = Veldrath.Server.Data.Entities.Character;
@@ -114,6 +115,110 @@ internal static class CombatHelpers
         }
 
         return (damage, ability.Name);
+    }
+
+    // Rolls the defeated archetype's loot table and puts the result in the killer's bag.
+    //
+    // The bag is the character's own `InventoryBlob` — the store the client reads. `IInventoryService`
+    // writes save-game records, so drops "added" through it were announced and never carried.
+    //
+    // Each entry rolls independently against its own weight, which is what the seed authored ("drop weight",
+    // not "pick one"), and a guaranteed entry always lands. A catalog read that fails is logged and skipped: a
+    // kill must not fail because loot could not be read.
+    //
+    // Lives here rather than in one handler so that every death path rolls the same table with the same source:
+    // an ability that lands the killing blow drops what a melee blow of the same archetype drops.
+    internal static async Task<IReadOnlyList<CombatLootDrop>> RollLootAsync(
+        SpawnedEnemy enemy,
+        ServerCharacter entity,
+        ILootTableRepository lootTables,
+        ICharacterRepository repo,
+        IRandomSource random,
+        CancellationToken ct,
+        ILogger? logger = null)
+    {
+        ArgumentNullException.ThrowIfNull(random);
+
+        var tableSlugs = enemy.Template?.LootTableIds ?? [];
+        if (tableSlugs.Count == 0) return [];
+
+        var bag = CharacterBag.Read(entity.InventoryBlob);
+        var drops = new List<CombatLootDrop>();
+
+        foreach (var tableSlug in tableSlugs)
+        {
+            LootTableData? table;
+            try
+            {
+                table = await lootTables.GetBySlugAsync(tableSlug);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger?.LogError(ex, "Loot table {TableSlug} could not be read; the kill drops nothing", tableSlug);
+                continue;
+            }
+
+            if (table is null || table.Entries.Count == 0) continue;
+
+            var totalWeight = table.Entries.Sum(entry => Math.Max(1, entry.DropWeight));
+
+            foreach (var entry in table.Entries)
+            {
+                if (!entry.IsGuaranteed && random.Next(totalWeight) >= Math.Max(1, entry.DropWeight)) continue;
+
+                var quantity = entry.QuantityMax > entry.QuantityMin
+                    ? random.Next(entry.QuantityMin, entry.QuantityMax + 1)
+                    : Math.Max(1, entry.QuantityMin);
+
+                CharacterBag.Add(bag, entry.ItemSlug, quantity);
+                drops.Add(new CombatLootDrop(entry.ItemSlug, quantity));
+            }
+        }
+
+        if (drops.Count > 0)
+        {
+            entity.InventoryBlob = CharacterBag.Serialize(bag);
+            await repo.UpdateAsync(entity, ct);
+
+            logger?.LogInformation(
+                "Enemy {EnemyName} dropped {DropCount} stack(s) into {CharacterName}'s bag",
+                enemy.Name, drops.Count, entity.Name);
+        }
+
+        return drops;
+    }
+
+    // Records what the killing blow that emptied a location earned, or null when the room still holds an enemy.
+    //
+    // Clearing the floor is a location fact, not a combat fact: ask the store how many are still standing rather
+    // than trusting this one death. Only a run records the clear itself — a shared-zone room has no run to credit,
+    // so it never unlocks anything — and the room still stays quiet for the cleared-room window in either case.
+    //
+    // Shared by both death paths, so an ability kill clears a room exactly as a melee kill does.
+    internal static async Task<CombatRoomClear?> ResolveRoomClearAsync(
+        SpawnedEnemy enemy,
+        Guid characterId,
+        IEnemyInstanceStore enemies,
+        IZoneInstanceService instances,
+        CancellationToken ct)
+    {
+        if (await enemies.CountAliveAsync(enemy.ZoneGroup, enemy.LocationSlug, ct) > 0) return null;
+
+        // A cleared room stays quiet for the cleared-room window, in a public dungeon as much as in a
+        // run: the promise in plans/dungeons.md §6 is "longer respawn", not no respawn.
+        await enemies.ExtendClearedRespawnsAsync(enemy.ZoneGroup, enemy.LocationSlug, ct);
+
+        if (enemy.ZoneInstanceId is not Guid runId) return null;
+
+        var cleared = await instances.RecordClearAsync(runId, enemy.LocationSlug, characterId, ct);
+        if (!cleared.Cleared) return null;
+
+        return new CombatRoomClear(
+            runId,
+            enemy.LocationSlug,
+            cleared.FirstClearOfRun,
+            cleared.FirstClearForCharacter,
+            cleared.UnlockedLocationSlugs);
     }
 
     // Splits the enemy's XP and gold across its contributors, awards each share and releases their combat
@@ -323,3 +428,16 @@ internal sealed record CombatRewardShare(Guid CharacterId, int Xp, int Gold, Com
 internal sealed record CombatRewardDistribution(
     IReadOnlyList<CombatRewardShare> Rewards,
     IReadOnlyList<Guid> ReleasedCharacterIds);
+
+/// <summary>What the killing blow that emptied a location cleared, ready to project onto a hub result.</summary>
+/// <param name="InstanceId">The run the room belonged to.</param>
+/// <param name="LocationSlug">The room that was cleared.</param>
+/// <param name="FirstClearOfRun">Whether this kill is what cleared the room in the run.</param>
+/// <param name="FirstClearForCharacter">Whether the killer had ever cleared the room before.</param>
+/// <param name="UnlockedLocationSlugs">The hidden locations this clear made visible to the killer.</param>
+internal sealed record CombatRoomClear(
+    Guid InstanceId,
+    string LocationSlug,
+    bool FirstClearOfRun,
+    bool FirstClearForCharacter,
+    IReadOnlyList<string> UnlockedLocationSlugs);
