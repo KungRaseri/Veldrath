@@ -93,13 +93,11 @@ run's sessions and `GetOnSharedZoneAsync` lists a zone's sessions whose pointer 
 on the caller's side of the zone's difficulty split (`PlayerSession` stores no difficulty, so the read joins
 `Character`; `null` means the scope is not split, which is every zone type but `Wilderness`). The pair is the same
 pair `ZoneGroupName.ForZone` composes the scope name from, so a roster can only name connections in the caller's own
-group. Every `ZoneEntered`
-snapshot is read from one of those two — `EnterZone` by the run it resumed or not, `SyncArrivedZoneAsync` by the
-`CurrentZoneInstanceId` `ApplyArrivalGroupAsync` has just written — because the client keeps the roster until the
-next group event. `GetByZoneIdAsync` remains the whole zone, run members included, and is only correct where that
-population is the answer: the public `GET /api/zones` counts. The `/who` chat command is not such a place — it names
-the players standing beside the caller, so `GameHub.ReadOwnScopeAsync` is its read too (one helper, the same pair,
-behind every roster a connection is shown).
+group. Every roster a connection is shown goes through `GameHub.ReadOwnScopeAsync`: both `ZoneEntered` snapshots —
+`EnterZone` after it has written the run it resumed (or none), and `SyncArrivedZoneAsync` after
+`ApplyArrivalGroupAsync` has written the run of the walk — and the `/who` chat command. One helper, the same pair,
+because the client keeps a roster until the next group event. `GetByZoneIdAsync` remains the whole zone, run members
+included, and is only correct where that population is the answer: the public `GET /api/zones` counts.
 The pointer does not survive a disconnect, because the session row is deleted, so
 `EnterZone` re-derives the run through `IZoneInstanceService.FindResumableAsync` and writes it on the new session.
 

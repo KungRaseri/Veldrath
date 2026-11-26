@@ -21,22 +21,24 @@ the same disclosure #323 fixed in the roster; the shard half is the same one `t_
 - `GameHub.ReadOwnScopeAsync(string zoneId, ZoneType? zoneType)` — one read for every roster the hub shows a
   connection: the run's members while `Context.Items["CurrentZoneInstanceId"]` names a run
   (`GetByZoneInstanceAsync`), otherwise `GetOnSharedZoneAsync(zoneId, SharedScopeDifficulty(zoneType, CurrentDifficultyMode()))`.
-  It is the body `SyncArrivedZoneAsync` already had inline, lifted out rather than copied, so the arrival snapshot
-  and `/who` cannot drift: the pair that selects the shared scope is the pair that composed the group the
-  connection joined.
-- The `who` case now resolves the zone once (`_zoneRepo.GetByIdAsync`) and asks the helper for the caller's scope.
-  The catalog read is there because the **zone type** is what declares the difficulty split; `ZoneGroupName` forbids
-  reading it back out of the group name ("no business rule may decide which run it is in by reading the group
-  name"), so the type comes from the catalog or not at all. `ZoneType?` is nullable for the one case that has no row:
-  a zone the catalog does not know declares no split, so its shared scope is read whole and only the run dimension
-  narrows the list. `/who` also runs once per invocation, not per tick, so the extra read is not a hot path.
+  All three call sites go through it: the reconnect's `ZoneEntered` in `EnterZone`, the walk's `ZoneEntered` in
+  `SyncArrivedZoneAsync`, and `/who`. `EnterZone` keeps its inline `resumedRun is null ? … : …` compose out of the
+  arrival path (review round 1 caught that the "one read" claim was false while it did); the helper sees the run
+  pointer `EnterZone` has already written, so the scope it reads is the group the connection just joined.
+- A second overload, `ReadOwnScopeAsync(string zoneId, Func<Task<ZoneType?>> resolveZoneType)`, resolves the zone
+  type only when the shared scope is read. The run id alone selects a run's roster, so `/who` no longer pays a
+  catalog read whose answer it cannot use. The catalog read exists because the **zone type** is what declares the
+  difficulty split; `ZoneGroupName` forbids reading it back out of the group name ("no business rule may decide
+  which run it is in by reading the group name"), so the type comes from the catalog or not at all. `ZoneType?` is
+  nullable for the one case that has no row: a zone the catalog does not know declares no split, so its shared
+  scope is read whole and only the run dimension narrows the list.
 - No payload, DTO, or client change: the command still answers with one `SystemMessage` of
   `Players here: a, b`. The `GetChatCommands` description ("List players in your zone") is unchanged on purpose — a
   run is inside the zone the character stands in, and the entry has to stay short.
 - Stable reference corrected in place:
   `.github/agent-memory/areas/session-29-2026-04-08-region-map-architecture-playersession-migration.md` named `/who`
-  as the remaining unscoped reader of `GetByZoneIdAsync`. The public `GET /api/zones` count is now the only
-  deliberate whole-zone read.
+  as the remaining unscoped reader of `GetByZoneIdAsync` and described `EnterZone` as composing its own occupant
+  read. Both statements are now false; the public `GET /api/zones` count is the only deliberate whole-zone read.
 
 **Tests — `GameHubChatTests`, 1 renamed and 3 new.**
 
@@ -46,25 +48,31 @@ the same disclosure #323 fixed in the roster; the shard half is the same one `t_
   whose session carries a run id, both in `the-droveway`. `/who` names the caller and the resident, not the delver.
   Membership is compared as a set (the DB order is not a contract).
 - `Who_Inside_An_Instance_Run_Lists_The_Runs_Members_And_Not_The_Shared_Zone` — the other branch: caller and party
-  member on one run id, a shared resident beside the door; the list is the run.
+  member on one run id, a shared resident beside the door; the list is the run. Its group name comes from
+  `ZoneGroupName.ForInstance("the-droveway", "normal", runId)` rather than a hand-composed literal.
 - `Who_In_A_Wilderness_Zone_Lists_The_Callers_Difficulty_Shard_Only` — normal and hardcore sessions in the
   Droveway's shared rooms; the caller's list is their own shard. This is the card's "take the shard filter from the
   same repository method" clause: the fix calls `GetOnSharedZoneAsync` and duplicates no predicate.
 
-**Negative controls, one at a time in a detached worktree at the commit (`git worktree remove`d afterwards).**
+**Negative controls, one at a time in a detached worktree at the commit (`git worktree remove`d afterwards).** The
+expected counts were re-derived after `EnterZone` moved onto the helper — that moved the reach of the last two
+controls, which is the point of running them again rather than reusing round 1's numbers. Counts are over
+`GameHubChatTests` + `GameHubZoneTests` together (110 tests).
 
-- The `who` case reverted to `GetByZoneIdAsync` (the pre-fix shape): 3 failed / 50 passed — exactly the three new
+- The `who` case reverted to `GetByZoneIdAsync` (the pre-fix shape): 3 failed / 107 passed — exactly the three new
   cases; the renamed shared-scope case passes, correctly, because every session in it is shared.
-- `ReadOwnScopeAsync` passes `null` for the difficulty (the run dimension only, #323's behaviour): 2 failed — the new
-  shard case and `GameHubZoneTests.TravelToNode_Crossing_A_Border_Lists_Only_The_Callers_Shared_Scope`, which proves
-  the helper is still on the arrival path.
-- `ReadOwnScopeAsync` ignores the run pointer and always reads the shared scope: 4 failed — the new run case plus the
-  three arrival-snapshot cases that list a run's members. Same proof from the other side.
+- `ReadOwnScopeAsync` passes `null` for the difficulty (the run dimension only, #323's behaviour): 3 failed / 107
+  passed — the new shard case, `GameHubZoneTests.TravelToNode_Crossing_A_Border_Lists_Only_The_Callers_Shared_Scope`
+  and now `GameHubZoneTests.EnterZone_Roster_In_A_Wilderness_Zone_Lists_Only_The_Callers_Difficulty_Shard`, which
+  proves `EnterZone`'s snapshot is on the helper. Round 1 failed 2: the EnterZone case is the difference.
+- `ReadOwnScopeAsync` ignores the run pointer and always reads the shared scope: 5 failed / 105 passed — the new run
+  case, the three arrival-snapshot cases that list a run's members, and
+  `GameHubZoneTests.EnterZone_Reconnect_Reattaches_The_Character_To_Their_Open_Run` (`EnterZone`'s reconnect
+  snapshot). Round 1 failed 4: the reconnect case is the difference.
 
 **Gates.** `dotnet build Veldrath.Server.slnx` (0 warnings, 0 errors); `dotnet test Veldrath.Server.slnx` (6648
-passed / 0 failed: Shared 1158, Core 2748, Data 697, Server 2045 — the three new cases are the difference);
-`dotnet format Veldrath.Server.slnx --verify-no-changes` (exit 0); `node scripts/memory/memory-index.mjs --check`;
-`node scripts/check-markdown-links.mjs`.
+passed / 0 failed: Shared 1158, Core 2748, Data 697, Server 2045); `dotnet format Veldrath.Server.slnx
+--verify-no-changes` (exit 0); `node scripts/memory/memory-index.mjs --check`; `node scripts/check-markdown-links.mjs`.
 
 **Reachability.** The run half needs an instanced location, which no seeder sets yet, so today it is latent. The shard
 half is ordinary play: `the-droveway` is a seeded wilderness zone and every character has a `DifficultyMode`, so a
@@ -78,3 +86,5 @@ normal and a hardcore character standing in the same wilderness zone is exactly 
   the shard card as its own item, still unreachable because nothing seeds an instanced location.
 - `GetByZoneIdAsync` remains the whole zone and keeps its "never use it for a roster" remark; `GET /api/zones` counts
   are the intentional caller.
+- `Players here: No players in this zone.` is unreachable while the caller's own session exists in that scope; the
+  wording predates this card and was left alone.
