@@ -308,6 +308,47 @@ public class TravelToNodeHubCommandHandlerTests
         store.RosterRequests.Should().Equal(("zone:crestfall", "crestfall-square"));
     }
 
+    /// <summary>
+    /// A zone row the catalog no longer holds makes the shared scope unknowable, and the only case where the group
+    /// the caller arrived with is trusted at all is one that names this zone. Anything else — including another
+    /// zone's shard — falls back to the unsharded scope of the destination, because the roster still has to exist.
+    /// </summary>
+    [Theory]
+    [InlineData("zone:crestfall_hardcore", "zone:crestfall_hardcore")]
+    [InlineData("zone:other_hardcore", "zone:crestfall")]
+    public async Task Handle_Reuses_The_Callers_Scope_Only_When_It_Names_A_Zone_With_No_Row(
+        string requestedGroup,
+        string expectedGroup)
+    {
+        var store = new FakeEnemyInstanceStore();
+        var (handler, mapRepo, _, _, _, zoneRepo, locationRepo, _) =
+            MakeHandler(character => character.CurrentNodeId = EntryNodeId, store);
+        mapRepo.Setup(r => r.GetOutgoingEdgesAsync(
+                ZoneMapId, EntryNodeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Edge(EntryNodeId, SquareNodeId)]);
+        zoneRepo.Setup(r => r.GetByIdAsync("crestfall"))
+            .ReturnsAsync((Zone?)null);
+        locationRepo.Setup(r => r.GetBySlugAsync("crestfall-square"))
+            .ReturnsAsync(new ZoneLocationEntry(
+                "crestfall-square",
+                "The Crestfall Square",
+                "locations",
+                "crestfall",
+                100,
+                null,
+                null,
+                ActorPool: [new ActorPoolEntry("town-drunk", 1)]));
+
+        var result = await handler.Handle(
+            new TravelToNodeHubCommand(CharacterId, ZoneMapId, SquareNodeId, requestedGroup),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ZoneGroup.Should().Be(expectedGroup);
+        result.ZoneInstanceId.Should().BeNull();
+        store.RosterRequests.Should().Equal((expectedGroup, "crestfall-square"));
+    }
+
     [Fact]
     public async Task Handle_ReturnsError_WhenHiddenDestinationIsNotDiscovered()
     {
