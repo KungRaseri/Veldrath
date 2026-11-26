@@ -139,6 +139,41 @@ public class GameHubZoneTests : IDisposable
     }
 
     [Fact]
+    public async Task EnterZone_Roster_In_A_Town_Lists_The_Other_Difficulty()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        // Crestfall is not difficulty-scoped: both difficulties join zone:crestfall, so the roster has to name them
+        // even though the arriving character is only one side of the split. Filtering here would hide a player the
+        // caller can see and chat with.
+        var hardcoreAccount = await HubHarness.SeedAccountAsync(db);
+        var hardcore = await HubHarness.SeedCharacterAsync(db, hardcoreAccount.Id);
+        hardcore.DifficultyMode = "hardcore";
+        await HubHarness.SeedSessionAsync(db, hardcore, "conn-hardcore", "crestfall");
+        await db.SaveChangesAsync();
+
+        var (hub, clients, groups, ctx, _, _) = HubHarness.Create(db, account.Id, connectionId: "conn-normal");
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+        ctx.Items["DifficultyMode"] = "normal";
+
+        await hub.EnterZone("crestfall");
+
+        groups.AddedGroups.Should().Contain("zone:crestfall");
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Occupants = new[]
+            {
+                new { CharacterId = hardcore.Id, CharacterName = hardcore.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "a town's shared scope carries no difficulty suffix, so every difficulty stands in the caller's group");
+    }
+
+    [Fact]
     public async Task EnterZone_Scopes_Wilderness_Groups_By_Difficulty()
     {
         await using var db = _factory.CreateContext();
@@ -155,6 +190,44 @@ public class GameHubZoneTests : IDisposable
         clients.OthersInGroupNamed("zone:the-droveway_hardcore").SentMessages.Should()
             .ContainSingle(m => m.Method == "PlayerEntered");
         ctx.Items["CurrentZoneGroupName"].Should().Be("zone:the-droveway_hardcore");
+    }
+
+    [Fact]
+    public async Task EnterZone_Roster_In_A_Wilderness_Zone_Lists_Only_The_Callers_Difficulty_Shard()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        // The Droveway's group is difficulty-scoped, so a normal-difficulty arrival cannot see or chat with the
+        // characters in the hardcore shard even though they stand in the same zone's shared rooms.
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
+
+        var hardcoreAccount = await HubHarness.SeedAccountAsync(db);
+        var hardcore = await HubHarness.SeedCharacterAsync(db, hardcoreAccount.Id);
+        hardcore.DifficultyMode = "hardcore";
+        await HubHarness.SeedSessionAsync(db, hardcore, "conn-hardcore", "the-droveway");
+        await db.SaveChangesAsync();
+
+        var (hub, clients, groups, ctx, _, _) = HubHarness.Create(db, account.Id, connectionId: "conn-normal");
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+        ctx.Items["DifficultyMode"] = "normal";
+
+        await hub.EnterZone("the-droveway");
+
+        groups.AddedGroups.Should().Contain("zone:the-droveway_normal");
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Occupants = new[]
+            {
+                new { CharacterId = resident.Id, CharacterName = resident.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "the hardcore character is in zone:the-droveway_hardcore, a group this connection cannot reach");
     }
 
     [Fact]
@@ -1054,14 +1127,15 @@ public class GameHubZoneTests : IDisposable
     }
 
     [Fact]
-    public async Task TravelToNode_Crossing_A_Border_Lists_Only_The_Shared_Scope()
+    public async Task TravelToNode_Crossing_A_Border_Lists_Only_The_Callers_Shared_Scope()
     {
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
         var character = await HubHarness.SeedCharacterAsync(db, account.Id);
 
-        // The destination zone holds one neighbour in its shared rooms and one party mid-delve. The walk keeps
-        // the arriving connection in the shared scope, so the snapshot must not name the party.
+        // The destination zone holds one neighbour in its shared rooms, one party mid-delve and one character in
+        // the other difficulty shard. The walk keeps the arriving connection in its own shared scope, so the
+        // snapshot must name neither the party nor the shard the caller cannot reach.
         var residentAccount = await HubHarness.SeedAccountAsync(db);
         var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
         await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
@@ -1070,6 +1144,11 @@ public class GameHubZoneTests : IDisposable
         var delver = await HubHarness.SeedCharacterAsync(db, delverAccount.Id);
         var delverSession = await HubHarness.SeedSessionAsync(db, delver, "conn-delver", "the-droveway");
         delverSession.ZoneInstanceId = Guid.NewGuid();
+
+        var hardcoreAccount = await HubHarness.SeedAccountAsync(db);
+        var hardcore = await HubHarness.SeedCharacterAsync(db, hardcoreAccount.Id);
+        hardcore.DifficultyMode = "hardcore";
+        await HubHarness.SeedSessionAsync(db, hardcore, "conn-hardcore", "the-droveway");
         await db.SaveChangesAsync();
 
         var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id, connectionId: "conn-crossing");
@@ -1090,7 +1169,7 @@ public class GameHubZoneTests : IDisposable
         entered.Should().BeEquivalentTo(new
         {
             Occupants = new[] { new { CharacterId = resident.Id, CharacterName = resident.Name } },
-        }, "a walk into the shared zone arrives in the shared scope, so the party inside a run is invisible here");
+        }, "the walk arrives in the caller's own shared scope: the party inside a run and the other difficulty shard are both outside it");
     }
 
     [Fact]

@@ -28,8 +28,14 @@ public class PlayerSessionRepository(ApplicationDbContext db) : IPlayerSessionRe
         db.PlayerSessions.Where(s => s.ZoneId == zoneId).ToListAsync();
 
     /// <inheritdoc/>
-    public Task<List<PlayerSession>> GetOnSharedScopeAsync(string zoneId) =>
-        db.PlayerSessions.Where(s => s.ZoneId == zoneId && s.ZoneInstanceId == null).ToListAsync();
+    public Task<List<PlayerSession>> GetOnSharedZoneAsync(string zoneId, string? difficultyMode) =>
+        string.IsNullOrEmpty(difficultyMode)
+            ? db.PlayerSessions.Where(s => s.ZoneId == zoneId && s.ZoneInstanceId == null).ToListAsync()
+            : db.PlayerSessions
+                .Where(s => s.ZoneId == zoneId
+                            && s.ZoneInstanceId == null
+                            && s.Character.DifficultyMode == difficultyMode)
+                .ToListAsync();
 
     /// <inheritdoc/>
     public Task<List<PlayerSession>> GetByZoneInstanceAsync(Guid instanceId) =>

@@ -52,8 +52,10 @@ instanced location in its own zone, so standing in a dungeon's lobby and coming 
 re-entered with `JoinAsync` (which clears the participant's `LeftAt`), becomes the new session's `ZoneInstanceId`
 and `Context.Items["CurrentZoneInstanceId"]`, and its `ZoneGroup` replaces the shared group; the `ZoneEntered`
 occupant list is then the run's sessions (`GetByZoneInstanceAsync`). A resume that stays in the shared zone
-answers with `GetOnSharedScopeAsync` — the zone's sessions whose pointer is `null` — so the roster never names a
-party mid-delve, which is in another SignalR group the connection can neither see nor chat with. A run that has emptied is
+answers with `GetOnSharedZoneAsync` — the zone's sessions whose pointer is `null`, narrowed to the caller's own
+difficulty shard in a wilderness zone — so the roster never names a party mid-delve, which is in another SignalR
+group the connection can neither see nor chat with, nor a character in the other difficulty shard, whose group is
+named `zone:{zoneId}_{difficultyMode}`. A run that has emptied is
 `ZoneInstanceState.Empty` and is deliberately not returned, so the character does not resume inside it; the room they
 stood on is a shared room now, so `EnterZone` moves the resume point to the zone's safe location (`IsSafeRespawn`, the
 same rule `EnterZoneLocationHubCommandHandler` calls the entrance) and sends the sentence the respawn path sends —
@@ -80,13 +82,18 @@ Replaces `IZoneSessionRepository`. Same core methods plus new:
 - `UpdatePositionAsync(Guid characterId, int tileX, int tileY)` — update tile coords only — **removed 2026-10-22**
 - `SetZoneAsync(Guid characterId, string? zoneId)` — enter/exit zone (null = back to region map) — **removed 2026-10-22**
 
-**The interface today**: `GetByZoneIdAsync`, `GetOnSharedScopeAsync`, `GetByZoneInstanceAsync`, `GetByRegionIdAsync`,
+**The interface today**: `GetByZoneIdAsync`, `GetOnSharedZoneAsync(zoneId, difficultyMode)`,
+`GetByZoneInstanceAsync`, `GetByRegionIdAsync`,
 `GetOnRegionMapAsync`, `GetByConnectionIdAsync`, `GetByCharacterIdAsync`, `GetByCharacterNameAsync`, `AddAsync`,
 `RemoveAsync`, `RemoveByConnectionIdAsync`, `UpdateMapPositionAsync(characterId, mapId, nodeId, zoneId, regionId)`
 and `SetZoneInstanceAsync(characterId, instanceId)`.
 The position write is the map-graph pair; `SetZoneInstanceAsync` writes the run pointer, which scopes the run's
 chests and floor loot, and the two scoped reads are the two halves of one rule: `GetByZoneInstanceAsync` lists one
-run's sessions and `GetOnSharedScopeAsync` lists a zone's sessions whose pointer is `null`. Every `ZoneEntered`
+run's sessions and `GetOnSharedZoneAsync` lists a zone's sessions whose pointer is `null` **and** whose character is
+on the caller's side of the zone's difficulty split (`PlayerSession` stores no difficulty, so the read joins
+`Character`; `null` means the scope is not split, which is every zone type but `Wilderness`). The pair is the same
+pair `ZoneGroupName.ForZone` composes the scope name from, so a roster can only name connections in the caller's own
+group. Every `ZoneEntered`
 snapshot is read from one of those two — `EnterZone` by the run it resumed or not, `SyncArrivedZoneAsync` by the
 `CurrentZoneInstanceId` `ApplyArrivalGroupAsync` has just written — because the client keeps the roster until the
 next group event. `GetByZoneIdAsync` remains the whole zone, run members included, and is only correct where that
