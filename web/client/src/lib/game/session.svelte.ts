@@ -781,9 +781,15 @@ export class GameSession {
 		});
 
 		hub.on('ZoneEntered', (payload: ZoneEnteredPayload) => {
+			// The server also sends this snapshot for a scope change inside one zone — walking between a
+			// zone's shared rooms and an instanced room of the same zone repaints the roster without an
+			// arrival, and the walk's own "Travelled to …" line is the one the player should read. So the
+			// snapshot always refreshes the zone and its occupants, but only a snapshot naming a different
+			// zone is an arrival worth announcing.
+			const arrived = this.zone?.id !== payload.id;
 			this.zone = payload;
 			this.occupants = payload.occupants ?? [];
-			this.addSystemMessage(`Entered ${payload.name}.`);
+			if (arrived) this.addSystemMessage(`Entered ${payload.name}.`);
 		});
 
 		hub.on('MapGraphReceived', (payload: MapGraphReceivedPayload) => {

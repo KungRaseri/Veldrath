@@ -920,6 +920,31 @@ describe('GameSession character and world events', () => {
 		expect(session.chat.at(-1)?.message).toBe('Entered Aldenmere.');
 	});
 
+	it('announces a zone entry once, then repaints a scope change inside the zone silently', async () => {
+		const session = await connected();
+		const arrivals = (): string[] =>
+			session.chat
+				.filter((entry: ChatMessage) => entry.message.startsWith('Entered '))
+				.map((entry: ChatMessage) => entry.message);
+
+		hub.emit('ZoneEntered', zone({ id: 'the-droveway', name: 'The Droveway' }));
+		expect(arrivals()).toEqual(['Entered The Droveway.']);
+
+		// A scope change inside one zone sends another snapshot — it carries the roster of the run the
+		// player just stepped into, but they never left the zone, so the walk's own "Travelled to …"
+		// line stays the only arrival.
+		const occupants = [{ characterId: 'c9', characterName: 'Rook', enteredAt: 'now' }];
+		hub.emit('ZoneEntered', zone({ id: 'the-droveway', name: 'The Droveway', occupants }));
+
+		expect(session.occupants).toEqual(occupants);
+		expect(session.zone?.name).toBe('The Droveway');
+		expect(arrivals()).toEqual(['Entered The Droveway.']);
+
+		// Crossing into another zone is still an arrival, even after a same-zone snapshot.
+		hub.emit('ZoneEntered', zone({ id: 'rootbound-cellars', name: 'Rootbound Cellars' }));
+		expect(arrivals()).toEqual(['Entered The Droveway.', 'Entered Rootbound Cellars.']);
+	});
+
 	it('adds arriving players once and removes leaving players', async () => {
 		const session = await connected();
 
