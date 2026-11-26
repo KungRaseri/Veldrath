@@ -8,6 +8,7 @@ using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
 using Veldrath.Server.Settings;
@@ -261,6 +262,10 @@ internal static class HubHarness
     /// <param name="connectionId">Caller connection id.</param>
     /// <param name="permissions">Permission claims granted to the caller.</param>
     /// <param name="locations">Zone-location catalog, so a test can make a location instanced or a lobby safe.</param>
+    /// <param name="lobbies">
+    /// Zone lobby resolver the hub asks where a swept run's character wakes; one over <paramref name="locations"/>
+    /// and the test's own unlock rows when omitted.
+    /// </param>
     /// <param name="zoneInstances">
     /// Run service the hub talks to; the real one over <paramref name="db"/> when omitted, so a test can either
     /// observe the run's rows or a mock's invocations.
@@ -286,6 +291,7 @@ internal static class HubHarness
         ModerationOptions? moderation = null,
         string connectionId = "conn-1",
         IZoneLocationRepository? locations = null,
+        IZoneLobbyResolver? lobbies = null,
         Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         params string[] permissions)
     {
@@ -315,7 +321,10 @@ internal static class HubHarness
                 locations ?? new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
                 NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             random,
-            locations);
+            locations,
+            lobbies ?? new ZoneLobbyResolver(
+                locations ?? new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
+                new CharacterUnlockedLocationRepository(db)));
 
         var clients = new RecordingHubClients();
         var groups = new FakeGroupManager();

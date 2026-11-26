@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Features.Characters.Combat;
@@ -56,7 +57,7 @@ public class RespawnHubCommandHandler
 {
     private readonly ICharacterRepository _characterRepo;
     private readonly ICombatSessionStore _sessions;
-    private readonly IZoneLocationRepository _zoneLocations;
+    private readonly IZoneLobbyResolver _lobbies;
     private readonly IMapGraphRepository _maps;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<RespawnHubCommandHandler> _logger;
@@ -64,21 +65,21 @@ public class RespawnHubCommandHandler
     /// <summary>Initializes a new instance of <see cref="RespawnHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
-    /// <param name="zoneLocations">Zone location catalog, used to find the zone's safe respawn point.</param>
+    /// <param name="lobbies">Zone lobby resolver, used to find the safe respawn point the character may use.</param>
     /// <param name="maps">Map graphs, used to name the node that represents the safe location.</param>
     /// <param name="penalty">Configured death values, including the sickness window.</param>
     /// <param name="logger">Logger instance.</param>
     public RespawnHubCommandHandler(
         ICharacterRepository characterRepo,
         ICombatSessionStore sessions,
-        IZoneLocationRepository zoneLocations,
+        IZoneLobbyResolver lobbies,
         IMapGraphRepository maps,
         IOptions<DeathPenaltyOptions> penalty,
         ILogger<RespawnHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
         _sessions = sessions;
-        _zoneLocations = zoneLocations;
+        _lobbies = lobbies;
         _maps = maps;
         _penalty = penalty;
         _logger = logger;
@@ -198,8 +199,9 @@ public class RespawnHubCommandHandler
     }
 
     /// <summary>
-    /// Finds where the character should wake up. The zone's authored safe location wins; anything else is a
-    /// degradation, so it is logged as an <c>Error</c> and said out loud to the player.
+    /// Finds where the character should wake up. The zone's authored safe location wins, read through the
+    /// character's own unlocks so a hidden lobby they have opened is found; anything else is a degradation, so it
+    /// is logged as an <c>Error</c> and said out loud to the player.
     /// </summary>
     /// <param name="entity">Character that died.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -211,25 +213,39 @@ public class RespawnHubCommandHandler
         if (string.IsNullOrWhiteSpace(entity.CurrentZoneId))
             return (null, null, false, null);
 
-        var locations = await _zoneLocations.GetByZoneIdAsync(entity.CurrentZoneId);
-        if (locations.Count == 0)
-        {
-            _logger.LogError(
-                "Zone {ZoneId} has no authored locations; character {CharacterIdPrefix} respawns where they fell",
-                entity.CurrentZoneId, entity.Id.ToString()[..8]);
-            return (null, null, true, "This zone has no place to wake up; you respawn where you fell.");
-        }
+        var lobby = await _lobbies.ResolveAsync(entity.CurrentZoneId, entity.Id, cancellationToken);
 
-        var safe = locations.FirstOrDefault(location => location.IsSafeRespawn);
-        if (safe is null)
+        switch (lobby.Status)
         {
-            _logger.LogError(
-                "Zone {ZoneId} has no location flagged SafeRespawn; falling back to {LocationSlug}",
-                entity.CurrentZoneId, locations[0].Slug);
-            return (locations[0].Slug, locations[0].DisplayName, true,
-                "This zone has no safe respawn point; you wake at its entrance instead.");
-        }
+            case ZoneLobbyStatus.Resolved when lobby.Lobby is { } safe:
+                return (safe.Slug, safe.DisplayName, false, null);
 
-        return (safe.Slug, safe.DisplayName, false, null);
+            case ZoneLobbyStatus.NotUnlocked when lobby.LockedLobby is { } locked:
+                // The zone has a lobby, but it is hidden from this character. Say that rather than blaming the zone
+                // for having none: the fallback is still the entrance, and the wording is the difference between
+                // "broken content" and "not open to you yet".
+                _logger.LogError(
+                    "Zone {ZoneId} has a hidden safe respawn location {LocationSlug} that character {CharacterIdPrefix} has not unlocked; falling back to {FallbackSlug}",
+                    entity.CurrentZoneId, locked.Slug, entity.Id.ToString()[..8],
+                    lobby.Fallback?.Slug ?? "where they fell");
+                return lobby.Fallback is { } fallback
+                    ? (fallback.Slug, fallback.DisplayName, true,
+                        "This zone's safe haven is not yet open to you; you wake at its entrance instead.")
+                    : (null, null, true,
+                        "This zone's safe haven is not yet open to you; you respawn where you fell.");
+
+            case ZoneLobbyStatus.NoSafeLocation when lobby.Fallback is { } entrance:
+                _logger.LogError(
+                    "Zone {ZoneId} has no location flagged SafeRespawn; falling back to {LocationSlug}",
+                    entity.CurrentZoneId, entrance.Slug);
+                return (entrance.Slug, entrance.DisplayName, true,
+                    "This zone has no safe respawn point; you wake at its entrance instead.");
+
+            default:
+                _logger.LogError(
+                    "Zone {ZoneId} has no location a respawn can use for character {CharacterIdPrefix} ({Status}); they respawn where they fell",
+                    entity.CurrentZoneId, entity.Id.ToString()[..8], lobby.Status);
+                return (null, null, true, "This zone has no place to wake up; you respawn where you fell.");
+        }
     }
 }

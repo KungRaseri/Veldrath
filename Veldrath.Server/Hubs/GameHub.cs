@@ -67,6 +67,7 @@ public class GameHub : Hub
     private readonly Veldrath.Server.Features.Zones.IZoneInstanceService? _zoneInstances;
     private readonly IRandomSource _random;
     private readonly IZoneLocationRepository? _locations;
+    private readonly IZoneLobbyResolver? _lobbies;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -76,6 +77,13 @@ public class GameHub : Hub
     /// </summary>
     private const string ExpiredInstanceMessage =
         "The instance you were in has closed. You wake in the shared zone.";
+
+    /// <summary>
+    /// Said when the run is gone but the zone's lobby is hidden from this character, so the saved node stands: the
+    /// wake could not happen, and a player who is not where they logged out deserves the reason rather than silence.
+    /// </summary>
+    private const string LockedLobbyMessage =
+        "The instance you were in has closed. You wake where you logged out; this zone's safe haven is not yet open to you.";
 
     /// <summary>Initializes a new instance of <see cref="GameHub"/>.</summary>
     public GameHub(
@@ -96,7 +104,8 @@ public class GameHub : Hub
         IEnemyInstanceStore enemies,
         Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         IRandomSource? randomSource = null,
-        IZoneLocationRepository? locations = null)
+        IZoneLocationRepository? locations = null,
+        IZoneLobbyResolver? lobbies = null)
     {
         _logger = logger;
         _characterRepo = characterRepo;
@@ -116,6 +125,7 @@ public class GameHub : Hub
         _zoneInstances = zoneInstances;
         _random = randomSource ?? SystemRandomSource.Shared;
         _locations = locations;
+        _lobbies = lobbies;
     }
 
     public override async Task OnConnectedAsync()
@@ -896,7 +906,9 @@ public class GameHub : Hub
     /// Join a zone. Broadcasts <c>PlayerEntered</c> to all existing members of the zone,
     /// and sends <c>ZoneEntered</c> (current occupants) back to the caller.
     /// Re-entering the zone the character was already inside resumes them at their saved node, and — when that
-    /// node is an instanced location whose run is still open — back inside that run.
+    /// node is an instanced location whose run is still open — back inside that run. When the run has been swept,
+    /// they wake in the zone's safe location instead and are told why; a lobby that is closed to this character
+    /// leaves them on the saved node, and the same one-line message says so.
     /// </summary>
     public async Task EnterZone(string zoneId)
     {
@@ -973,15 +985,16 @@ public class GameHub : Hub
         // only a room in the shared zone now — nobody else's roster, no enemies of its own. The plan's reconnect
         // rule is that they wake in the dungeon's lobby and are told why, so move the resume point there instead
         // of dropping them into a room whose instance is gone. No lobby (or a room that was never instanced)
-        // keeps the saved node: a login must not fail over a place to stand.
-        var lobby = resumingHere && resumedRun is null
-            ? await ResolveSweptInstanceLobbyAsync(zoneId, resumeLocationSlug, zoneGraph)
+        // keeps the saved node: a login must not fail over a place to stand. A lobby this character cannot use is
+        // the one degraded case that still speaks — the resolver's message says why they stayed put.
+        var wake = resumingHere && resumedRun is null
+            ? await ResolveSweptInstanceLobbyAsync(zoneId, characterId, resumeLocationSlug, zoneGraph)
             : null;
 
-        if (lobby is { } wake)
+        if (wake is { NodeId: { } wakeNodeId, Slug: { } wakeSlug })
         {
-            resumeNodeId = wake.NodeId;
-            resumeLocationSlug = wake.Slug;
+            resumeNodeId = wakeNodeId;
+            resumeLocationSlug = wakeSlug;
         }
 
         // Create new session
@@ -1061,9 +1074,10 @@ public class GameHub : Hub
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);
 
         // The wake-up is only half the reconnect: the plan promises the player is told why they are not where
-        // they logged out, in the same words the respawn path uses for the same event.
-        if (lobby is not null)
-            await Clients.Caller.SendAsync("SystemMessage", ExpiredInstanceMessage);
+        // they logged out, in the same words the respawn path uses for the same event. A lobby they cannot use is
+        // still an event worth one sentence — they keep the saved node either way.
+        if (wake?.Message is { } wakeMessage)
+            await Clients.Caller.SendAsync("SystemMessage", wakeMessage);
     }
 
     /// <summary>Voluntarily leave the current zone.</summary>
@@ -4525,20 +4539,34 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Where a character whose instanced run is gone wakes, and what to tell them. <see langword="null"/> means the
+    /// room they stood on was never instanced, the zone has no lobby this character can use, or that lobby has no
+    /// node on the zone's own map — all of which keep the saved position.
+    /// </summary>
+    /// <param name="NodeId">The lobby's node on the zone graph, or <see langword="null"/> to keep the saved node.</param>
+    /// <param name="Slug">The lobby's location slug, written beside the node.</param>
+    /// <param name="Message">The single sentence the player is told, or <see langword="null"/> for a silent stay.</param>
+    private readonly record struct SweptRunWake(string? NodeId, string? Slug, string? Message);
+
+    /// <summary>
     /// Resolves the zone's lobby — its safe-respawn location — as the place to wake a character whose instanced
     /// run is gone, or <see langword="null"/> when the room they stood on was never instanced, the zone has no
     /// safe location, or that location has no node on the zone's own map.
     /// </summary>
     /// <param name="zoneId">Zone the character is resuming into.</param>
+    /// <param name="characterId">Character reconnecting, whose hidden-location unlocks decide the lobby.</param>
     /// <param name="locationSlug">Location the character stood on when their connection dropped.</param>
     /// <param name="zoneGraph">The zone's map graph, which owns the node the lobby stands on.</param>
     /// <returns>The lobby's node and slug, or <see langword="null"/> to keep the saved position.</returns>
-    private async Task<(string NodeId, string Slug)?> ResolveSweptInstanceLobbyAsync(
+    private async Task<SweptRunWake?> ResolveSweptInstanceLobbyAsync(
         string zoneId,
+        Guid characterId,
         string? locationSlug,
         MapGraph? zoneGraph)
     {
-        if (_locations is null || zoneGraph is null || string.IsNullOrWhiteSpace(locationSlug))
+        // Both halves are registered in the server's container; a hub built without them (some tests) has no
+        // catalogue to ask, so it keeps the saved position rather than moving the character on a guess.
+        if (_locations is null || _lobbies is null || zoneGraph is null || string.IsNullOrWhiteSpace(locationSlug))
             return null;
 
         // Only an instanced room has a run behind it. Everywhere else the shared scope is where the character
@@ -4550,18 +4578,44 @@ public class GameHub : Hub
             return null;
         }
 
-        // The lobby is the zone's safe location: the same rule that names the entrance of a zone, so a dungeon
-        // has one lobby rather than one per caller.
-        var lobby = (await _locations.GetByZoneIdAsync(zoneId))
-            .FirstOrDefault(candidate => candidate.IsSafeRespawn);
-        if (lobby is null)
-            return null;
+        // The lobby is the zone's safe location — the same rule the respawn uses, resolved the same way, so a hidden
+        // lobby the character has unlocked is reachable instead of silently turning this wake into a no-op.
+        var resolution = await _lobbies.ResolveAsync(zoneId, characterId);
 
-        var node = zoneGraph.Nodes.FirstOrDefault(candidate =>
-            candidate.NodeType == MapNodeType.Location &&
-            string.Equals(candidate.RefId, lobby.Slug, StringComparison.OrdinalIgnoreCase));
+        switch (resolution.Status)
+        {
+            case ZoneLobbyStatus.Resolved when resolution.Lobby is { } lobby:
+                var node = zoneGraph.Nodes.FirstOrDefault(candidate =>
+                    candidate.NodeType == MapNodeType.Location &&
+                    string.Equals(candidate.RefId, lobby.Slug, StringComparison.OrdinalIgnoreCase));
 
-        return node is null ? null : (node.Id, lobby.Slug);
+                if (node is null)
+                {
+                    _logger.LogError(
+                        "Zone {ZoneId} has no map node for its safe respawn location {LocationSlug}; character {CharacterIdPrefix} keeps the saved node after their run was swept",
+                        zoneId, lobby.Slug, characterId.ToString()[..8]);
+                    return null;
+                }
+
+                _logger.LogInformation(
+                    "Character {CharacterIdPrefix} woke in {LocationSlug} of zone {ZoneId} after their instanced run was swept",
+                    characterId.ToString()[..8], lobby.Slug, zoneId);
+                return new SweptRunWake(node.Id, lobby.Slug, ExpiredInstanceMessage);
+
+            case ZoneLobbyStatus.NotUnlocked when resolution.LockedLobby is { } locked:
+                // The zone authored a lobby, but this character cannot see it. Say so: the wake keeps the saved node,
+                // and a player left silently on a node whose run is gone has no way to understand why.
+                _logger.LogError(
+                    "Zone {ZoneId} has a hidden safe respawn location {LocationSlug} that character {CharacterIdPrefix} has not unlocked; the swept-run wake keeps the saved node",
+                    zoneId, locked.Slug, characterId.ToString()[..8]);
+                return new SweptRunWake(null, null, LockedLobbyMessage);
+
+            default:
+                _logger.LogError(
+                    "Zone {ZoneId} has no lobby a swept-run wake can use for character {CharacterIdPrefix} ({Status}); keeping the saved node",
+                    zoneId, characterId.ToString()[..8], resolution.Status);
+                return null;
+        }
     }
 
     private async Task SendInventorySnapshotAsync(
