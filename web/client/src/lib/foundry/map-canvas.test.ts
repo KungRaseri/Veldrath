@@ -117,6 +117,15 @@ describe('layoutCanvas', () => {
 
 		expect(layoutCanvas(empty).bounds.width).toBe(0);
 	});
+
+	it('labels a node by its id when the map holds no display name', () => {
+		const unnamed = graph({
+			nodes: [node({ id: 'entry', displayName: '', layoutX: 1, layoutY: 1 })]
+		});
+
+		// A blank name is missing data, not a blank card.
+		expect(layoutCanvas(unnamed).placed[0].label).toBe('entry');
+	});
 });
 
 describe('nodeAt', () => {
@@ -187,6 +196,14 @@ describe('nextFreeCell', () => {
 
 		expect(nextFreeCell(layout, { x: 2, y: 2 })).toEqual({ x: 3, y: 2 });
 	});
+
+	it('starts the next row at the left edge when the last cell of a row is taken', () => {
+		const layout = layoutCanvas(
+			graph({ nodes: [node({ id: 'corner', layoutX: MAX_CELL, layoutY: 0 })] })
+		);
+
+		expect(nextFreeCell(layout, { x: MAX_CELL, y: 0 })).toEqual({ x: 0, y: 1 });
+	});
 });
 
 describe('tidyLayout', () => {
@@ -223,5 +240,62 @@ describe('tidyLayout', () => {
 
 		expect(withIsland.nodes.every((candidate) => candidate.layoutX !== null)).toBe(true);
 		expect(withIsland.nodes.every((candidate) => candidate.layoutY !== null)).toBe(true);
+	});
+
+	it('falls back to the entry-point node when the graph names an entry it does not hold', () => {
+		const tidied = tidyLayout(
+			graph({
+				entryNodeId: 'missing',
+				nodes: [node({ id: 'entry', nodeType: 'EntryPoint', isEntryPoint: true })],
+				edges: []
+			})
+		);
+
+		// The walk still has to start somewhere, or tidy would leave every node unplaced.
+		expect(tidied.nodes[0]).toMatchObject({ layoutX: 0, layoutY: 0 });
+	});
+
+	it('starts from the first ordered node when nothing is marked as the entry', () => {
+		const tidied = tidyLayout(
+			graph({ entryNodeId: 'missing', nodes: [node({ id: 'hall' })], edges: [] })
+		);
+
+		expect(tidied.nodes[0]).toMatchObject({ id: 'hall', layoutX: 0, layoutY: 0 });
+	});
+
+	it('returns a graph with no nodes untouched', () => {
+		const empty = graph({ nodes: [], edges: [] });
+
+		expect(tidyLayout(empty)).toBe(empty);
+	});
+
+	it('survives a cycle, a dangling edge, and a direction the grid cannot express', () => {
+		const tidied = tidyLayout(
+			graph({
+				nodes: [
+					node({ id: 'entry', nodeType: 'EntryPoint', isEntryPoint: true }),
+					node({ id: 'hall' }),
+					node({ id: 'vault' })
+				],
+				edges: [
+					edge('entry', 'hall', 'South'),
+					// A return edge: `entry` already has a cell and must not be handed a second one.
+					edge('hall', 'entry', 'North'),
+					// An edge naming a node the graph does not hold; the validator reports it separately.
+					edge('hall', 'ghost', 'East'),
+					// `Up` is a real model direction but has no canvas delta, so `vault` is parked beside
+					// the hall instead of being guessed onto its origin.
+					edge('hall', 'vault', 'Up')
+				]
+			})
+		);
+		const at = (id: string) => {
+			const found = tidied.nodes.find((candidate) => candidate.id === id)!;
+			return { x: found.layoutX, y: found.layoutY };
+		};
+
+		expect(at('entry')).toEqual({ x: 0, y: 0 });
+		expect(at('hall')).toEqual({ x: 0, y: 1 });
+		expect(at('vault')).toEqual({ x: 1, y: 1 });
 	});
 });

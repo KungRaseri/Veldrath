@@ -163,6 +163,10 @@ namespace RealmEngine.Data.Migrations
                     b.Property<int?>("LevelOverride")
                         .HasColumnType("integer");
 
+                    b.Property<string>("LocationSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<Guid?>("LootTableOverride")
                         .HasColumnType("uuid");
 
@@ -1556,6 +1560,33 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("ZoneLocationConnections");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.ZoneStockItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ItemSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ZoneId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ZoneId", "ItemSlug")
+                        .IsUnique();
+
+                    b.ToTable("ZoneStockItems");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>
                 {
                     b.HasOne("RealmEngine.Data.Entities.Background", "Background")
@@ -1945,6 +1976,40 @@ namespace RealmEngine.Data.Migrations
 
                             b1.WithOwner()
                                 .HasForeignKey("DialogueId");
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.DialogueOption", "Options", b2 =>
+                                {
+                                    b2.Property<Guid>("DialogueStatsDialogueId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("Grants");
+
+                                    b2.Property<string>("Key")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Label")
+                                        .IsRequired();
+
+                                    b2.Property<string>("NextSlug");
+
+                                    b2.Property<bool?>("OneShot");
+
+                                    b2.Property<string>("Requires");
+
+                                    b2.Property<string>("Response")
+                                        .IsRequired();
+
+                                    b2.HasKey("DialogueStatsDialogueId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Dialogues");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("DialogueStatsDialogueId");
+                                });
+
+                            b1.Navigation("Options");
                         });
 
                     b.OwnsOne("RealmEngine.Data.Entities.DialogueTraits", "Traits", b1 =>

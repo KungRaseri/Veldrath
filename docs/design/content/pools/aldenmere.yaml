@@ -1,0 +1,48 @@
+# docs/design/content/pools/aldenmere.yaml
+# Veldrath spawn pools — zone: aldenmere (region: greymoor)
+# Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4).
+# DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
+# rejects an unknown spawn archetype (missing-spawn-archetype, Error), so a pool imports only
+# once every archetype it names is seeded. The design file stays the design set; each zone's
+# pack is written beside it at content/zonelocations/aldenmere.yaml and is what the importer
+# reads (pool-matrix.md §8).
+# The roster roll is 2-4 per location, from one global const pair (ActorPoolResolver.cs:32-33,
+# rolled at :94), and it is a fill target, not a cap: the location's placed hostile instances
+# go in first and the pool fills from their count up to the roll (:117). Five or more hostile
+# placements at one location would exceed it.
+# There is no per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:193-204), never percentages, and must be
+# >= 1. The importer must not normalise them; only the ratio is meaningful.
+# "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
+# point or a dungeon lobby that has no pool and no placements deliberately spawns nothing
+# (ActorPoolResolver.cs:86-92). An empty pool does not suppress the location's hostile
+# placements — those spawn on their own, exactly as placed, never topped up (:111-115) — and a
+# non-hostile placement is dropped with a warning (:100-106).
+schema_version: 1
+zone: aldenmere
+region: greymoor
+locations:
+  - slug: ironhollow-keep
+    # band: b4-6 (D0 budget) | location L5-12
+    level_range: [5, 12]
+    excluded: true
+    exclusion_class: safe_respawn
+    exclusion_reason: 'SafeRespawn + IsTown. Aldenmere''s keep and respawn point.'
+    pool: []   # empty by design
+  - slug: aldenmere-marketplace
+    # band: b4-6 (D0 budget) | location L5+
+    level_range: [5, null]   # no MaxLevel authored at this location
+    excluded: true
+    exclusion_class: town
+    exclusion_reason: 'IsTown. Merchant location.'
+    pool: []   # empty by design
+  - slug: grey-cup
+    # band: b4-6 (D0 budget) | location L5+
+    level_range: [5, null]   # no MaxLevel authored at this location
+    excluded: true
+    exclusion_class: town
+    exclusion_reason: 'IsTown. Inn.'
+    pool: []   # empty by design
+
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 0 | excluded 3

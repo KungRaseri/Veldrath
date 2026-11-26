@@ -1,0 +1,269 @@
+# content/archetypes/b7-10.yaml
+# The hostile roster rows of docs/design/content/archetypes.md whose spawn band is b7-10.
+# Mirrors RealmEngine.Data/Seeders/ArchetypeSeeder.cs value for value: an import reports these rows
+# unchanged, so the day the two disagree the importer says so instead of quietly rewriting a stat line.
+# lootTableId is a slug here; the importer resolves it against content/loottables/, which must be
+# imported first (docs/content-packs.md, 'Two runs, in dependency order').
+family: archetype
+entities:
+  - slug: moor-wight
+    typeKey: undead
+    displayName: Moor Wight
+    rarityWeight: 60
+    isActive: true
+    minLevel: 6
+    maxLevel: 10
+    stats:
+      health: 90
+      mana: 30
+      strength: 12
+      agility: 8
+      intelligence: 12
+      constitution: 12
+      armorClass: 5
+      attackBonus: 4
+      damage: 10
+      experienceReward: 70
+      goldRewardMin: 8
+      goldRewardMax: 20
+    traits:
+      hostile: true
+      aggressive: false
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: false
+      ranged: false
+      caster: true
+      fireImmune: false
+      coldImmune: true
+      poisonImmune: true
+    lootTableId: moor-wight-drops
+
+  - slug: barrow-bear
+    typeKey: beasts
+    displayName: Barrow Bear
+    rarityWeight: 50
+    isActive: true
+    minLevel: 7
+    maxLevel: 9
+    stats:
+      health: 150
+      strength: 17
+      agility: 7
+      intelligence: 3
+      constitution: 16
+      armorClass: 6
+      attackBonus: 5
+      damage: 16
+      experienceReward: 110
+      goldRewardMin: 12
+      goldRewardMax: 28
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: barrow-bear-drops
+
+  - slug: moor-tollman
+    typeKey: humanoids
+    displayName: Moor Tollman
+    rarityWeight: 60
+    isActive: true
+    minLevel: 7
+    maxLevel: 9
+    stats:
+      health: 100
+      strength: 11
+      agility: 11
+      intelligence: 8
+      constitution: 11
+      armorClass: 5
+      attackBonus: 6
+      damage: 12
+      experienceReward: 80
+      goldRewardMin: 10
+      goldRewardMax: 25
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: true
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: moor-tollman-drops
+
+  - slug: cairn-haunt
+    typeKey: undead
+    displayName: Cairn Haunt
+    rarityWeight: 45
+    isActive: true
+    minLevel: 8
+    maxLevel: 14
+    stats:
+      health: 110
+      mana: 45
+      strength: 14
+      agility: 10
+      intelligence: 14
+      constitution: 12
+      armorClass: 6
+      attackBonus: 5
+      damage: 12
+      experienceReward: 95
+      goldRewardMin: 10
+      goldRewardMax: 24
+    traits:
+      hostile: true
+      aggressive: false
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: true
+      fireImmune: false
+      coldImmune: true
+      poisonImmune: true
+    lootTableId: cairn-haunt-drops
+
+  - slug: fen-lurker
+    typeKey: beasts
+    displayName: Fen Lurker
+    rarityWeight: 55
+    isActive: true
+    minLevel: 9
+    maxLevel: 14
+    stats:
+      health: 140
+      strength: 18
+      agility: 12
+      intelligence: 4
+      constitution: 16
+      armorClass: 7
+      attackBonus: 6
+      damage: 15
+      experienceReward: 120
+      goldRewardMin: 12
+      goldRewardMax: 30
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: true
+    lootTableId: fen-lurker-drops
+
+  - slug: burrow-worm
+    typeKey: beasts
+    displayName: Burrow Worm
+    rarityWeight: 45
+    isActive: true
+    minLevel: 10
+    maxLevel: 12
+    stats:
+      health: 135
+      strength: 16
+      agility: 8
+      intelligence: 2
+      constitution: 15
+      armorClass: 6
+      attackBonus: 6
+      damage: 15
+      experienceReward: 118
+      goldRewardMin: 12
+      goldRewardMax: 28
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: burrow-worm-drops
+
+  - slug: bog-lantern
+    typeKey: spirits
+    displayName: Bog Lantern
+    rarityWeight: 40
+    isActive: true
+    minLevel: 10
+    maxLevel: 12
+    stats:
+      health: 95
+      mana: 40
+      strength: 9
+      agility: 12
+      intelligence: 16
+      constitution: 10
+      armorClass: 6
+      attackBonus: 6
+      damage: 11
+      experienceReward: 100
+      goldRewardMin: 10
+      goldRewardMax: 24
+    traits:
+      hostile: true
+      aggressive: false
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: false
+      ranged: true
+      caster: true
+      fireImmune: false
+      coldImmune: true
+      poisonImmune: false
+    lootTableId: bog-lantern-drops

@@ -22,9 +22,16 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
     private readonly FakeCombatSessionStore _sessions = new();
     private readonly Mock<RealmEngine.Shared.Abstractions.ILootTableRepository> _lootTables = new();
 
+    /// <summary>
+    /// The class catalogue. Returning nothing leaves <c>CharacterProgression</c> on its engine-formula fallback;
+    /// a test that crosses a level sets up the row whose curve it expects.
+    /// </summary>
+    private readonly Mock<RealmEngine.Shared.Abstractions.ICharacterClassRepository> _classes = new();
+
     private AttackEnemyHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
             new CharacterRepository(db),
+            _classes.Object,
             _enemies,
             _sessions,
             new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
@@ -165,12 +172,65 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
         result.GoldEarned.Should().Be(5, "a solo player takes the enemy's whole gold");
         result.ParticipantIds.Should().Equal([character.Id]);
         result.EnemyArchetypeSlug.Should().Be("goblin");
+        result.Progression.Should().NotBeNull("every kill that pays XP reports where the award left the character");
+        result.Progression!.NewLevel.Should().Be(1, "10 XP does not cross the level-1 threshold of 100");
+        result.Progression.NewExperience.Should().Be(10);
 
         await using var read = _dbFactory.CreateContext();
         var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
         stored.Experience.Should().Be(10);
         stored.Attributes.Should().Contain("\"Gold\":5",
             "the gold must survive the cooldown write that follows the award");
+    }
+
+    [Fact]
+    public async Task Handle_LevelsTheCharacter_When_TheKillCrossesTheThreshold()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(
+            db, """{"Constitution":12,"CurrentHealth":100,"MaxHealth":120,"CurrentMana":15,"MaxMana":20}""");
+        character.Level = 1;
+        character.Experience = 90;
+        await db.SaveChangesAsync();
+
+        // The seeded warrior curve: 120 health / 20 mana at level 1, +12 / +2 per level. The kill pays exactly the
+        // 10 XP still missing on the level-1 threshold of 100.
+        _classes.Setup(classes => classes.GetByName("Warrior")).Returns(new RealmEngine.Shared.Models.CharacterClass
+        {
+            Slug = "warrior",
+            Name = "Warrior",
+            DisplayName = "Warrior",
+            StartingHealth = 120,
+            StartingMana = 20,
+            Progression = new RealmEngine.Shared.Models.ClassProgression
+            {
+                StatGrowth = new RealmEngine.Shared.Models.StatGrowth { HealthPerLevel = 12, ManaPerLevel = 2 },
+            },
+        });
+
+        var (zoneGroup, location, enemy) = AddEnemy(1, character.Id);
+        SetSession(character.Id, zoneGroup, location, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(character.Id), CancellationToken.None);
+
+        result.EnemyDefeated.Should().BeTrue();
+        result.Progression.Should().NotBeNull();
+        result.Progression!.OldLevel.Should().Be(1);
+        result.Progression.NewLevel.Should().Be(2, "90 stored XP plus a 10 XP kill crosses the level-1 threshold");
+        result.Progression.NewExperience.Should().Be(0, "the surplus is banked, not left over the threshold");
+        result.Progression.LeveledUp.Should().BeTrue();
+        result.Progression.MaxHealth.Should().Be(132, "the warrior curve is 120 + 12 per level");
+        result.Progression.MaxMana.Should().Be(22);
+        result.Progression.UnspentAttributePoints.Should().Be(3, "reaching level 2 banks the engine's 3 points");
+
+        // The row every later login reads has to carry the level, not just the reply to this turn.
+        await using var read = _dbFactory.CreateContext();
+        var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
+        stored.Level.Should().Be(2);
+        stored.Experience.Should().Be(0);
+        stored.Attributes.Should().Contain("\"MaxHealth\":132");
+        stored.Attributes.Should().Contain("\"CurrentHealth\":100",
+            "a bigger bar is not a mid-fight heal: the current pool is clamped, never refilled");
     }
 
     [Fact]
@@ -196,6 +256,28 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
 
         (killerXp + allyXp).Should().Be(10, "the split must not mint or lose experience");
         allyXp.Should().BeGreaterThan(killerXp, "the ally dealt three times the damage");
+    }
+
+    [Fact]
+    public async Task Handle_Reports_Every_Session_The_Kill_Released()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var killer = await SeedCharacterAsync(db);
+        // A defender never lands a hit, so the split pays them nothing — but they are still engaged with the row.
+        var defender = await SeedCharacterAsync(db, """{"CurrentHealth":40,"MaxHealth":100}""");
+        var (zg, loc, enemy) = AddEnemy(1, killer.Id);
+        enemy.Participants.Add(defender.Id);
+        SetSession(killer.Id, zg, loc, enemy.Id);
+        SetSession(defender.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(killer.Id), CancellationToken.None);
+
+        result.EnemyDefeated.Should().BeTrue();
+        // Killing the row ends every fight pointed at it. Without these ids the hub can only tell the killer, and the
+        // defender's next Defend is answered "Not in combat" with its panel still up.
+        result.ReleasedCombatCharacterIds.Should().BeEquivalentTo([killer.Id, defender.Id]);
+        _sessions.IsInCombat(killer.Id).Should().BeFalse();
+        _sessions.IsInCombat(defender.Id).Should().BeFalse();
     }
 
     [Fact]

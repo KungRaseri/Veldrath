@@ -430,7 +430,7 @@ public class GameHubQuestItemTests : IDisposable
         var account = await HubHarness.SeedAccountAsync(db);
         var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
         var characterId = Guid.NewGuid();
-        ctx.Items["CharacterId"] = characterId;
+        ctx.EnterZoneState(characterId);
         mediator.Returns(new TurnInQuestHubResult
         {
             Success = true,
@@ -440,7 +440,13 @@ public class GameHubQuestItemTests : IDisposable
             Quests = [],
         });
         mediator.Returns(new AddGoldHubResult { Success = true, GoldAdded = 25, NewGoldTotal = 125 });
-        mediator.Returns(new GainExperienceHubResult { Success = true, NewLevel = 2, NewExperience = 60 });
+        mediator.Returns(new GainExperienceHubResult
+        {
+            Success = true,
+            NewLevel = 2,
+            NewExperience = 60,
+            UnspentAttributePoints = 7,
+        });
 
         await hub.TurnInQuest("rats");
 
@@ -449,6 +455,38 @@ public class GameHubQuestItemTests : IDisposable
         var xp = mediator.Invocations.Select(i => i.Arguments[0]).OfType<GainExperienceHubCommand>().Single();
         xp.Amount.Should().Be(60);
         xp.Source.Should().Be("Quest");
+
+        // The toast names the reward; the purse moves on GoldChanged, and it carries the writer's total so
+        // stats.gold cannot drift from what the server stored. Gold is private: the caller alone is told.
+        clients.Caller.SentMessages.Single(m => m.Method == "GoldChanged").Args[0]
+            .Should().BeEquivalentTo(new
+            {
+                CharacterId = characterId,
+                GoldAdded = 25,
+                NewGoldTotal = 125,
+                Source = "Quest:rats",
+            });
+        clients.GroupNamed("zone:crestfall").SentMessages.Should()
+            .NotContain(m => m.Method == "GoldChanged", "one player's purse is not the zone's business");
+
+        // The turn-in is the only thing that tells the client what the award paid: the level, the pools a
+        // level-up re-derives, and the attribute points it banked — the allocation panel budgets from that last
+        // number, so a missing field leaves the panel disabled until the player re-selects.
+        var experience = clients.Caller.SentMessages.Single(m => m.Method == "ExperienceGained").Args[0];
+        experience.Should().BeEquivalentTo(new
+        {
+            CharacterId = characterId,
+            NewLevel = 2,
+            NewExperience = 60L,
+            LeveledUp = false,
+            LeveledUpTo = (int?)null,
+            MaxHealth = 0,
+            CurrentHealth = 0,
+            MaxMana = 0,
+            CurrentMana = 0,
+            UnspentAttributePoints = 7,
+            Source = "Quest",
+        });
 
         var payload = clients.Caller.SentMessages.Single(m => m.Method == "QuestTurnedIn").Args[0];
         payload.Should().BeEquivalentTo(new { CharacterId = characterId, Slug = "rats", GoldReward = 25, XpReward = 60 });
@@ -468,6 +506,8 @@ public class GameHubQuestItemTests : IDisposable
         mediator.Invocations.Select(i => i.Arguments[0])
             .Should().NotContain(a => a is AddGoldHubCommand || a is GainExperienceHubCommand);
         clients.Caller.SentMessages.Should().ContainSingle(m => m.Method == "QuestTurnedIn");
+        clients.EveryMessage.Should().NotContain(m => m.Method == "GoldChanged",
+            "a turn-in that paid no gold must not move the purse");
     }
 
     // ── TalkToNpc ────────────────────────────────────────────────────────────
@@ -586,6 +626,65 @@ public class GameHubQuestItemTests : IDisposable
 
         await act.Should().NotThrowAsync("a best-effort objective advance must never break the player action");
         clients.EveryMessage.Should().NotContain(m => m.Method == "QuestLogReceived");
+    }
+
+    // ── ChooseNpcOption ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ChooseNpcOption_Announces_Dialogue_Gold_With_The_Server_Total()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new ChooseNpcOptionResult
+        {
+            Success = true,
+            SpeakerSlug = "village-blacksmith",
+            DisplayName = "Mira",
+            Response = "Take it, and mind the edge.",
+            Applied = ["25 gold"],
+            GoldAwarded = 25,
+            NewGoldTotal = 84,
+            Ended = true,
+        });
+        mediator.Returns(new GetInventoryHubResult { Success = false });
+        mediator.Returns(new GetQuestLogHubResult { Success = true });
+
+        await hub.ChooseNpcOption(new NpcOptionHubRequest("village-blacksmith", "sell-rumour"));
+
+        clients.Caller.SentMessages.Single(m => m.Method == "GoldChanged").Args[0]
+            .Should().BeEquivalentTo(new
+            {
+                CharacterId = characterId,
+                GoldAdded = 25,
+                NewGoldTotal = 84,
+                Source = "Dialogue:village-blacksmith",
+            });
+        clients.GroupNamed("zone:crestfall").SentMessages.Should()
+            .BeEmpty("a private conversation is not announced to the zone");
+    }
+
+    [Fact]
+    public async Task ChooseNpcOption_Sends_No_GoldChanged_When_The_Choice_Paid_Nothing()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(Guid.NewGuid());
+        mediator.Returns(new ChooseNpcOptionResult
+        {
+            Success = true,
+            SpeakerSlug = "village-blacksmith",
+            DisplayName = "Mira",
+            Response = "Safe roads.",
+            Ended = true,
+        });
+
+        await hub.ChooseNpcOption(new NpcOptionHubRequest("village-blacksmith", "ask-about-woods"));
+
+        clients.EveryMessage.Should().NotContain(m => m.Method == "GoldChanged");
     }
 
     // ── CraftItem ────────────────────────────────────────────────────────────

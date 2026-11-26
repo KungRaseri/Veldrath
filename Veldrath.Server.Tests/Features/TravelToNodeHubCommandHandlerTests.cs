@@ -8,6 +8,8 @@ using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Map;
+using Veldrath.Server.Features.Zones;
+using Veldrath.Server.Tests.Infrastructure;
 using CharacterEntity = Veldrath.Server.Data.Entities.Character;
 
 namespace Veldrath.Server.Tests.Features;
@@ -24,6 +26,9 @@ public class TravelToNodeHubCommandHandlerTests
     private const string SecretNodeId = "zone:crestfall:location:secret-location";
     private const string ExitNodeId = "zone:crestfall:exit:zone:the-droveway";
     private const string TargetEntryNodeId = "zone:the-droveway:entry";
+    private const string GrevenmireMapId = "zone:grevenmire";
+    private const string MireExitNodeId = "zone:crestfall:exit:zone:grevenmire";
+    private const string MireCrossingNodeId = "zone:grevenmire:location:mire-crossing";
 
     [Fact]
     public async Task Handle_ReturnsError_WhenCharacterIdIsEmpty()
@@ -232,6 +237,78 @@ public class TravelToNodeHubCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Keys_A_Cross_Zone_Arrival_To_The_Destination_Zones_Scope()
+    {
+        var store = new FakeEnemyInstanceStore();
+        var (handler, mapRepo, _, _, _, zoneRepo, locationRepo, _) = MakeHandler(enemyStore: store);
+
+        mapRepo.Setup(r => r.GetOutgoingEdgesAsync(
+                ZoneMapId, SquareNodeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Edge(SquareNodeId, MireExitNodeId)]);
+        mapRepo.Setup(r => r.GetMapAsync(GrevenmireMapId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(GrevenmireGraph());
+        zoneRepo.Setup(r => r.GetByIdAsync("grevenmire"))
+            .ReturnsAsync(new Zone
+            {
+                Id = "grevenmire",
+                Name = "Grevenmire",
+                RegionId = "varenmark",
+                Type = ZoneType.Wilderness,
+            });
+        locationRepo.Setup(r => r.GetBySlugAsync("mire-crossing"))
+            .ReturnsAsync(new ZoneLocationEntry(
+                "mire-crossing",
+                "The Mire Crossing",
+                "locations",
+                "grevenmire",
+                100,
+                null,
+                null,
+                ActorPool: [new ActorPoolEntry("bog-lurker", 1)]));
+
+        // The caller walked out of Crestfall, so its connection is still scoped to the town's group. That group used
+        // to key the destination's roster, leaving the same enemies stored under both zones' groups at once.
+        var result = await handler.Handle(
+            new TravelToNodeHubCommand(CharacterId, ZoneMapId, MireExitNodeId, "zone:crestfall"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ZoneId.Should().Be("grevenmire");
+        result.ZoneGroup.Should().Be("zone:grevenmire_normal", "a wilderness scope carries the character's difficulty");
+        store.RosterRequests.Should().Equal(("zone:grevenmire_normal", "mire-crossing"));
+    }
+
+    [Fact]
+    public async Task Handle_Keeps_The_Zones_Own_Scope_For_A_Walk_Inside_It()
+    {
+        var store = new FakeEnemyInstanceStore();
+        var (handler, mapRepo, _, _, _, _, locationRepo, _) = MakeHandler(character => character.CurrentNodeId = EntryNodeId, store);
+        mapRepo.Setup(r => r.GetOutgoingEdgesAsync(
+                ZoneMapId, EntryNodeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Edge(EntryNodeId, SquareNodeId)]);
+
+        // Crestfall is a town, so its shared scope has no difficulty suffix even though the character arrived with a
+        // group that carries one: the destination zone decides the shape.
+        locationRepo.Setup(r => r.GetBySlugAsync("crestfall-square"))
+            .ReturnsAsync(new ZoneLocationEntry(
+                "crestfall-square",
+                "The Crestfall Square",
+                "locations",
+                "crestfall",
+                100,
+                null,
+                null,
+                ActorPool: [new ActorPoolEntry("town-drunk", 1)]));
+
+        var result = await handler.Handle(
+            new TravelToNodeHubCommand(CharacterId, ZoneMapId, SquareNodeId, "zone:crestfall_normal"),
+            CancellationToken.None);
+
+        result.ZoneGroup.Should().Be("zone:crestfall");
+        store.RosterRequests.Should().Equal(("zone:crestfall", "crestfall-square"));
+    }
+
+    [Fact]
     public async Task Handle_ReturnsError_WhenHiddenDestinationIsNotDiscovered()
     {
         var (handler, mapRepo, characterRepo, _, _, _, _, _) = MakeHandler();
@@ -343,7 +420,8 @@ public class TravelToNodeHubCommandHandlerTests
         Mock<IZoneRepository> ZoneRepo,
         Mock<IZoneLocationRepository> LocationRepo,
         Mock<IEnemyRepository> EnemyRepo) MakeHandler(
-        Action<CharacterEntity>? configure = null)
+        Action<CharacterEntity>? configure = null,
+        FakeEnemyInstanceStore? enemyStore = null)
     {
         var character = new CharacterEntity
         {
@@ -403,6 +481,7 @@ public class TravelToNodeHubCommandHandlerTests
                 Id = "crestfall",
                 Name = "Crestfall",
                 RegionId = "varenmark",
+                Type = ZoneType.Town,
             });
 
         locationRepo.Setup(r => r.GetHiddenByZoneIdAsync(It.IsAny<string>()))
@@ -422,6 +501,14 @@ public class TravelToNodeHubCommandHandlerTests
 
         var actorPoolResolver = new ActorPoolResolver(
             new EnemyGenerator(enemyRepo.Object, NullLogger<EnemyGenerator>.Instance));
+
+        // The one roster read a walk and a resume share; the test's store is the same object either way, so a
+        // second arrival sees the cohort the first one spawned.
+        var rosters = new LocationRosterReader(
+            enemyStore ?? new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
+            actorPoolResolver,
+            NullLogger<LocationRosterReader>.Instance);
 
         var instanceService = new Mock<Veldrath.Server.Features.Zones.IZoneInstanceService>();
         instanceService
@@ -443,8 +530,7 @@ public class TravelToNodeHubCommandHandlerTests
             sessionRepo.Object,
             zoneRepo.Object,
             locationRepo.Object,
-            actorPoolResolver,
-            new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            rosters,
             instanceService.Object,
             NullLogger<TravelToNodeHubCommandHandler>.Instance);
 
@@ -473,13 +559,59 @@ public class TravelToNodeHubCommandHandlerTests
                     targetNodeId: TargetEntryNodeId,
                     layoutX: 10,
                     layoutY: 2),
+                Node(
+                    MireExitNodeId,
+                    MapNodeType.ZoneExit,
+                    "grevenmire",
+                    "Road to Grevenmire",
+                    isExitPoint: true,
+                    targetMapId: GrevenmireMapId,
+                    targetNodeId: MireCrossingNodeId,
+                    layoutX: 14,
+                    layoutY: 2),
             ],
             [
                 Edge(EntryNodeId, SquareNodeId),
                 Edge(SquareNodeId, EntryNodeId),
                 Edge(SquareNodeId, SecretNodeId),
                 Edge(SquareNodeId, ExitNodeId),
+                Edge(SquareNodeId, MireExitNodeId),
             ]);
+
+    /// <summary>
+    /// The far side of a border that is not at an entry node, so the walk ends on a location whose roster has to be
+    /// keyed by the destination zone rather than by the group the caller arrived with.
+    /// </summary>
+    private static MapGraph GrevenmireGraph() =>
+        new(
+            GrevenmireMapId,
+            MapType.Zone,
+            "grevenmire",
+            "Grevenmire",
+            "A drowned lowland.",
+            MireCrossingNodeId,
+            [
+                new MapNodeEntry(
+                    MireCrossingNodeId,
+                    GrevenmireMapId,
+                    MapNodeType.Location,
+                    "mire-crossing",
+                    "The Mire Crossing",
+                    "A causeway over black water.",
+                    "place",
+                    4,
+                    4,
+                    IsEntryPoint: true,
+                    IsExitPoint: false,
+                    TargetMapId: null,
+                    TargetNodeId: null,
+                    IsHidden: false,
+                    UnlockType: null,
+                    UnlockKey: null,
+                    DiscoverThreshold: null,
+                    SortOrder: 0),
+            ],
+            []);
 
     private static MapGraph TargetZoneGraph() =>
         new(

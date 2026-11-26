@@ -1,0 +1,111 @@
+# content/zonelocations/grevenmire.yaml
+#
+# The import shape of docs/design/content/pools/grevenmire.yaml (D4, pool-matrix.md §8), translated
+# by card t_5298ce2b (A1). The design file stays the design set; this is the pack the importer reads.
+#
+# Every spawn entry below resolves: all five pooled archetypes are in content/archetypes/ already
+# (peat-adder in b1-3, bandit-ruffian/mire-boar/forest-wolf in b4-6, moor-wight in b7-10), and each
+# names a loot table the landed content/loottables pack carries (peat-adder-drops,
+# bandit-ruffian-drops, mire-boar-drops, wolf-common-drops, moor-wight-drops). That is what the design
+# file's header was waiting for.
+#
+# A pack entity owns the whole row (docs/content-packs.md, "Limits worth knowing"), so every authored
+# value below is the one RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs writes for that slug —
+# displayName, typeKey, zoneId, rarityWeight, stats and traits. The one authored value that is NOT the
+# seeder's is `actorPool`: the seeder's interim pools for mire-crossing and bone-hollow are pre-roster
+# pairs written as percentage-looking weights (mire-crossing: bandit 60 / wolf 40, bone-hollow: wight 60
+# / bandit 40), and the design replaced them with relative-integer pools. Importing this pack is what
+# replaces them; a second run reports zero changes because the importer compares the stored row with
+# this file value for value.
+#
+# Weights are relative integers (ActorPoolResolver.cs:193-204), never percentages, and must be >= 1.
+# The importer does not normalise them; only the ratio is meaningful. Slugs and weights are the
+# design's, preserved entry for entry.
+#
+# sunken-estate is authored here with an empty pool on purpose: it is the zone's SafeRespawn point and
+# the design excludes it. An empty pool is authored content, not an omission — it spawns nothing and
+# the design keeps it that way (pool-matrix.md §4). The design's `excluded: true` / `exclusion_class`
+# are reviewer annotations; the importer writes nothing for them, and the trait that makes the
+# exclusion true (safeRespawn) is below.
+#
+# bone-hollow is hidden behind a passive DC 8 check. That is a map trait and does not change its pool:
+# the design pools it, so this pack pools it.
+#
+# Reachability is NOT a property of this pack. The zone's entry chain runs entry → bone-hollow →
+# mire-crossing by SortOrder (bone-hollow sorts first at 20) and bone-hollow is hidden, so
+# MapGraphSeeder.ConnectVisibleLocationsAcrossHiddenNodes bypasses it with an entry ↔ mire-crossing
+# walk edge — which is what makes the zone walkable with the pools below exactly as the design
+# authored them. No value here was widened to make the journey pass.
+#
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 (mire-crossing, bone-hollow) | excluded 1 (sunken-estate)
+family: zonelocation
+entities:
+  - slug: mire-crossing
+    displayName: The Mire Crossing
+    typeKey: environments
+    zoneId: grevenmire
+    rarityWeight: 80
+    isActive: true
+    stats:
+      size: 6
+      dangerLevel: 4
+      population: 20
+      minLevel: 3
+      maxLevel: 6
+    traits:
+      isIndoor: false
+    # band: b1-3 (D0 budget) | location L3-6 | design: peat-adder 4, mire-boar 4, bandit-ruffian 3, forest-wolf 2
+    actorPool:
+      - archetypeSlug: peat-adder
+        weight: 4
+      - archetypeSlug: mire-boar
+        weight: 4
+      - archetypeSlug: bandit-ruffian
+        weight: 3
+      - archetypeSlug: forest-wolf
+        weight: 2
+
+  - slug: bone-hollow
+    displayName: The Bone Hollow
+    typeKey: environments
+    zoneId: grevenmire
+    rarityWeight: 30
+    isActive: true
+    stats:
+      size: 2
+      dangerLevel: 6
+      minLevel: 4
+      maxLevel: 6
+    traits:
+      isHidden: true
+      unlockType: skill_check_passive
+      discoverThreshold: 8
+    # band: b4-6 (D0 budget) | location L4-6 | design: bandit-ruffian 5, mire-boar 3, moor-wight 1
+    # The wight is the hollow's identity, not its difficulty: rarest thing in the pool, and its 6-10
+    # band still overlaps this location's 4-6 at level 6.
+    actorPool:
+      - archetypeSlug: bandit-ruffian
+        weight: 5
+      - archetypeSlug: mire-boar
+        weight: 3
+      - archetypeSlug: moor-wight
+        weight: 1
+
+  - slug: sunken-estate
+    displayName: The Sunken Estate
+    typeKey: locations
+    zoneId: grevenmire
+    rarityWeight: 70
+    isActive: true
+    stats:
+      size: 3
+      dangerLevel: 5
+      population: 10
+      minLevel: 3
+      maxLevel: 6
+    traits:
+      safeRespawn: true
+      isIndoor: false
+    # Empty by design: the zone's SafeRespawn point, excluded by the design (exclusion_class: safe_respawn).
+    actorPool: []

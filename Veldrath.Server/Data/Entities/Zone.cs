@@ -6,7 +6,7 @@
 /// </summary>
 public class Zone
 {
-    public string Id { get; set; } = string.Empty; // e.g. "fenwick-crossing", "aldenmere"
+    public string Id { get; set; } = string.Empty; // e.g. "crestfall", "aldenmere"
 
     public string Name { get; set; } = string.Empty;
 

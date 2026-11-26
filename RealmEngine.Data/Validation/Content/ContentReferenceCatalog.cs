@@ -12,7 +12,7 @@ namespace RealmEngine.Data.Validation.Content;
 /// <see cref="ContentDbContext"/>. Every set is case-insensitive and every lookup ignores blank entries, matching how
 /// gameplay resolves content at runtime.
 /// </remarks>
-public sealed class ContentReferenceCatalog
+public sealed partial class ContentReferenceCatalog
 {
     /// <summary>A catalog with no known content: every reference therefore reports as dangling.</summary>
     public static ContentReferenceCatalog Empty { get; } = new();
@@ -41,6 +41,12 @@ public sealed class ContentReferenceCatalog
     /// <summary>Gets the loot-table slugs present in content.</summary>
     public IReadOnlySet<string> LootTables { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Gets the ids of the loot tables present in content. Ids as well as slugs, because an override that is a foreign
+    /// key (<c>ActorInstance.LootTableOverride</c>) can only be proved to resolve against the id set.
+    /// </summary>
+    public IReadOnlySet<Guid> LootTableIds { get; init; } = new HashSet<Guid>();
+
     /// <summary>Gets the skill slugs present in content.</summary>
     public IReadOnlySet<string> Skills { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -50,6 +56,9 @@ public sealed class ContentReferenceCatalog
     /// <summary>Gets the dialogue slugs present in content.</summary>
     public IReadOnlySet<string> Dialogues { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Gets the quest slugs present in content, used by dialogue requirements and grants.</summary>
+    public IReadOnlySet<string> Quests { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Gets the node ids present per map id, for map-edge checks.</summary>
     public IReadOnlyDictionary<string, IReadOnlySet<string>> NodeIdsByMap { get; init; } =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase);
@@ -57,6 +66,10 @@ public sealed class ContentReferenceCatalog
     /// <summary>
     /// Loads the catalog from the content catalog database.
     /// </summary>
+    /// <remarks>
+    /// One set per family a reference rule resolves against. Families no rule points at are deliberately absent: loading
+    /// one would add a query to every validation — the write path's included — for a set nothing reads.
+    /// </remarks>
     /// <param name="db">Content context to read.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A catalog describing every slug currently stored.</returns>
@@ -83,9 +96,11 @@ public sealed class ContentReferenceCatalog
             Powers = Slugs(await db.Powers.AsNoTracking().Select(p => p.Slug).ToListAsync(cancellationToken)),
             Recipes = Slugs(await db.Recipes.AsNoTracking().Select(r => r.Slug).ToListAsync(cancellationToken)),
             LootTables = Slugs(await db.LootTables.AsNoTracking().Select(t => t.Slug).ToListAsync(cancellationToken)),
+            LootTableIds = (await db.LootTables.AsNoTracking().Select(t => t.Id).ToListAsync(cancellationToken)).ToHashSet(),
             Skills = Slugs(await db.Skills.AsNoTracking().Select(s => s.Slug).ToListAsync(cancellationToken)),
             Organizations = Slugs(await db.Organizations.AsNoTracking().Select(o => o.Slug).ToListAsync(cancellationToken)),
             Dialogues = Slugs(await db.Dialogues.AsNoTracking().Select(d => d.Slug).ToListAsync(cancellationToken)),
+            Quests = Slugs(await db.Quests.AsNoTracking().Select(q => q.Slug).ToListAsync(cancellationToken)),
             NodeIdsByMap = maps.ToDictionary(
                 map => map.Id,
                 map => (IReadOnlySet<string>)map.NodeIds.ToHashSet(StringComparer.OrdinalIgnoreCase),

@@ -14,7 +14,7 @@
 ## 1. What the world already is
 
 The hierarchy is `World → Region → Zone → ZoneLocation`, and "where a character is" already has four
-coordinates: [`PlayerSession`](../Veldrath.Server/Data/Entities/Zone.cs:56) holds `RegionId`, `ZoneId`,
+coordinates: [`PlayerSession`](../Veldrath.Server/Data/Entities/PlayerSession.cs) holds `RegionId`, `ZoneId`,
 `CurrentMapId` and `CurrentNodeId`.
 
 Maps are explicit graph data, not tilemaps:
@@ -22,16 +22,16 @@ Maps are explicit graph data, not tilemaps:
 | Piece | Where | Fact |
 |---|---|---|
 | [`MapType`](../RealmEngine.Shared/Models/MapGraphModels.cs:7) | shared models | `World \| Region \| Zone \| Interior` (Interior added in F1) |
-| [`MapNodeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:21) | shared models | `EntryPoint, Zone, Location, ZoneExit, RegionExit, Portal, Stair, Landmark` |
-| [`MapDirection`](../RealmEngine.Shared/Models/MapGraphModels.cs:50) | shared models | includes `Up`, `Down`, `In`, `Out` |
-| [`MapEdgeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:79) | shared models | `Walk, ExitToZone, ExitToRegion, Portal, Door` |
+| [`MapNodeType`](../RealmEngine.Shared/Models/MapGraphModels.cs) | shared models | `EntryPoint, Zone, Location, ZoneExit, RegionExit, Portal, Stair, Landmark` |
+| [`MapDirection`](../RealmEngine.Shared/Models/MapGraphModels.cs) | shared models | includes `Up`, `Down`, `In`, `Out` |
+| [`MapEdgeType`](../RealmEngine.Shared/Models/MapGraphModels.cs) | shared models | `Walk, ExitToZone, ExitToRegion, Portal, Door` |
 | `MapNode.TargetMapId/TargetNodeId` | shared models | **already** expresses "this node leads into another map" |
 | [`Zone.Type`](../Veldrath.Server/Data/Entities/Zone.cs:59) | server | `Town \| Wilderness \| Dungeon` |
 | [`ZoneLocation`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:7) | content | `TypeKey`, plus `Stats` (size, danger, min/max level, population) and `Traits` (`IsDungeon`, `IsIndoor`, `IsHidden`, `UnlockType/Key`, `IsDiscoverable`), plus an `ActorPool` of what spawns there |
 
-**All five dungeons are already authored as zones with interior maps.** [`MapGraphSeeder`](../RealmEngine.Data/Seeders/MapGraphSeeder.cs:275)
+**All five dungeons are already authored as zones with interior maps.** [`MapGraphSeeder`](../RealmEngine.Data/Seeders/MapGraphSeeder.cs)
 gives each one a `MapType.Zone` map with an entry node, three named locations, one hidden
-quest-locked deep room and edges; [`ZoneLocationsSeeder`](../RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs:146)
+quest-locked deep room and edges; [`ZoneLocationsSeeder`](../RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs)
 seeds the matching locations; [`ApplicationDataSeeder`](../Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:81)
 seeds the zones themselves with a level floor and a parent region.
 
@@ -206,7 +206,7 @@ These are bugs in the seeded world, not new features. Fixing them is part of pha
 | The Halrow's map is disconnected | edges connect `entry ↔ halrow-threshold` and `rootbound-cellars ↔ collapsed-vault`, but nothing joins the two halves | Two rooms are unreachable |
 | The Drowning Pits' workings are sealed | `deepest-chamber ↔ flooded-workings` is an island; only `pit-descent ↔ entry` connects to the entrance | The two deepest rooms are unreachable |
 | No deep room can unlock | every hidden room is `UnlockType = "quest"` with `UnlockKey = null` (and the map nodes carried the same null) | Boss rooms are permanently invisible |
-| No zone has a safe respawn | no `ZoneLocation` is flagged `IsSafeRespawn`, so [`ResolveRespawnLocationAsync`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:162) always falls through to the fallback | Every death logs an `Error` and tells the player their zone has no safe point |
+| No zone has a safe respawn | no `ZoneLocation` is flagged `IsSafeRespawn`, so [`ResolveRespawnLocationAsync`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:207) always falls through to the fallback | Every death logs an `Error` and tells the player their zone has no safe point |
 | `MinLevel` never checked | seeded and exposed in DTOs, enforced nowhere | A level 1 character can enter Kaldrek's Maw |
 
 The first two are the ones a map validator would have caught; that validator is part of F1 and the
@@ -233,7 +233,7 @@ issue codes — so this phase **extends** both rather than inventing them.
 | `Traits.IsSafeRespawn` | [`ZoneLocation.cs`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:55) `ZoneLocationTraits` | already existed; the seeder simply never set it. Owned JSON, so no schema migration |
 | `Traits.IsInstanced` | same | consumed by F2, authored in F1. Also owned JSON: no schema migration (`SafeRespawn` set the precedent) |
 | Map both traits onto `ZoneLocationEntry` | `EfCoreZoneLocationRepository` (entity → entry projection) | `IsSafeRespawn` was projected but unset; `IsInstanced` is new on the entry record |
-| Accept `Interior` in the validator's scope rules | [`MapGraphValidator.cs`](../RealmEngine.Data/Validation/MapGraphValidator.cs:49) | an `Interior` map's owner must be a known **location** slug |
+| Accept `Interior` in the validator's scope rules | [`MapGraphValidator.cs`](../RealmEngine.Data/Validation/MapGraphValidator.cs:72-81) | an `Interior` map's owner must be a known **location** slug |
 
 **1.2 — seed the world** (the §4 defect list, plus the data the model now needs)
 
@@ -451,7 +451,7 @@ create index ix_ground_item_run on "GroundItems" ("ZoneInstanceId", "LocationSlu
 
 Two members entering the same room at the same instant: one insert wins the partial index, the loser
 catches `DbUpdateException`, re-reads and joins. This is the same shape as the existing spawn race in
-[`GetAliveOrSpawnAsync`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:84),
+[`GetAliveOrSpawnAsync`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs),
 which already logs and adopts the winner.
 
 #### F2.4 The lifecycle, in rules
@@ -462,11 +462,11 @@ which already logs and adopts the winner.
 | Enter an **instanced** location | find an open run for the zone and party; else one for the zone and solo character; else insert. Then join its group |
 | Solo player | `OwnerPartyId` null, run keyed by character — still a real run, so a retry after emptying gets a new id |
 | Late joiner | the same lookup, so a party member always lands in the party's run; nobody is ever told an instance id |
-| Leave the last instanced room | the run stays Open while any `PlayerSession` points at it, including from the lobby, so backtracking keeps the attempt |
+| Leave the last instanced room | the run stays Open while any `PlayerSession` points at it, including from the lobby; a walk out of the run into the zone's shared rooms closes that character's participation and starts the emptiness grace from the walk-out, so backtracking keeps the attempt either way |
 | The run empties | State Empty and `LastOccupiedAt` now; after a configurable grace, Purging then delete, cascading enemies, ground items, participants and room state |
 | Party disbands inside | `OwnerPartyId` is provenance, not a live foreign key; the run survives until empty |
 | Death | respawn at the run's lobby if the run is still open, otherwise the public zone lobby |
-| Disconnect and reconnect | `PlayerSession.ZoneInstanceId` restores the run; the group is recomputed from the row |
+| Disconnect and reconnect | `PlayerSession.ZoneInstanceId` restores the run; the group is recomputed from the row. A run that was swept while the character was away cannot be re-entered, so they wake at the zone's safe location (`IsSafeRespawn`) and are told why, in the same words the respawn path uses. The roster at the node they wake on is read on resume through the same read a walk uses (`GetLocationRoster` → `LocationRosterReader`), so a room with an active pool is not shown empty until their next move |
 
 #### F2.5 Hardening rules
 
@@ -649,7 +649,7 @@ Today the tunables live in three places, and none of them is a `const`:
 | `Enemies:SessionGraceSeconds` (60) | same | same | combat reconnect grace **and** instance empty grace |
 | `Enemies:ClearedRoomRespawnMultiplier` (3) | same | same | how many respawn windows a cleared room stays quiet |
 
-The values are bound once in [`Program.cs:174`](../Veldrath.Server/Program.cs:174) with
+The values are bound once in [`Program.cs:178-181`](../Veldrath.Server/Program.cs:178-181) with
 `ValidateDataAnnotations().ValidateOnStart()`, so a nonsensical value fails the host instead of silently
 defaulting. Both [`EfCoreEnemyInstanceStore`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:46)
 and [`EnemyRespawnService`](../Veldrath.Server/Features/Characters/Combat/EnemyRespawnService.cs:38) take
@@ -707,5 +707,6 @@ restart is acceptable while the world is small. A **rebuild** is not: that is th
 - [`party-play.md`](party-play.md) — the party aggregate an instance is built for.
 - [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md) — the panel-driven client and
   the DB map graph.
-- [`wiki/Veldrath-World.md`](../wiki/Veldrath-World.md), [`wiki/Region-Varenmark.md`](../wiki/Region-Varenmark.md)
+- [`wiki/Veldrath-World.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Veldrath-World),
+  [`wiki/Region-Varenmark.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Region-Varenmark)
   — the authored world and its dungeon zones.

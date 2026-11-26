@@ -1,0 +1,82 @@
+name: CI - Content packs
+
+# Forgejo-native. See docs/ci-forgejo.md before editing: every action must resolve from
+# DEFAULT_ACTIONS_URL (the copies on this instance) and must not need the GitHub API.
+#
+# This is the content guard plans/content-pipeline.md §2.2 (B3) assumes. It is separate from
+# ci-server.yml on purpose: that workflow runs SeededContentValidationTests over the C# seeders,
+# which says nothing about the files under content/. Here a pack file with an Error-severity
+# issue fails the pull request and the message names the entity and the field.
+#
+# It does not need a database. `validate` seeds the tracked seeders into an in-process provider
+# and resolves references against that catalogue, so no service container and no credentials.
+
+concurrency:
+  group: ci-content-${{ github.ref }}
+  # Cancel only a superseded pull-request head: a run cancelled by this group is recorded as a
+  # *failing* status — `failure`, description "Has been cancelled" (measured on Forgejo
+  # 15.0.11) — so cancelling a base-branch run leaves the merged commit red with a verdict that
+  # never happened. Losing a run is safe only on a PR whose head is its own branch; the release
+  # PR (`development` → `main`) has `development` as its head, so its pull-request runs cancel
+  # against `development` commits too. See docs/ci-forgejo.md, "Branch protection".
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'content/**'
+      - 'RealmEngine.Data/**'
+      - 'Veldrath.ContentPack/**'
+      - 'Directory.Build.props'
+      - 'Directory.Build.targets'
+      - 'Directory.Packages.props'
+      - 'global.json'
+      - 'NuGet.config'
+      - '.github/workflows/ci-content.yml'
+  pull_request:
+    # `development` only, deliberately: the sole pull request into `main` is the release PR
+    # (`development` → `main`), whose head commit is a `development` commit that already
+    # carries this workflow's `push` run at that commit. Running the matrix again duplicates
+    # that verdict and, when the next push supersedes it, records `failure / "Has been
+    # cancelled"` on the `development` commit the superseded run was started for. The merge
+    # gate lints main separately. docs/ci-forgejo.md, "What runs where".
+    branches: [ development ]
+    paths:
+      - 'content/**'
+      - 'RealmEngine.Data/**'
+      - 'Veldrath.ContentPack/**'
+      - 'Directory.Build.props'
+      - 'Directory.Build.targets'
+      - 'Directory.Packages.props'
+      - 'global.json'
+      - 'NuGet.config'
+      - '.github/workflows/ci-content.yml'
+  workflow_dispatch:
+
+env:
+  # Pinned SDK, as in ci-server.yml: '10.0.x' resolves to a build dotnet-install cannot find.
+  DOTNET_VERSION: '10.0.402'
+
+jobs:
+  guard:
+    name: Validate content packs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 1
+        submodules: false
+
+    # Replaces actions/setup-dotnet; see docs/ci-forgejo.md for the toolchain rules.
+    - name: Install the .NET SDK
+      run: bash scripts/ci-toolchain.sh
+
+    # Formatting for the C# this uses is gated by ci-engine.yml, which runs on RealmEngine.Data/**
+    # changes; this job stays on the content question so it costs a restore and a run, not a suite.
+    # Exit code 1 is the guard: any Error-severity issue fails the job, and the step log carries
+    # the rule id, the entity slug and the field. Warnings are printed and do not fail the build.
+    - name: Validate content/ against the content rules
+      run: dotnet run --project Veldrath.ContentPack --configuration Release -- validate content/

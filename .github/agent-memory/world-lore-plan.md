@@ -53,11 +53,11 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 **Assigned Calethic names:**
 - The Collapse → *Kaelorneth* (great unmaking) | Aethori short form: *Orneth*
 - The Unbound (working) → *Orveld* (the unconstrained) → derives Common "the Unbound"
-- The Unbound (Aethori ceremonial) → *Thaelornvael* (the enduring illuminating presence that unmakes)
+- The Unbound (Aethori ceremonial) → *Thaelornvael* (the illuminate-unmaking-enduring; thael + orn + vael, the vaeld-register terminal form of *vel* — docs §5.1)
 - Aethori full title → *Thornkaelaethori* (the great-compact-witnessing keepers)
 - Aetheld (Ashlen Wood) | Greveld (Grevenmire) | Korrveld (Droveway) | Kaeldor (Halrow) | Dornkeld (Drowning Pits) | Korreldh (Crestfall waypoint)
 - Vaelren (Varenmark Calethic form: vael+vren, V-drop junction) | Kaeltheld (The Wound) | Veldrath confirmed as vel+vrath
-- Vraen confirmed as intact Calethic: vren+–ael (frontier-sworn military order)
+- Vraen: reads as intact Calethic *vren*+*–ael* ("frontier-sworn"); what the name attaches to is **undecided** — see "The Vraen" below
 
 ---
 
@@ -96,13 +96,14 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 - Reserved for later reveal
 - Could be: Calethic military order, conquered people, or the heartland region name
 - Do not design until Regions 2–4 are sketched (Q2)
+- Wiki status (2026-11-20, card t_40f12136): `wiki/Calethic-Language.md` now presents what the name attaches to as disputed, not settled fact, while the `vren`+`–ael` derivation stays intact Calethic. Keep the wiki aligned with this item until a reading is decided and recorded here — note that `docs/lore/calethic-language.md` §5.2 already carries the military-order reading in its entity pass, so the two documents still disagree until that is reconciled.
 
 ### The Being
 - **Concept name:** the Unbound Ruin
 - **Scholars call it:** the Unbound
 - **Common people call it:** the Ruin
 - **Calethic working name:** *Orveld* (the unconstrained; *or–* negation + *veld* void-beyond) — source of Common "the Unbound"
-- **Aethori ceremonial name:** *Thaelornvael* (thael illuminate + orn unmake + vael enduring presence) — "the enduring illuminating presence that unmakes"
+- **Aethori ceremonial name:** *Thaelornvael* (thael illuminate + orn unmake + vael the enduring — the vaeld-register terminal form of *vel*) — "the illuminate-unmaking-enduring"
 - **Nature:** exists outside all constraint; its presence is what it means for anything it touches
 - **Current state:** still here, diminished, partially contained — not gone
 - The Collapse did not destroy it; it changed the world as retaliation and retreated into reduced presence
@@ -126,6 +127,42 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 - Physically was Calethic experimental territory (fringe, not heartland)
 - The strangeness is real but unrecognised by locals
 - Arc payoff: players discover Varenmark's true history by arc end — they started at the edge of something ancient
+
+### Varenmark settlements
+
+- **Crestfall** — settled by drovers at the *Korreldh* crossing during the Reclaiming, not at the stone.
+  The slab in the square is that crossing's threshold marker (*raeth*), worn blank by three generations
+  of feet; the town has no record of who laid it and does not want one. The founding claim is the
+  crossing. *(Approved 2026-11-20 — P1. Fixes only what is above the ground: open item 7 is not
+  answered and stays open.)*
+
+### Greymoor settlements
+
+- **Aldenmere** — reoccupied, not founded. It stands on a Calethic administered waypoint named *Aldeld*
+  (*ald*, open ground + *–eld*, site: "the cleared site"); the name corrupted to *Alden* by the same
+  step as *Greveld* → *Greven*, and Common *mere* was appended later for the wet ground under it. What
+  lies underneath stays open. *(Approved 2026-11-20 — P2.)*
+
+### Saltcliff settlements
+
+- **Tolvaren** — a Common name of no surviving derivation, coined by the fisher families who resettled
+  the anchorage during the Reclaiming. Its Calethic survey name was *Gaelvren* (*gael*, water + *vren*,
+  frontier: "the water's edge"), which survives in coastal records and is never spoken in the town.
+  *(Approved 2026-11-20 — P3.)*
+
+### Cinderplain settlements
+
+- **Skarhold** — founded after the Collapse by smiths drawn to the caldera's heat, with no Calethic
+  antecedent. The Caleth surveyed the ash-plain (*Daeld-Ald*) but did not settle it, and the town's own
+  name is a Common coinage, which is why it carries a sibilant no Calethic word may. The Kaldrek
+  question is untouched. *(Approved 2026-11-20 — P4.)*
+- **The heat-workers** — outside Skarhold, the people who work the heat break ash-glass and iron off the
+  cooled flow and the battlefield, and mark a claim with a pick-cut in the rock. They keep no guild, no
+  written title and no officer: a claim is a debt owed to whoever cut it, and nothing above a claim
+  binds them. *(Approved 2026-11-20 — P10.)*
+- **Nothing standing in Cinderplain was built by the Caleth** — they surveyed the ash-plain (*Daeld-Ald*)
+  and did not settle it (P4), so no structure, guardian, construct, inscription or road in the region is
+  theirs. What stands there is volcanic, animal, or post-Collapse human. *(Approved 2026-11-20 — P11.)*
 
 ---
 
@@ -185,9 +222,46 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 - Zone TMX files were resized last session: all `infinite="0"`, per-zone dimensions, empty `<data encoding="csv"/>`
 - Exit objects with no `toZoneId` property return to the region map — all zone exits currently use this pattern
 - `wiki/_Sidebar.md` has Regions & Zones section and `World Lore` link
-- `wiki/Veldrath-World.md` = technical reference (region/zone IDs, level ranges from seeder) — left stale intentionally; update after region names are locked
-- `wiki/World-Veldrath.md` = lore document — ✅ Phase 1 rewrite complete
-- Seeder authority: `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs`
+- **Canon surfaces.** Three places carry shipped world text and all three must use
+  post-Collapse names (no Sundering / Age of Embers / Dravan / Thysmara / Kaldrek):
+  `Veldrath.Server/Data/Seeders/WorldCanonText.cs` (the single server-side authority — world,
+  regions, zones and the map-graph copy the sweep reads),
+  `RealmEngine.Data/Seeders/MapGraphSeeder.cs` (the same prose, mirrored onto map nodes —
+  the copy players actually read in the map tooltip), and the Wiki. `ApplicationDataSeeder`
+  now reads `WorldCanonText` instead of holding its own literals. A guard test
+  (`SeededWorldTextTests`) fails the build on a retired token and on the two copies drifting.
+- **A text change needs the sweep, not just the seeder.** Both world seeders stop as soon as
+  their tables have rows, so a rewritten string only reaches an *empty* database.
+  `WorldCanonSweep` (called on the Postgres startup path right after `DatabaseSeeder.SeedAsync`)
+  rewrites a field only when its current value still contains a retired token,
+  case-sensitively, or is *exactly* a value recorded in `WorldCanonText.KnownStaleValues`, and
+  reports the ids it touched. The exact-match set exists because a reword can drop the old name
+  without adding a new one — `World.Description` did exactly that — so **when a rewrite carries no
+  retired token, record the old string in `KnownStaleValues`**; until it is recorded the sweep
+  names the field in its drift report instead of changing it. Drift is reported only for
+  `Worlds`/`Regions`/`Zones` (whose only writer is the seeder); map and node text is written by
+  the Foundry editor as well, so its divergence from the seed is authored content and stays
+  quiet. Do not "improve" any of this into an upsert: the Foundry map editor writes the same
+  `Map`/`MapNode` rows, so an upsert would overwrite authored content on every deploy.
+- **Era value.** `World.Era = "The Ashen Age (the Age of Reclaiming)"` — both names are in
+  simultaneous use (see "The Catastrophe"), so a single-name value is a canon error.
+- **Ids are not canon; display names are.** Zone and location slugs (`kaldrek-maw`,
+  `kaldreks-heart`, `the-halrow`) are opaque keys referenced by map node ids, quest unlock
+  keys and character position rows. Rename display names freely; renaming a slug is a
+  cross-database migration and needs its own card.
+- **The Halrow is typed `Dungeon`.** The outdoor Threshold and Grounds are `locations`,
+  the Rootbound Cellars and the Collapsed Vault are `dungeons` — the estate is the approach,
+  the dungeon is what it buried. Zone type drives the client's dungeon panel
+  (`DungeonPanel.svelte`), the `EnterDungeon` command and the SignalR presence group, so it
+  is not a label. `drowning-pits`, `barrow-deeps`, `sunken-name` and `kaldrek-maw` are the
+  other Dungeon-typed zones.
+- `wiki/Veldrath-World.md` is a **derived snapshot** of the seeders (ids, MinLevel, types,
+  connections), not an independent source. Regenerate it when the seeder changes; do not
+  extend it with data the engine does not have (there is no `ZoneConnection` entity).
+- Seeder authority: `Veldrath.Server/Data/Seeders/WorldCanonText.cs` (text), applied by
+  `ApplicationDataSeeder.cs` on an empty database and by `WorldCanonSweep.cs` on a seeded one;
+  `RealmEngine.Data/Seeders/MapGraphSeeder.cs` is the map-graph copy (kept honest by
+  `WorldCanonSweepTests.Canon_matches_the_rows_both_seeders_write`)
 
 ---
 
@@ -203,6 +277,8 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 | 2026-04-14 | Phase 4 complete: 5 new sub-locations added across 5 zone pages (crestfall-garrison, foresters-camp, old-waystation, mire-marker, halrow-grounds). Drowning Pits complete as-is. |
 | 2026-04-15 | Full Varenmark review done — all writing confirmed good. 7 open design items identified (see resume point). Decision made to do Q3 Calethic language pass first, before locking names or moving to Greymoor. Language pass started: tonal character question posed, awaiting answer. |
 | 2026-04-15 | Q3 COMPLETE: Full Calethic language designed — phonology (hard+formal tonal character, sibilants ceremonial-only), morphology (7 suffixes, 11 prefixes, title construction rules, place-name compounding), basic syntax (3 registers: administrative/formal/vaeld), root dictionary (~75 roots), full named-entity pass for all Varenmark entities + TBD terms. New files: `docs/lore/calethic-language.md` (design ref) + `wiki/Calethic-Language.md` (player-facing). All `[TBD — language pass Q3]` placeholders filled in `World-Veldrath.md`. Calethic names added to all 6 zone spoiler sections. Open item #1 resolved (Varenmark keeps its name; etymology established). 6 open items remain. |
+| 2026-11-20 | Canon/text reconciliation decided (card t_7a2beb7d): seeded world text rewritten to post-Collapse names in both seeders; `World.Era` = "The Ashen Age (the Age of Reclaiming)"; The Halrow confirmed `Dungeon` (the wiki said Wilderness and was wrong); `Kaldrek's Maw` display renamed `The Maw` with the id kept; `Veldrath-World.md` to be rewritten as a derived snapshot. |
+| 2026-11-20 | A text rewrite has to reach already-migrated databases (card t_111aacaa). `WorldCanonText` now holds the server-side canon (world/regions/zones + the map-graph copy the sweep needs) and `ApplicationDataSeeder` reads it; `WorldCanonSweep` runs after seeding on the Postgres startup path and rewrites only fields still holding `Dravan` / `Thysmara` / `Kaldrek` / `Age of Embers` (case-sensitive, so `kaldrek-maw` and `kaldreks-heart` ids are safe). It also rewrites `ZoneLocation.DisplayName`, because the seeders' idempotent "add only missing rows" path leaves the Maw's old label behind too. Review caught one field the token match cannot see: the old `World.Description` names nothing retired, so it would have survived beside the new era — the sweep now also rewrites a value that *exactly* equals an entry in `WorldCanonText.KnownStaleValues` (the recorded pre-rewrite world description), and reports any other canon-covered divergence on `Worlds`/`Regions`/`Zones` as drift without touching it (map graph divergence stays quiet: it is authored in Foundry). `WorldCanonText.RejectedLoreTokens` is the single token authority the guard test reads; the sweep rewrites on the narrower `RetiredTokens`. `WorldCanonSweepTests` covers rewrite, the token-free world description, idempotency, authored text, untouched ids, canon-vs-seeder drift, restorability and the unresolved case. |
 
 ### Session-39 Note (2026-06-27)
 

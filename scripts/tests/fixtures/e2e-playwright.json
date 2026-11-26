@@ -1,0 +1,146 @@
+{
+	"config": {
+		"projects": [],
+		"rootDir": "."
+	},
+	"suites": [
+		{
+			"title": "one.e2e.ts",
+			"file": "tests/one.e2e.ts",
+			"column": 0,
+			"line": 1,
+			"specs": [
+				{
+					"title": "a journey that passes",
+					"ok": true,
+					"tags": [],
+					"tests": [
+						{
+							"timeout": 30000,
+							"annotations": [],
+							"expectedStatus": "passed",
+							"projectId": "chromium",
+							"projectName": "chromium",
+							"results": [
+								{
+									"workerIndex": 0,
+									"status": "passed",
+									"duration": 1200,
+									"errors": [],
+									"stdout": [],
+									"stderr": [],
+									"retry": 0,
+									"startTime": "2026-11-20T00:00:00.000Z",
+									"attachments": []
+								}
+							],
+							"status": "expected"
+						}
+					],
+					"id": "one-passing",
+					"file": "tests/one.e2e.ts",
+					"line": 5,
+					"column": 5
+				},
+				{
+					"title": "a journey that fails",
+					"ok": false,
+					"tags": [],
+					"tests": [
+						{
+							"timeout": 30000,
+							"annotations": [],
+							"expectedStatus": "passed",
+							"projectId": "chromium",
+							"projectName": "chromium",
+							"results": [
+								{
+									"workerIndex": 0,
+									"status": "failed",
+									"duration": 2400,
+									"error": {
+										"message": "Error: expect(received).toBeVisible()\n\nLocator: getByRole('button', { name: 'Respawn' })\nExpected: visible\nReceived: hidden",
+										"stack": "at /repo/web/client/tests/one.e2e.ts:42:3"
+									},
+									"errors": [],
+									"stdout": [],
+									"stderr": [],
+									"retry": 1,
+									"startTime": "2026-11-20T00:00:02.000Z",
+									"attachments": [
+										{
+											"name": "trace",
+											"contentType": "application/zip",
+											"path": "test-results/one-a-journey-that-fails/trace.zip"
+										},
+										{
+											"name": "screenshot",
+											"contentType": "image/png",
+											"path": "test-results/one-a-journey-that-fails/test-failed-1.png"
+										}
+									]
+								}
+							],
+							"status": "unexpected"
+						}
+					],
+					"id": "one-failing",
+					"file": "tests/one.e2e.ts",
+					"line": 21,
+					"column": 5
+				}
+			],
+			"suites": []
+		},
+		{
+			"title": "two.e2e.ts",
+			"file": "tests/two.e2e.ts",
+			"column": 0,
+			"line": 1,
+			"specs": [
+				{
+					"title": "a second file's journey",
+					"ok": true,
+					"tags": [],
+					"tests": [
+						{
+							"timeout": 30000,
+							"annotations": [],
+							"expectedStatus": "passed",
+							"projectId": "chromium",
+							"projectName": "chromium",
+							"results": [
+								{
+									"workerIndex": 1,
+									"status": "passed",
+									"duration": 800,
+									"errors": [],
+									"stdout": [],
+									"stderr": [],
+									"retry": 0,
+									"startTime": "2026-11-20T00:00:04.000Z",
+									"attachments": []
+								}
+							],
+							"status": "expected"
+						}
+					],
+					"id": "two-passing",
+					"file": "tests/two.e2e.ts",
+					"line": 5,
+					"column": 5
+				}
+			],
+			"suites": []
+		}
+	],
+	"errors": [],
+	"stats": {
+		"startTime": "2026-11-20T00:00:00.000Z",
+		"duration": 4400,
+		"expected": 2,
+		"skipped": 0,
+		"unexpected": 1,
+		"flaky": 0
+	}
+}

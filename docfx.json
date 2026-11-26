@@ -22,6 +22,7 @@
       {
         "files": [
           "docs/client-overview.md",
+          "docs/content-packs.md",
           "docs/design-system.md",
           "docs/client-ui-architecture.md",
           "docs/lore/**/*.md",
@@ -29,7 +30,8 @@
         ]
       },
       {
-        "files": ["docs/design/**/*.md"]
+        "files": ["docs/design/**/*.md"],
+        "exclude": ["docs/design/content/**"]
       }
     ],
     "resource": [

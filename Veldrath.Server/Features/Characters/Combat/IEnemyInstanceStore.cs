@@ -64,14 +64,23 @@ public interface IEnemyInstanceStore
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically flips a living enemy to dead and schedules its return using the configured respawn delay.
-    /// Exactly one caller can win, so rewards are distributed once even when several players land the killing blow
-    /// at the same moment.
+    /// Atomically flips a living enemy to dead, schedules its return using the configured respawn delay, and reports
+    /// who the kill credits: the participants committed when the transition was applied.
     /// </summary>
+    /// <remarks>
+    /// Exactly one caller can win, so rewards are distributed once even when several players land the killing blow
+    /// at the same moment. The participant set travels with the transition on purpose, and is read inside the same
+    /// unit of work as the conditional update: a caller holding a <see cref="SpawnedEnemy"/> that was materialised
+    /// while the enemy was alive cannot credit a set the kill never had, and a participant committed by a
+    /// concurrent turn is credited even when the winner loaded the enemy before that turn.
+    /// </remarks>
     /// <param name="enemyId">Enemy instance id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><see langword="true"/> when this call performed the death transition.</returns>
-    Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default);
+    /// <returns>
+    /// The character ids the kill credits, or <see langword="null"/> when another caller already performed the
+    /// transition — and therefore already took the credit, the rewards and the room.
+    /// </returns>
+    Task<IReadOnlyList<Guid>?> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Revives up to <paramref name="batchSize"/> dead enemies whose respawn time has passed, clearing their
@@ -92,6 +101,26 @@ public interface IEnemyInstanceStore
     /// <param name="enemyId">Enemy instance id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task RemoveAsync(Guid enemyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes every stored enemy whose zone group does not name a zone that owns its location, and returns how many
+    /// rows went. This is debris cleanup, not read-side filtering: a row a client can never load still costs every
+    /// read of its location and would otherwise stay in the table forever.
+    /// </summary>
+    /// <remarks>
+    /// The caller supplies the zones per location slug because that mapping is content, and this store only sees the
+    /// application database. A row whose slug is absent from the map is reported and left in place, never deleted: a
+    /// slug the catalog no longer holds — or one whose location has been deactivated, since the map is built from the
+    /// active locations — cannot be judged, and deleting on absence is how live state gets destroyed by a content
+    /// rollback. The store logs a warning naming each distinct group/slug pair it left behind, so the rows it could
+    /// not judge do not go unreported.
+    /// </remarks>
+    /// <param name="zonesByLocationSlug">Zones that own each location slug, keyed by slug.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many enemy rows were deleted.</returns>
+    Task<int> RemoveForeignZoneGroupRowsAsync(
+        IReadOnlyDictionary<string, IReadOnlySet<string>> zonesByLocationSlug,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Pushes back the pending respawn of every enemy that died at a location, which is what makes a

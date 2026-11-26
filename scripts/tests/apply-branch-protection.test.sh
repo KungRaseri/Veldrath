@@ -69,6 +69,22 @@ assert_contains() {
 # mutate BODY SED-EXPR -> BODY with one field changed
 mutate() { printf '%s' "$1" | sed "$2"; }
 
+# server_rule BRANCH -> the compact rule body Forgejo returns for that branch.
+# Built from literals here on purpose: verify_rule must accept the number the
+# server actually stores, not the payload compared against itself (which would
+# pass even when both sides were wrong). `required_approvals` is pinned as a
+# literal 1 so these cases fail if the implementation drifts to any other count.
+server_rule() {
+    case "$1" in
+        development)
+            printf '%s' '{"rule_name":"development","enable_push":false,"enable_push_whitelist":false,"push_whitelist_usernames":[],"push_whitelist_teams":[],"push_whitelist_deploy_keys":false,"enable_status_check":true,"status_check_contexts":["*"],"required_approvals":1,"apply_to_admins":false}' ;;
+        main)
+            printf '%s' '{"rule_name":"main","enable_push":true,"enable_push_whitelist":true,"push_whitelist_usernames":["kungraseri"],"push_whitelist_teams":[],"push_whitelist_deploy_keys":false,"enable_status_check":true,"status_check_contexts":["*"],"required_approvals":1,"apply_to_admins":false}' ;;
+        *)
+            return 1 ;;
+    esac
+}
+
 # assert_json LABEL BODY
 assert_json() {
     command -v node >/dev/null 2>&1 || return 0
@@ -98,10 +114,39 @@ assert_json "payload development" "${dev_body}"
 assert_json "payload main" "${main_body}"
 
 # --- the documented rule passes ---------------------------------------------
-# rule_body is what the API is sent; the response carries the same values, so a
-# payload that verifies against itself also proves payload and assertions agree.
-assert_body "development: documented policy" development "${dev_body}" 0
-assert_body "main: documented policy" main "${main_body}" 0
+# rule_body is what the API is sent; the stub here is a literal server body so a
+# payload that verifies against itself cannot hide a wrong value on both sides.
+assert_body "development: documented policy" development "$(server_rule development)" 0
+assert_body "main: documented policy" main "$(server_rule main)" 0
+
+# --- one required approval, on both rules -----------------------------------
+# docs/ci-forgejo.md states one approving review from an account other than the
+# author's. The payload must ask for exactly that number, and the read-back must
+# accept only the number: 0 re-opens self-merge, 10 and the string "1" are not
+# the policy. Expectations are literal so a wrong constant in the script cannot
+# make the test agree with it.
+assert_contains "payload development: one required approval" "${dev_body}" '"required_approvals": 1'
+assert_contains "payload main: one required approval" "${main_body}" '"required_approvals": 1'
+
+for branch in development main; do
+    assert_body "${branch}: server stores one approval" "${branch}" "$(server_rule "${branch}")" 0
+    assert_body "${branch}: zero approvals" "${branch}" \
+        "$(mutate "$(server_rule "${branch}")" 's/"required_approvals":1/"required_approvals":0/')" \
+        1 '"required_approvals":1'
+    assert_body "${branch}: ten approvals" "${branch}" \
+        "$(mutate "$(server_rule "${branch}")" 's/"required_approvals":1/"required_approvals":10/')" \
+        1 '"required_approvals":1'
+    assert_body "${branch}: quoted approval count" "${branch}" \
+        "$(mutate "$(server_rule "${branch}")" 's/"required_approvals":1/"required_approvals":"1"/')" \
+        1 '"required_approvals":1'
+done
+
+# The approval field can also be the last key, where the value boundary is `}`.
+# A prefix match would accept 10 there too, so this position is exercised.
+assert_body "development: approval in final field" development \
+    '{"rule_name":"development","enable_push":false,"enable_push_whitelist":false,"push_whitelist_usernames":[],"push_whitelist_teams":[],"push_whitelist_deploy_keys":false,"enable_status_check":true,"status_check_contexts":["*"],"apply_to_admins":false,"required_approvals":1}' 0
+assert_body "main: approval in final field" main \
+    '{"rule_name":"main","enable_push":true,"enable_push_whitelist":true,"push_whitelist_usernames":["kungraseri"],"push_whitelist_teams":[],"push_whitelist_deploy_keys":false,"enable_status_check":true,"status_check_contexts":["*"],"apply_to_admins":false,"required_approvals":1}' 0
 
 # --- drift on main ----------------------------------------------------------
 assert_body "main: extra team" main \
@@ -156,7 +201,10 @@ PUSH_BYPASS_JSON='[]'
 closed_main="$(rule_body main)"
 
 assert_contains "PUSH_BYPASS_USERS=: main payload refuses pushes" "${closed_main}" '"enable_push": false'
+assert_contains "PUSH_BYPASS_USERS=: main keeps one approval" "${closed_main}" '"required_approvals": 1'
 assert_body "PUSH_BYPASS_USERS=: closed main passes" main "${closed_main}" 0
+assert_body "PUSH_BYPASS_USERS=: closed main keeps one approval" main \
+    '{"rule_name":"main","enable_push":false,"enable_push_whitelist":false,"push_whitelist_usernames":[],"push_whitelist_teams":[],"push_whitelist_deploy_keys":false,"enable_status_check":true,"status_check_contexts":["*"],"required_approvals":1,"apply_to_admins":false}' 0
 assert_body "PUSH_BYPASS_USERS=: an open main is drift" main "${saved_main}" 1 '"enable_push":false'
 
 PUSH_BYPASS_USERS="${saved_users}"

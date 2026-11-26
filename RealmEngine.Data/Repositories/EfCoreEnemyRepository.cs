@@ -3,13 +3,29 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Data.Repositories;
 
-/// <summary>EF Core-backed repository for enemy catalog data.</summary>
-public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepository> logger)
+/// <summary>
+/// EF Core-backed repository for enemy catalog data. The archetype row is projected onto the <see cref="Enemy"/>
+/// template a spawn is copied from, so every authored stat has to survive the projection: combat reads the
+/// template, never the content row.
+/// </summary>
+/// <param name="db">Content database context.</param>
+/// <param name="logger">Logger instance.</param>
+/// <param name="randomSource">
+/// Source for the per-spawn gold roll; defaults to <see cref="SystemRandomSource.Shared"/>. Register or pass a
+/// seeded source to make a spawn reproducible.
+/// </param>
+public class EfCoreEnemyRepository(
+    ContentDbContext db,
+    ILogger<EfCoreEnemyRepository> logger,
+    IRandomSource? randomSource = null)
     : IEnemyRepository
 {
+    private readonly IRandomSource _random = randomSource ?? SystemRandomSource.Shared;
+
     /// <inheritdoc />
     public async Task<List<Enemy>> GetAllAsync()
     {
@@ -42,31 +58,13 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
         return entities.Select(MapToModel).ToList();
     }
 
-    private static Enemy MapToModel(Entities.ActorArchetype e) => new()
-    {
-        Id = e.Slug,
-        Slug = e.Slug,
-        Name = e.DisplayName ?? e.Slug,
-        BaseName = e.DisplayName ?? e.Slug,
-        Health = e.Stats.Health ?? 50,
-        Level = e.MinLevel,
-        RarityWeight = e.RarityWeight,
-        // The kill path rolls this table. Carried on the model because the spawned enemy is a copy of it, and the
-        // archetype row's loot id is otherwise unreachable from combat.
-        LootTableIds = e.LootTable is null ? [] : [e.LootTable.Slug],
-        // Hostility has to survive the projection: a spawn pool is allowed to name any archetype, and a pool that
-        // names a shopkeeper must not put them in the roster as something to hit. Unset means hostile, which keeps
-        // every monster archetype behaving as it always has.
-        Traits =
-        {
-            ["hostile"] = new TraitValue(e.Traits.Hostile ?? true, TraitType.Boolean),
-        },
-        Attributes =
-        {
-            ["strength"]     = e.Stats.Strength     ?? 10,
-            ["dexterity"]    = e.Stats.Agility       ?? 10,
-            ["intelligence"] = e.Stats.Intelligence  ?? 10,
-            ["constitution"] = e.Stats.Constitution  ?? 10,
-        },
-    };
+    /// <summary>Projects one archetype row onto the template a spawn is copied from.</summary>
+    /// <remarks>
+    /// The projection lives in <see cref="ActorTemplateProjection"/> so the named-instance path composes its overrides
+    /// onto exactly the same projection instead of keeping a second copy of these rules; this call passes no
+    /// overrides, which is what keeps a bare archetype spawn identical to what it was before instances were placed.
+    /// </remarks>
+    /// <param name="e">The archetype row.</param>
+    /// <returns>The spawned-out enemy template.</returns>
+    private Enemy MapToModel(Entities.ActorArchetype e) => ActorTemplateProjection.Project(e, _random);
 }

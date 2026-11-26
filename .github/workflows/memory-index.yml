@@ -1,0 +1,68 @@
+name: CI - Memory index
+
+# The memory hub (`.github/agent-memory/veldrath-memory.md`) is generated **whole** from
+# `scripts/memory/veldrath-memory.template.md`: the hub is that template verbatim, and
+# `node scripts/memory/memory-index.mjs --check` fails unless the two are byte-for-byte equal. A hand
+# edit to the hub — a preamble change, a `### Session-*` block appended at the end — fails, while a
+# pull request that adds a note passes with no regeneration step at all.
+#
+# The same check validates every note in `.github/agent-memory/work-items/` and
+# `.github/agent-memory/areas/`: required front matter (`kind`, `date`, `area`, `title`; `card` and
+# `pr` optional), a `yyyy-mm-dd`-or-`undated` date, an `area` from the fixed enum, and a file name
+# that agrees with them. It exits 1 naming the file and the field.
+#
+# Why validation rather than "the index must be regenerated": the notes are one file per work item
+# and the hub no longer carries a table of them, so adding a note touches exactly one new path and
+# two branches that add notes cannot conflict. (Before the split the hub was a 4,895-line log
+# appended to by every session; #240 and #244 both conflicted there. The split gave it a generated
+# table, and two branches regenerating that table conflicted in a handful of rows — #291 took four
+# review rounds to land one note. Neither shape is possible now.)
+#
+# There is deliberately no "regenerate and commit after merge" job: `development` refuses
+# every direct push (`enable_push: false`; docs/ci-forgejo.md, "Branch protection: what can
+# block a merge"), including the per-job token's. Currency is enforced at the pull request
+# instead, which is the only place a commit can be added.
+#
+# `pull_request.branches` filters on the base branch, so `development` here means "a pull
+# request into development" (docs/ci-forgejo.md, "What runs where"). The `development → main`
+# release PR has base `main` and is therefore not triggered — it legitimately carries the whole
+# file and needs no check.
+
+concurrency:
+  group: ci-memory-index-${{ github.ref }}
+  # Cancel only a superseded pull-request head. A cancelled run is recorded as a failing
+  # status on the commit it was started for; cancelling a base-branch run would leave the
+  # merged commit red (docs/ci-forgejo.md, "What runs where").
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    branches: [ development ]
+    paths: &memory-paths
+      - '.github/agent-memory/**'
+      - 'scripts/memory/**'
+      - '.github/workflows/memory-index.yml'
+  pull_request:
+    branches: [ development ]
+    paths: *memory-paths
+  workflow_dispatch:
+
+jobs:
+  index:
+    name: Memory notes are valid and the hub matches its template
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Check the hub and every note
+        run: node scripts/memory/memory-index.mjs --check

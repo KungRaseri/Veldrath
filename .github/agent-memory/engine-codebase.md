@@ -64,6 +64,15 @@ The SvelteKit app adds Vitest + Playwright suites under `web/`.
 - `Character.GainExperience()` auto-levels at `Level * 100` XP
 - `InventoryRecord` now has nullable `Durability` column (added migration `AddInventoryRecordDurability`)
 
+### Assigning a child collection is an UPDATE, not an insert (A0, 2026-11-20)
+
+EF's change detection treats a deserialised child whose generated key is already set
+(`LootTableEntry.Id = Guid.NewGuid()`) as an existing row, so assigning the authored list onto a tracked parent
+issues an UPDATE for a row that was never inserted — `DbUpdateConcurrencyException`, nothing written. Any update
+path that owns child rows (the content-pack importer does, `RealmEngine.Data/Authoring/ContentPacks/
+ContentPackImporter.ReconcileChildren`) has to reconcile them: match on authored identity, mutate the match,
+`db.RemoveRange` what the pack dropped, and `db.Add` what it added with the parent FK set explicitly.
+
 ## Positional Records (must use positional ctor, not object initializer)
 - `RestAtInnCommand(string LocationId, string CharacterName, int Cost = 10)`
 - `VisitShopCommand(string LocationId, string CharacterName)`
@@ -197,6 +206,15 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 ### Enemy / NPC Dual-Archetype Behavior
 - `EfCoreEnemyRepository` and `EfCoreNpcRepository` **both** query `db.ActorArchetypes` without any hostility/role filter. A single seeded `ActorArchetype` row therefore appears in both `/api/content/enemies` and `/api/content/npcs` responses. This is by design — hostility is a trait flag, not a filter applied by the repos.
 
+### Archetype → Enemy Stat Projection (E1, 2026-11-20)
+- `EfCoreEnemyRepository.MapToModel` now assigns every stat the archetype authors: `Stats.Health` → `Health` **and** `MaxHealth` (a spawn arrives at full health), `Stats.Damage` → `BasePhysicalDamage`, `Stats.ExperienceReward` → `XP`, `Stats.Mana` → `Mana` + `MaxMana`. A stat the archetype does not author keeps the `Enemy` model default — the projection never hardcodes a second copy of it.
+- The four authored attributes are **canonical on the typed `Enemy` properties**: `Stats.Strength`/`Agility`/`Intelligence`/`Constitution` → `Enemy.Strength`/`Dexterity`/`Intelligence`/`Constitution` (`Agility` is the archetype's name for Dexterity). `Enemy.Attributes` is a **derived mirror** filled from those typed values under the existing lowercase keys — never the reverse. `Wisdom`/`Charisma` stay at the model default 10 because no archetype authors them.
+- `ArchetypeStats.ArmorClass`, `AttackBonus`, `TradeSkill` and `TradeGold` are **reserved**: authored on the row, never projected, and absent from `Enemy` on purpose (mitigation is Constitution, no attack roll exists, shop fields have no spawn-path consumer). `ArchetypeStatsProjectionClassificationTests` (`RealmEngine.Data.Tests`) pins the split by reflection — a new stat that is neither projected nor reserved fails, and a reserved stat appearing on `Enemy` fails.
+- Gold is the one authored value that is a range: `MapToModel` rolls `[GoldRewardMin, GoldRewardMax]` **inclusive** (`Next(low, high + 1)`) once per materialised template, from an `IRandomSource? randomSource = null` ctor parameter (defaults to `SystemRandomSource.Shared`). A half-authored range collapses to the authored bound; both unset means no draw and the template default survives (the three NPC archetypes author no gold).
+- The roll is not repeated on later reads: `EfCoreEnemyInstanceStore` stores `SpawnedEnemy.GoldReward` on the `EnemyInstances` row and every read takes it from there. `Enemy.Template.GoldReward` on a re-read is a fresh roll and is *not* what the player is awarded.
+- `ActorPoolResolver` no longer owns a bare `new Random()`: its third ctor parameter is `IRandomSource? randomSource = null`, so roster size, selection and the repository's gold roll all come from the one DI-registered binding and a seed makes a whole spawn reproducible.
+- Tests: `EfCoreEnemyRepositoryStatProjectionTests` (`RealmEngine.Data.Tests`, 14 facts, mapping + attributes + inclusive/seeded gold), `ArchetypeStatsProjectionClassificationTests` (`RealmEngine.Data.Tests`, projection contract + reserved list) and `SpawnedEnemyStatProjectionTests` (`Veldrath.Server.Tests`, 5 facts, real seeded catalog through `ActorPoolResolver`). The latter pins 20 HP / 3 damage / 8 XP / 1–3 gold and attributes 4/10/2/6 for `giant-rat`, 55 / 7 / 40 / 5–15 for `bandit-ruffian` and 900 / 42 / 1200 / 150–300 with attributes 30/12/22/26 for `fire-ancient`.
+
 ### PowerDto.School Is the Raw Entity School (no tradition mapping)
 - `EfCorePowerRepository` returns `Power.School` directly (e.g. `"fire"`, `"arcane"`). No tradition mapping is applied.
 - The old `EfCoreSpellRepository.ParseTradition` logic (mapping `"fire"` → `MagicalTradition.Primal` → `"Primal"`) was NOT carried over to `EfCorePowerRepository`. `SpellDto` is gone; `PowerDto.School` is raw.
@@ -221,7 +239,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `OrganizationEntry(Slug, DisplayName, TypeKey, OrgType, RarityWeight)`
 - `WorldLocationEntry(Slug, DisplayName, TypeKey, LocationType, RarityWeight, int? MinLevel, int? MaxLevel)`
 - `DialogueEntry(Slug, DisplayName, TypeKey, string? Speaker, RarityWeight, List<string> Lines)`
-- `ActorInstanceEntry(Slug, DisplayName, TypeKey, Guid ArchetypeId, int? LevelOverride, string? FactionOverride, RarityWeight)`
+- `ActorInstanceEntry(Slug, DisplayName, TypeKey, Guid ArchetypeId, int? LevelOverride, string? FactionOverride, RarityWeight, string? LocationSlug = null)` (A2 added `LocationSlug`, trailing)
 - `MaterialPropertyEntry(Slug, DisplayName, TypeKey, string MaterialFamily, float CostScale, RarityWeight)`
 - `TraitDefinitionEntry(string Key, string ValueType, string? Description, string? AppliesTo)` — NOT a ContentBase model, no `IsActive`, no `Slug`
 
@@ -309,24 +327,30 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 > Full details in [veldrath-memory.md](veldrath-memory.md). Summary:
 
 - Server hub commands follow the **blob pattern**: read `Character.Attributes` JSON, mutate, save. Never call Core handlers (type mismatch).
-- Wired bridges: `GainExperience`, `RestAtLocation`, `AllocateAttributePoints`, `UseAbility`
-- **P3 stubs: closed.** `CharacterSelectViewModel.ServerUrl` is no longer hardcoded — the desktop client
-  reads `Server:BaseUrl` and the old `ScopedSession`/`TravelToNode` stubs were wired to real hub commands.
+- Wired bridges: `RestAtLocation`, `AllocateAttributePoints`, `UseAbility` (`GainExperience` and `TakeDamage` were retired from the hub 2026-11-23; their commands are dispatched server-side only)
+- **P3 stubs: closed — historical.** The item described `CharacterSelectViewModel.ServerUrl` and the
+  `ScopedSession`/`TravelToNode` stubs of the Avalonia desktop client, which was retired together with its test
+  project. Nothing in the tree reads a `Server:BaseUrl` key; the SvelteKit app reaches the API through the
+  `PUBLIC_API_URL` / `PUBLIC_HUB_URL` values inlined at build time.
 - **P4 XML docs: closed** (re-audited 2026-10-24). `IPlayerAccountRepository`, `IZoneRepository`, and
   `IZoneSessionRepository` all carry `<summary>` docs, and CS1591 is a compile error, so an undocumented
   public member cannot land in the first place.
-======= REPLACE
 
-### Avalonia Thread Affinity in Client Tests
-- `MapEdgeViewModel.ComputeStyle` creates `SolidColorBrush` (inherits `AvaloniaObject`) which requires the Avalonia dispatcher thread.
-- Any test that constructs `MapEdgeViewModel` (directly or indirectly via `MapViewModel`) will throw `InvalidOperationException: Call from invalid thread` when run after `[AvaloniaFact]` tests that initialized the dispatcher on a different thread.
-- **Fix**: use `[AvaloniaFact]` (not `[Fact]`) for any test that creates `MapEdgeViewModel` or a `MapViewModel` that loads zone-exit edges.
-- Tests that create `MapViewModel` but with no zone connections (so no `MapEdgeViewModel` is created) are safe to remain as `[Fact]`.
+### Avalonia client test notes — deleted, do not apply
 
-### ActorClassDto Changed (2026-03-19)
-- `ActorClassDto` in `Veldrath.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
-- This was a breaking change that broke `FakeServices.cs` and `CharacterSelectViewModelTests.cs` in Client.Tests
-- Fix: update all `new ActorClassDto(slug, name, typeKey)` calls to `new ActorClassDto(slug, name, typeKey, hitDie, primaryStat, rarityWeight)`
+The desktop client and its test project were retired, so the old `[AvaloniaFact]` dispatcher rule for
+`MapEdgeViewModel` / `MapViewModel` has no target. Do not add `[AvaloniaFact]`, and do not look for
+`MapEdgeViewModel`, `MapViewModel`, `CharacterSelectViewModel` or `CharacterSelectViewModelTests` — none exist.
+
+### ActorClassDto shape (2026-03-19)
+
+- `ActorClassDto` in `Veldrath.Contracts` takes six positional parameters — `Slug`, `DisplayName`, `TypeKey`,
+  `HitDie`, `PrimaryStat`, `RarityWeight` — followed by optional fields that default to null/false:
+  `BaseHealth`, `BaseMana`, `HealthGrowth`, `ManaGrowth`, `StrengthGrowth`, `DexterityGrowth`,
+  `IntelligenceGrowth`, `ConstitutionGrowth`, and the `IsSpellcaster` / `IsMelee` / `IsRanged` / `IsStealth` /
+  `CanDualWield` / `CanWearHeavy` / `CanWearShield` flags.
+- Historical: the three-parameter → six-parameter change broke the deleted Avalonia client's `FakeServices` and
+  `CharacterSelectViewModelTests`. Those files are gone; only the constructor shape matters now.
 
 ### Session-17 Integration Test Notes
 - `ContentTypedEndpointsFixture` seeds ActorClass, Species, Background, Skill, 2×Enchantment (different TargetSlot), Ability, Item into `ContentDbContext` — all routes under test resolve through the SQLite in-memory DB
@@ -343,12 +367,6 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `Item.TypeKey` on the shared model can be null — use `?? string.Empty` when mapping to `ItemDto.TypeKey`
 - `GetSpeciesQuery` handler namespace is `RealmEngine.Core.Features.Species.Queries` (feature folder named `Species`)
 - `EfCoreHallOfFameRepository` methods are synchronous (no async) — tests use `using var db` not `await using var db`
-
-### AvailableClasses Test Gotcha
-- `CharacterSelectViewModel.LoadAsync` fires-and-forgets on construction; `FakeContentService.GetClassesAsync()` completes synchronously (Task.FromResult)
-- So `LoadAsync` replaces `AvailableClasses` before the test's first assertion if a non-empty `FakeContentService` is used
-- Test for fallback list: pass `new FakeContentService { Classes = [] }` + `await Task.Delay(50)` to let fire-and-forget complete
-- Test for catalog-populated list: pass classes with `Task.Delay(50)` wait
 
 ### ISpeciesRepository (added session-13)
 - `ISpeciesRepository` interface in `RealmEngine.Shared/Abstractions/`
@@ -466,8 +484,8 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 The `Veldrath.GameClient.Components` Razor class library (region-map page, game sidebar, action-bar
 hotbar, `wwwroot/css/game.css`) and its 14 tests were **deleted** with the Blazor decommission. The
 equivalent UI now lives in the SvelteKit app under `web/client/src/lib/game/` (map panel, left
-sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewModel`. There are no
-`.razor` files left in the tree — do not look for them.
+sidebar, hotbar inside the game shell). There are no `.razor` files left in the tree — do not look
+for them, and the Avalonia `GameViewModel` it once mirrored is retired too.
 
 ### Open Items (re-audited Session-47, 2026-10-22)
 
@@ -527,8 +545,8 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 
 ### Web-first RCL actions (Session-53, 2026-10-23)
 
-- The browser game client (SvelteKit) is the primary experience; see `docs/client-ui-architecture.md`.
-  Desktop/Avalonia follows web decisions.
+- The browser game client (SvelteKit) is the only client; see `docs/client-ui-architecture.md`.
+  There is no desktop client to keep in step.
 - **Hub request shapes matter.** `VisitShop` requires `{ ZoneId }`, `RestAtLocation` requires
   `{ LocationId, CostInGold }`, and `NavigateToLocation` requires `{ LocationSlug }`. Sending a
   bare string or no argument fails SignalR binding before the hub body runs.
@@ -540,9 +558,10 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 - **Shop hub method signatures** — `BuyItem(string itemRef)`, `SellItem(string itemRef)`, and
   `DropItem(string itemRef)` take a single string, not an object. `GetShopCatalog()` takes no
   arguments. `ShopVisited` only announces the merchant; clients must send `GetShopCatalog`.
-- **ShopCatalog payload** — server sends both `Items` (Avalonia `ShopItemDto`: ItemRef,
-  DisplayName, BuyPrice, SellPrice) and `Catalog` (RCL `ShopItemEntry`: Slug, Name, Rarity,
-  Price). Keep both until the desktop client moves to the shared payload.
+- **ShopCatalog payload** — one shape: `GameHub.GetShopCatalog` sends `{ ZoneId, Catalog }`, where each
+  entry is `{ Slug, Name, Rarity, Price }` (rarity is currently always `Common`). There is no `Items` /
+  `ShopItemDto` half any more — that existed for the retired Avalonia client. The web types are
+  `ShopCatalogPayload` / `ShopCatalogItem` in `web/client/src/lib/game/types.ts`.
 - **Transaction refresh** — after buy/sell/drop the server sends a background `InventoryLoaded`
   snapshot with `OpenOverlay = false`; clients update bag/equipment/gold without switching panels.
   Explicit `GetInventory` uses `OpenOverlay = true`.
@@ -586,3 +605,83 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   ThrowingInformationLogger.cs` instead of an interface extraction.
 - **Prefer seeded `IRandomSource` over retries** — assertions on unseeded `Random.Shared` draws
   are what produced the old 0.41-point coverage oscillation and the `EnemyPowerAIService` flake.
+
+### Content packs — the editable catalogue (2026-11-20)
+
+- **The seeders are insert-only; packs are the writable half.** `RealmEngine.Data/Seeders/*` stays the initial
+  catalogue and never updates a row it already sees. `content/<family>/<batch>.yaml` is upserted by
+  `Veldrath.ContentPack` (`dotnet run --project Veldrath.ContentPack -- validate content/`, then `import` every
+  family directory under `content/` in dependency order — `items`, `loottables`, `archetypes`, `zonelocations`,
+  `languages`, because a pack cannot resolve a GUID for a row it creates in the same run), keyed by slug:
+  create missing, update changed, leave unchanged untouched. Do not "fix" a seeder's insert-only behaviour to make an
+  edit land — author a pack or change the seeded value deliberately. **Name every family directory in the document
+  that shows the commands**: an omitted directory is never read, so the run still prints `Import complete: the catalog
+  already matched the pack.` and the author concludes their edit landed when the file was never opened.
+- **One rule set, three callers.** `RealmEngine.Data/Content/ContentEntityTypes.cs` (moved out of
+  `Veldrath.Server/Features/Content/`, now public) is the only type-key → entity-type/validator map, shared by the
+  HTTP write path, the pack validator and the startup audit. Adding a content family means adding it there, in
+  `ContentValidatorRegistry` and in `ContentSchemaRegistry` — nothing else holds a switch.
+- **`ContentPackImporter` compares EF projections, not CLR objects.** JSON-mapped owned values (`Stats`, `Traits`,
+  quest objectives) only persist when the tracked owned instance is mutated *in place*: replacing the instance leaves
+  EF comparing the old one and the column keeps its stored value. Reload navigations before comparing, and never
+  assign an owned navigation on a tracked row.
+- **Pack GUID foreign keys are authored as slugs** (`speciesId: human`, `lootTableId: wolf-loot`); the validator
+  resolves them through `ContentEntityTypes.FindBySlugAsync`. A pack cannot resolve one for a row it creates in the
+  same run.
+- **`ci-content.yml` is the guard; `SeededContentValidationTests` is not a substitute** — one reads `content/`
+  YAML, the other reads the C# seeders, and `content/**` never triggered `ci-server.yml`.
+- **A `ContentPackFile` may have an empty `Family`.** A file in the pack root (no family directory, no `family:`
+  header), an unknown family directory, or a file that failed before its family was read comes back with an empty
+  family and no entries — the reader has already reported which (`pack-family-directory-required`,
+  `pack-family-unknown`, a file-level rule). Anything walking `read.Files` must skip a family
+  `ContentEntityTypes.TryResolve` rejects: `ContentReferenceCatalog.WithContent` throws on a blank content type,
+  which is how `validate <family-dir>` used to die with a bare parameter exception instead of naming the file.
+- **A shelf edit is a data migration; stock has no pack family.** `ZoneStockItems` is
+  deliberately absent from `ContentEntityTypes` (the 22 keys at `ContentEntityTypes.cs:37-60`), from Foundry and from
+  the importer: a row is a `(ZoneId, ItemSlug)` pair of soft string references with no slug and no foreign key
+  (`ZoneStockItem.cs:22-31`), and the `Zone` it names lives in `ApplicationDbContext`
+  (`Veldrath.Server/Data/Entities/Zone.cs:7`, `ApplicationDbContext.cs:34`) — a context the importer never opens.
+  **The constraint is the context, not the database**: there is one Postgres database, and `Program.cs:95` hands the one
+  `DefaultConnection` to `ApplicationDbContext` (`:97-98`), `GameDbContext` (`:103-104`), `EditorialDbContext`
+  (`:107-108`) and the `ContentDbContext` factory (`:240`) — but an import writes `ContentDbContext` only, and
+  `ApplicationDbContext` is live game data an import must never touch. Shape rules a family out too: the importer's
+  create/update decision is `FindBySlugAsync` on a `ContentBase` (`ContentPackImporter.cs:119`,
+  `ContentEntityTypes.cs:114-124`) and its child reconciliation hangs off a parent navigation
+  (`ContentPackImporter.cs:275-306`), so there is nothing to key a stock row by. (The other tables that carry no pack
+  family are ruled out by that same shape test, not by that reason: none of them is a `ContentBase`, so
+  `FindBySlugAsync` has nothing to match — `ZoneLocationConnection`, a join table keyed by `FromLocationSlug`/
+  `ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's `Map`/`MapNode`/`MapEdge` — a map
+  document, its nodes and its edges: maps and nodes keyed by authored string ids rather than slugs, while an edge is
+  keyed by a generated uuid and identified by its natural slot `(MapId, FromNodeId, Direction)`
+  (`ContentModelConfiguration.cs:345`, `:352`). The
+  support tables — `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` at `ContentDbContext.cs:19`, `:21`, `:89` —
+  and `GameConfig` are not `ContentBase` rows either; they are vocabulary and configuration rather than per-entity
+  content, so no pack family addresses them.)
+  Decided in `t_3231a2ea`:
+  `ZoneStockSeeder.Authors()` is the truth, the seeder stays insert-only, and a row the shelf no longer lists is
+  removed by a data migration (`DELETE … WHERE "ZoneId" = … AND "ItemSlug" = …`, empty `Down` because the `Id` is
+  generated on insert) in `RealmEngine.Data/Migrations/`. Adding a row needs no migration — the seeder inserts what is
+  missing on the next start. The procedure and the verification query live in
+  [`docs/content-packs.md`](../../docs/content-packs.md). **Do not make the seeder reconcile**: it would silently
+  delete a row another authoring surface owns, which is the failure this decision exists to prevent.
+- **A map-graph edit is also a data migration, but its seeder cannot be made to reconcile at all.** `MapGraphSeeder`
+  is bootstrap-only — it returns as soon as `Maps` has a row (`MapGraphSeeder.cs:21-22`) — and the server migrates the
+  content database before seeding (`Program.cs:409`, `:416`), so a seeded database keeps its graph until a reviewed,
+  data-only `ContentDbContext` migration patches it. Maps and nodes are keyed by authored string ids; an edge is keyed
+  by a generated `uuid` but identified by its natural slot `(MapId, FromNodeId, Direction)`, which is unique
+  (`ContentModelConfiguration.cs:345`, `:352`) — the same authored graph seeded twice has the same slots and different
+  uuids. Freeze the rows as literals, patch only active seed-owned maps, keep an equivalent node or slot untouched
+  (text, layout, uuid and label included), abort on an incompatible id/slot/target instead of picking another
+  direction, bump `Version`/`UpdatedAt` once per changed map, and leave `Down` empty (backup restore or a reviewed
+  compensating migration). A seed-time walk the new door displaces may be re-homed only when declared and verified —
+  #270 moves Aldenmere's market walk East to North. Procedure, conflict rules and rollout proof:
+  [`docs/content-packs.md`](../../docs/content-packs.md); executable gate: `scripts/verify-map-graph-upgrade.sh`.
+
+### Placed actor instances (A2, 2026-11-20)
+
+- **Instances are placed by `ActorInstance.LocationSlug`** (null = catalogue-only). The spawn path emits every placed
+  instance once, then fills from the location's pool to the rolled 2–4; overrides compose onto the archetype's projected
+  template at spawn (null = inherit, an absolute number replaces), one gold roll after the pair is composed.
+  `ArmorClass`/`AttackBonus`/`PowerPool` are reserved and applied nowhere. `EnemyInstance.InstanceSlug` is why a reloaded
+  boss keeps its authored damage: `ToSpawnedAsync` resolves the composed template from the instance, not the archetype,
+  while `ArchetypeSlug` stays the identity the unique index and reconciliation use.

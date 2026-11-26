@@ -15,7 +15,7 @@
 | 1 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Key model facts, positional record constructors, known handler quirks, testing gotchas, known open P3/P4 items |
 | 2 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration history and completed work log |
 | 3 |  [`.github/agent-memory/foundry-content-schema.md`](.github/agent-memory/foundry-content-schema.md) | Foundry content schema, write endpoints, integration test gotchas |
-| 4 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Veldrath Server + web client hub architecture, blob schema, auth/env matrix, session log |
+| 4 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Veldrath Server + web client hub architecture, blob schema, auth/env matrix, generated index of work-item notes |
 | 5 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start |
 | 6 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, implementation decisions |
 | 7 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop + multiplayer architecture plan (actual turn-based implementation supersedes original tick-based design) |
@@ -75,7 +75,7 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── web/                          # SvelteKit 3 / Svelte 5 app — the only client, plus Foundry (shared + client workspaces)
 ├── [Project].Tests/              # One test project per .NET library/application (5 total)
 ├── .github/
-│   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
+│   ├── agent-memory/             # Canonical memory store: 8 reference files + work-items/ (one per card) + areas/, see Required Reading
 │   ├── instructions/             # Detailed instruction files (7 files)
 │   └── workflows/                # CI/CD workflows (per-component + docs + hygiene + release)
 ├── .roo/skills/                  # Agent skills (build, test, run server, web); catalog in .roo/skills/README.md
@@ -200,6 +200,7 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 - `cd web && npm run coverage --workspace client` enforces **90% global** with per-glob floors (92 for `src/lib/server`, `src/lib/game`, `src/lib/foundry`; 90 for `src/routes/**/*.ts`; 85/80 for `.svelte`). The gate is expected to be red until the coverage pass lands — do not lower it to make CI green.
 - Unit-test helpers live in [`web/client/src/lib/testing/`](web/client/src/lib/testing/) (imported as `#lib/testing/*`) and are excluded from coverage; Playwright helpers belong in `web/client/tests/`.
 - `web/shared` is intentionally excluded from coverage: it is declaration-only.
+- **E2E reporting and the spec manifest.** [`web/client/tests/e2e-manifest.json`](web/client/tests/e2e-manifest.json) is the only list of which spec runs in which run; `web/client/package.json` and [`ci-web.yml`](.github/workflows/ci-web.yml) both go through [`tests/run-e2e.mjs`](web/client/tests/run-e2e.mjs). **A new `*.e2e.ts` file must be added to one run there** — a spec no run claims fails `scripts/check-e2e-manifest.mjs`, and that check is why `tests/encounters.e2e.ts` had silently stopped running in CI. Playwright writes HTML/JSON/JUnit per run, [`scripts/e2e-summary.mjs`](scripts/e2e-summary.mjs) renders `E2EReport/Summary.md`, and both web jobs post it to the PR's own `<!-- ci-e2e -->` comment (separate from coverage). The gate enforces integrity only; pass/fail stays the job's exit code and flaky is reported, never gated. Tooling tests: `node --test scripts/tests/e2e-reporting.test.mjs`. Plan: [`plans/e2e-reporting.md`](plans/e2e-reporting.md).
 - Plan, baseline numbers, and deferred gaps: [`plans/web-feature-parity-and-coverage.md`](plans/web-feature-parity-and-coverage.md).
 
 ### Full Build (Final Verification)
@@ -260,13 +261,14 @@ CI runs on **Forgejo Actions** at `https://git.kungraseri.cloud/Veldrath/Veldrat
 
 Releases are created inside the package job by [`scripts/forgejo-release.sh`](scripts/forgejo-release.sh); there is no separate release workflow, because fetching an artifact cross-run is a GitHub-API dependency. Images go to `git.kungraseri.cloud/veldrath/*`, which is what [`docker-compose.coolify.yml`](docker-compose.coolify.yml) pulls.
 
-That is the whole list, deliberately. Three checks live inside those workflows instead of having a file each:
+That is the whole list, deliberately. Four checks live inside those workflows instead of having a file each:
 
 | Check | Lives in | Was |
 |---|---|---|
 | `dotnet format --verify-no-changes` | the `Verify formatting` step of each .NET component workflow | `format.yml` (deleted) |
 | Markdown relative-link check | a step in `docs.yml` | `repo-hygiene.yml` (deleted) |
 | Content validation over the seeded catalog | `SeededContentValidationTests`, already run by `ci-server.yml` | a planned `content-guard.yml` (never kept) |
+| Calethic name-collision check | a step in `docs.yml` ([`scripts/check-content-names.mjs`](scripts/check-content-names.mjs)) | never existed — D5 found `Orneld`/`Orveld` and `Gaelraeth`/`Kael-Raeth` by hand |
 
 Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsettings). Each .NET job uploads a `CoverageReport/` artifact and posts the summary as a sticky PR comment via [`scripts/forgejo-pr-comment.sh`](scripts/forgejo-pr-comment.sh).
 
@@ -333,11 +335,13 @@ The directory [`.github/agent-memory/`](.github/agent-memory/) is the **canonica
 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Codebase notes: model facts, constructor patterns, handler quirks, testing gotchas, open items |
 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration log, completed work, deleted files |
 | [`.github/agent-memory/foundry-content-schema.md`](.github/agent-memory/foundry-content-schema.md) | Foundry content schema, write endpoints, integration test gotchas |
-| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, session log |
+| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, and where the notes live; the page itself is generated from a template |
 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start (prompt templates) |
 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, decisions made, next steps |
 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop architecture plan (actual turn-based implementation supersedes original design) |
 | [`.github/agent-memory/world-lore-plan.md`](.github/agent-memory/world-lore-plan.md) | World lore plan, Calethic language reference, open items |
+| [`.github/agent-memory/work-items/`](.github/agent-memory/work-items/) | One file per work item — the note a card or session leaves behind; these folders are the index, and `node scripts/memory/memory-index.mjs --list` prints them |
+| [`.github/agent-memory/areas/`](.github/agent-memory/areas/) | A topic that outgrew a session log: long-lived reference, edited in place like the files above |
 
 ### Writing to Memory Files
 
@@ -347,7 +351,27 @@ When you discover something new about the codebase that future sessions should k
 2. **Edit it directly** with the new information
 3. **Commit the change** so it travels with the repo
 
-Do **not** create new memory files unless the existing 8 files are insufficient. Keep information organized by topic.
+**A note that belongs to one work item goes in its own file.** Create
+`.github/agent-memory/work-items/<yyyy-mm-dd>-<card>-<slug>.md` and write only that file; front matter is
+`kind: work-item`, `date`, `area`, `card`, `pr`, `title`. `area` is one of `content`, `engine`, `web`,
+`map`, `auth` or `infra`; `card` (`t_xxxxxxxx`) and `pr` are optional; the date in the file name and in
+`date:` agree, or both say `undated`.
+
+**Never edit another work item's note.** Record a correction in the correcting card's own note,
+link to the original, and update the relevant stable reference if the correction changes a long-lived fact.
+
+Never hand-edit [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) —
+`node scripts/memory/memory-index.mjs` generates it from `scripts/memory/veldrath-memory.template.md`,
+and CI checks the result. Adding a note touches **one new path and nothing else**: nothing is regenerated,
+so CI checks the note's front matter instead (`node scripts/memory/memory-index.mjs --check`, which names
+the file and the field when it fails).
+
+**Stable reference keeps its file.** The other seven are edited in place; a topic that outgrows a session
+log becomes `.github/agent-memory/areas/<topic>.md`. Create a new reference file only when none of them
+fits. A stable reference update alone does not require a work-item note.
+
+One file per work item is what keeps two cards from colliding: a new path cannot conflict, and adding a
+note regenerates nothing, so two branches that each add one merge without a conflict at all.
 
 ---
 

@@ -146,6 +146,43 @@ public static class DialogueSeeder
                     Greeting     = false,
                     Farewell     = false,
                 },
+            },
+
+            // Wayfarer Elder. One row for two placements: `Speaker` is the archetype slug, so the elder at Crestfall
+            // Square and the one at the Droveway's weathered waypost share these lines. That is the accepted trade —
+            // the three lines are written to cover both posts ("at the square I keep the tally, out here I keep the
+            // stone"), and there is no per-placement Speaker override to key a second row to. towns.md names this
+            // entry `wayfarer-elder-greeting` and it is what closes C4 (a placed person with nothing to say).
+            new Dialogue
+            {
+                Slug         = "wayfarer-elder-greeting",
+                TypeKey      = "greetings",
+                DisplayName  = "Wayfarer Elder Greeting",
+                Speaker      = "wayfarer-elder",
+                RarityWeight = 100,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new DialogueStats
+                {
+                    Tone      = 1,
+                    Formality = 1,
+                    Lines     = new List<string>
+                    {
+                        "The stone lists seven towns. Some of them are gone. The names are not.",
+                        "At the square I keep the tally. Out here I keep the stone.",
+                        "Ask me where a road goes. Do not ask me who set the stone.",
+                    },
+                },
+                Traits = new DialogueTraits
+                {
+                    Hostile      = false,
+                    Friendly     = true,
+                    Merchant     = false,
+                    QuestRelated = false,
+                    Greeting     = true,
+                    Farewell     = false,
+                },
             }
     ];
 }

@@ -276,7 +276,7 @@
 									Keep
 								</button>
 							{:else}
-								{#if isUsable(item) && !session.combat.active}
+								{#if isUsable(item) && !session.combat.active && !session.dead}
 									<button
 										class="btn preset-tonal-surface px-1 py-0.5"
 										type="button"

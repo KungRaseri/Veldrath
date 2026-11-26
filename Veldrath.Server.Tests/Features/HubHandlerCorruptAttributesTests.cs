@@ -108,23 +108,6 @@ public class HubHandlerCorruptAttributesTests
     }
 
     [Fact]
-    public async Task TakeDamage_DerivesMaxHealthFromLevel_WhenTheAttributesBlobIsCorrupt()
-    {
-        var (repo, character) = Arrange(level: 2);
-        var handler = new TakeDamageHubCommandHandler(
-            repo.Object, NullLogger<TakeDamageHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new TakeDamageHubCommand { CharacterId = character.Id, DamageAmount = 5 },
-            CancellationToken.None);
-
-        result.Success.Should().BeTrue();
-        result.MaxHealth.Should().Be(20);
-        result.CurrentHealth.Should().Be(15);
-        result.IsDead.Should().BeFalse();
-    }
-
-    [Fact]
     public async Task CraftItem_ToleratesACorruptAttributesBlob_AndFailsOnAMissingRecipe()
     {
         // E5 replaced the flat-gold stub: crafting now reads the recipe catalog, so a corrupt blob
@@ -136,7 +119,7 @@ public class HubHandlerCorruptAttributesTests
         var handler = new CraftItemHubCommandHandler(
             repo.Object,
             recipes.Object,
-            Mock.Of<IInventoryService>(),
+            Mock.Of<IMediator>(),
             NullLogger<CraftItemHubCommandHandler>.Instance);
 
         var result = await handler.Handle(

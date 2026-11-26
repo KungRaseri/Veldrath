@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Seeders;
 using RealmEngine.Data.Validation.Content;
 
 namespace Veldrath.Server.Features.Content;
 
 /// <summary>
-/// Runs the content reference audit once at startup and logs every dangling reference at <c>Error</c>.
+/// Runs the content reference audit once at startup and logs every finding — errors at <c>Error</c>, warnings at
+/// <c>Warning</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -99,26 +101,45 @@ public sealed class ContentAuditService : BackgroundService
             .Select(edge => new MapEdgeReference(edge.MapId, edge.FromNodeId, edge.ToNodeId))
             .ToListAsync(cancellationToken);
 
-        var mapEntities = await db.Maps.AsNoTracking()
+        // Nodes are projected as flat (map, node) pairs instead of being read through each map's `Nodes`
+        // navigation. A navigation is only populated by Include, and this context does not lazy-load, so reading
+        // `map.Nodes` off a plain Maps query yields an empty collection for every map — that made the edge rule
+        // report both ends of every edge as missing on a perfectly seeded database. A flat pair projection also
+        // needs no SQL APPLY, so it translates on SQLite (see the remark above).
+        var nodePairs = await db.MapNodes.AsNoTracking()
+            .Select(node => new { node.MapId, node.Id })
             .ToListAsync(cancellationToken);
 
-        var nodeIdsByMap = mapEntities
+        var nodeIdsByMap = nodePairs
+            .GroupBy(node => node.MapId, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
-                map => map.Id,
-                map => (IReadOnlySet<string>)map.Nodes
+                group => group.Key,
+                group => (IReadOnlySet<string>)group
                     .Select(node => node.Id)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase),
                 StringComparer.OrdinalIgnoreCase);
+
+        // Stock rows are authored by the seeder, which is insert-only, so a stored pair the authored shelves no
+        // longer list is a data migration that never landed (docs/content-packs.md, "Changing what a town sells").
+        // The authored side is projected the same way so the rule compares like with like.
+        var storedStock = await db.ZoneStockItems.AsNoTracking()
+            .Select(row => new ZoneStockReference(row.ZoneId, row.ItemSlug))
+            .ToListAsync(cancellationToken);
+
+        var authoredStock = ZoneStockSeeder.Authors()
+            .Select(row => new ZoneStockReference(row.ZoneId, row.ItemSlug))
+            .ToList();
 
         var issues = new List<ContentIssue>();
         issues.AddRange(ContentReferenceRules.AuditSpawnPools(pools, archetypes));
         issues.AddRange(ContentReferenceRules.AuditQuestObjectives(questObjectives, archetypes, items, locationSlugs));
         issues.AddRange(ContentReferenceRules.AuditMapEdges(edges, nodeIdsByMap));
+        issues.AddRange(ContentReferenceRules.AuditZoneStock(storedStock, authoredStock));
 
         return issues;
     }
 
-    /// <summary>Logs one consolidated report: a summary line plus one <c>Error</c> per finding.</summary>
+    /// <summary>Logs one consolidated report: a summary line plus one entry per finding at its own severity.</summary>
     /// <param name="issues">Findings from the audit.</param>
     private void Report(IReadOnlyList<ContentIssue> issues)
     {
@@ -128,9 +149,20 @@ public sealed class ContentAuditService : BackgroundService
             return;
         }
 
-        _logger.LogError(
-            "Content reference audit found {Count} dangling reference(s); fix the content before players hit them",
-            issues.Count);
+        // Warning-only findings (an empty spawn pool, a repeatable dialogue grant, a stock row no shelf lists) are
+        // legitimate content the audit wants reviewed, so they must not be logged as errors.
+        if (issues.Any(issue => issue.Severity == ContentIssueSeverity.Error))
+        {
+            _logger.LogError(
+                "Content reference audit found {Count} issue(s); fix the content before players hit them",
+                issues.Count);
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Content reference audit found {Count} warning(s) worth a review; the catalog still serves",
+                issues.Count);
+        }
 
         // The seeders are insert-only by slug and the map graph seeder skips a database that already has maps, so a
         // database seeded by an older build keeps its old shape forever. A dangling map edge is the signature of
@@ -146,7 +178,14 @@ public sealed class ContentAuditService : BackgroundService
 
         foreach (var issue in issues)
         {
-            _logger.LogError("Content reference audit [{Rule}] {Message}", issue.Rule, issue.Message);
+            if (issue.Severity == ContentIssueSeverity.Warning)
+            {
+                _logger.LogWarning("Content reference audit [{Rule}] {Message}", issue.Rule, issue.Message);
+            }
+            else
+            {
+                _logger.LogError("Content reference audit [{Rule}] {Message}", issue.Rule, issue.Message);
+            }
         }
     }
 

@@ -244,7 +244,7 @@ public class EfCoreEnemyInstanceStoreLifecycleTests : IDisposable
 
         var won = await store.TryMarkDeadAsync(Guid.NewGuid(), CancellationToken.None);
 
-        won.Should().BeFalse("nobody can claim a kill on a row that does not exist");
+        won.Should().BeNull("nobody can claim a kill on a row that does not exist");
     }
 
     [Fact]

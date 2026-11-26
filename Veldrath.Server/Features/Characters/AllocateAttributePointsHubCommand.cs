@@ -9,6 +9,12 @@ namespace Veldrath.Server.Features.Characters;
 /// Hub command that spends a character's unallocated attribute points.
 /// Validates that the character has enough points, applies the increases, and persists the result.
 /// </summary>
+/// <remarks>
+/// The points it spends are granted by <see cref="Veldrath.Server.Features.LevelUp.CharacterProgression"/> on every
+/// level-up (3 per level, 2 more on every fifth) and stored in the attributes blob under
+/// <c>UnspentAttributePoints</c> — the exact spelling matched below. A level-up that crossed no level banks nothing,
+/// and a character created by the engine carries none until it levels.
+/// </remarks>
 public record AllocateAttributePointsHubCommand : IRequest<AllocateAttributePointsHubResult>
 {
     /// <summary>Gets the ID of the character receiving the attribute increases.</summary>
@@ -45,6 +51,30 @@ public record AllocateAttributePointsHubResult
 /// Handles <see cref="AllocateAttributePointsHubCommand"/> by loading the server-side character,
 /// deserialising the attributes JSON blob, applying the point allocations, and persisting the result.
 /// </summary>
+/// <remarks>
+/// <para>
+/// An allocation writes the attribute and the <c>UnspentAttributePoints</c> balance and nothing else. It deliberately
+/// does not recompute <c>MaxHealth</c>/<c>MaxMana</c>/<c>CurrentHealth</c>/<c>CurrentMana</c>: the stored pools are the
+/// class curve <see cref="Veldrath.Server.Features.LevelUp.CharacterProgression"/> projects on a level-up — the
+/// class's level-1 pool plus its per-level growth, with the stored pool as the floor — and that curve does not read an
+/// attribute. Calling the same recompute from here would be a no-op while a class row resolves and would pay the
+/// engine's <c>Constitution × 10</c> / <c>Wisdom × 5</c> formulas only for a character whose class row does not, so one
+/// point would be worth 10 health to some characters and nothing to the rest.
+/// </para>
+/// <para>
+/// The attributes take effect where combat reads them: <c>Strength</c> raises player damage, <c>Constitution</c>
+/// reduces incoming damage (<c>CombatHelpers.CalculateEnemyDamage</c>) and <c>Intelligence</c> raises magic damage.
+/// <c>Dexterity</c> and <c>Charisma</c> have no reader yet, so a point there is inert until a rule consumes it;
+/// <c>Wisdom</c> is not inert, because it feeds the engine's no-class-row mana fallback on a level-up and the
+/// starting mana <c>CharacterEndpoints</c> derives from <c>GetMaxMana</c>. No regular-play rule consumes a point
+/// spent in <c>Dexterity</c>, <c>Wisdom</c> or <c>Charisma</c> today, so the web level-up panel keeps those three
+/// visible but withholds their spending controls until one is deliberately designed and records the reason on each
+/// row. That is a client-side panel policy, not validation here: it neither changes the stored value or the stored
+/// pools on an allocation nor refunds a point already spent. The client's health bar is the stored
+/// <c>MaxHealth</c>, so allocating <c>Constitution</c> does not move the bar — that is the recorded decision, not a
+/// regression. The facts in <c>AllocateAttributePointsHubCommandTests</c> pin it.
+/// </para>
+/// </remarks>
 public class AllocateAttributePointsHubCommandHandler
     : IRequestHandler<AllocateAttributePointsHubCommand, AllocateAttributePointsHubResult>
 {

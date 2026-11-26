@@ -49,6 +49,101 @@ public class SeededEncounterCoverageTests
             .ToList();
 
         noisy.Should().BeEmpty("a town, respawn point or lobby that spawns hostiles is a content bug");
+
+        // A placed named actor counts as spawn content too: putting a boss in the square is the same bug as pooling one
+        // there, and the roster now emits placements as well.
+        var quietSlugs = shouldBeQuiet.Select(location => location.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var placedInQuiet = await content.ActorInstances.AsNoTracking()
+            .Where(instance => instance.IsActive && instance.LocationSlug != null)
+            .Select(instance => new { instance.Slug, instance.LocationSlug })
+            .ToListAsync();
+
+        placedInQuiet
+            .Where(instance => quietSlugs.Contains(instance.LocationSlug!))
+            .Select(instance => $"{instance.LocationSlug}/{instance.Slug}")
+            .Should()
+            .BeEmpty("a named actor placed in a town, respawn point or lobby would stand there to be fought");
+    }
+
+    [Fact]
+    public async Task Every_placed_instance_stands_somewhere_real_hostile_and_alone()
+    {
+        await using var probe = new SeededContentProbe();
+        await using var content = await probe.CreateContextAsync();
+
+        var placed = await content.ActorInstances.AsNoTracking()
+            .Where(instance => instance.IsActive && instance.LocationSlug != null)
+            .ToListAsync();
+
+        placed.Should().NotBeEmpty("the seed places the two named actors this card made real");
+
+        var locations = (await content.ZoneLocations.AsNoTracking().ToListAsync())
+            .ToDictionary(location => location.Slug, StringComparer.OrdinalIgnoreCase);
+        var archetypesById = (await content.ActorArchetypes.AsNoTracking().ToListAsync())
+            .ToDictionary(archetype => archetype.Id);
+
+        var problems = new List<string>();
+
+        foreach (var instance in placed)
+        {
+            if (!locations.ContainsKey(instance.LocationSlug!))
+            {
+                problems.Add($"'{instance.Slug}' is placed at unknown location '{instance.LocationSlug}'");
+                continue;
+            }
+
+            if (!archetypesById.TryGetValue(instance.ArchetypeId, out var archetype))
+            {
+                problems.Add($"'{instance.Slug}' overrides a missing archetype");
+                continue;
+            }
+
+            if (archetype.Traits.Hostile != true)
+            {
+                problems.Add($"'{instance.Slug}' is placed but its archetype '{archetype.Slug}' is not hostile");
+            }
+        }
+
+        problems.Should().BeEmpty();
+
+        placed
+            .Where(instance => string.Equals(instance.TypeKey, "boss", StringComparison.OrdinalIgnoreCase))
+            .GroupBy(instance => instance.LocationSlug!, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key} holds {group.Count()} bosses")
+            .Should()
+            .BeEmpty("one location, one unique boss — a boss is made unique by being placed, not by being pooled");
+    }
+
+    [Fact]
+    public async Task Ashfields_resolves_exactly_one_respawn_anchor()
+    {
+        await using var probe = new SeededContentProbe();
+        await using var content = await probe.CreateContextAsync();
+
+        var ashfields = await content.ZoneLocations.AsNoTracking()
+            .Where(location => location.ZoneId == "ashfields")
+            .ToListAsync();
+
+        // L3 (t_6c70dc04) moved the respawn flag off the battlefield and onto the grove, and made the
+        // keeper-only shrine a rest point too. Two flags are correct; the point of this test is that only
+        // one of them can ever be the anchor, because RespawnHubCommand resolves through
+        // IZoneLocationRepository.GetByZoneIdAsync, which drops IsHidden locations.
+        ashfields
+            .Where(location => location.Traits.SafeRespawn == true)
+            .Select(location => location.Slug)
+            .Should().BeEquivalentTo(new[] { "obsidian-grove", "ash-shrine" },
+                "the grove is the respawn point; the shrine is a keeper-only rest point");
+
+        ashfields
+            .Where(location => location.Traits.SafeRespawn == true && location.Traits.IsHidden != true)
+            .Select(location => location.Slug)
+            .Should().ContainSingle("a hidden location is never offered to the respawn resolver")
+            .Which.Should().Be("obsidian-grove", "the anchor is deterministic, not whichever row loads first");
+
+        var battlefield = ashfields.Single(location => location.Slug == "scorched-battlefield");
+        battlefield.Traits.SafeRespawn.Should().NotBe(true, "a respawn point on a battlefield reads wrong");
+        battlefield.ActorPool.Should().NotBeEmpty("the battlefield keeps a pool (amendment 4)");
     }
 
     [Fact]

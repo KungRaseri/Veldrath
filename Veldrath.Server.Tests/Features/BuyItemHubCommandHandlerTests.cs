@@ -6,6 +6,7 @@ using RealmEngine.Core.Features.ItemCatalog.Queries;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Shop;
+using Veldrath.Server.Tests.Infrastructure;
 using Character = Veldrath.Server.Data.Entities.Character;
 
 namespace Veldrath.Server.Tests.Features;
@@ -17,8 +18,15 @@ public class BuyItemHubCommandHandlerTests
 
     private static BuyItemHubCommandHandler MakeHandler(
         ICharacterRepository charRepo,
-        ISender mediator) =>
-        new(charRepo, mediator, NullLogger<BuyItemHubCommandHandler>.Instance);
+        ISender mediator,
+        IShopMerchantResolver? merchants = null,
+        IZoneStockReader? stock = null) =>
+        new(
+            charRepo,
+            mediator,
+            merchants ?? new FakeShopMerchantResolver(),
+            stock ?? new FakeZoneStockReader().Offering("sword", "potion", "helm"),
+            NullLogger<BuyItemHubCommandHandler>.Instance);
 
     private static Character MakeCharacter(Guid id, int gold = 200, string inventoryBlob = "[]")
     {
@@ -32,6 +40,8 @@ public class BuyItemHubCommandHandlerTests
             SlotIndex = 1,
             Attributes = attrs,
             InventoryBlob = inventoryBlob,
+            CurrentZoneId = "crestfall",
+            CurrentZoneLocationSlug = "aurelian-market",
         };
     }
 
@@ -47,6 +57,7 @@ public class BuyItemHubCommandHandlerTests
             .Handle(new BuyItemHubCommand(Guid.NewGuid(), "zone", ""), CancellationToken.None);
 
         result.Success.Should().BeFalse();
+        result.Refusal.Should().Be(ShopRefusal.InvalidRequest);
         result.ErrorMessage.Should().Contain("ItemRef is required");
     }
 
@@ -61,7 +72,59 @@ public class BuyItemHubCommandHandlerTests
             .Handle(new BuyItemHubCommand(Guid.NewGuid(), "zone", "sword"), CancellationToken.None);
 
         result.Success.Should().BeFalse();
+        result.Refusal.Should().Be(ShopRefusal.CharacterNotFound);
         result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task Handle_Refuses_When_No_Merchant_Stands_Here()
+    {
+        var charId = Guid.NewGuid();
+        var charRepo = new Mock<ICharacterRepository>();
+        charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(MakeCharacter(charId));
+
+        var mediator = new Mock<ISender>();
+        mediator.Setup(m => m.Send(It.IsAny<GetItemCatalogQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CatalogWith("sword", price: 100));
+
+        var result = await MakeHandler(
+                charRepo.Object,
+                mediator.Object,
+                FakeShopMerchantResolver.Nobody(),
+                new FakeZoneStockReader().Offering("sword"))
+            .Handle(new BuyItemHubCommand(charId, "crestfall", "sword"), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.Refusal.Should().Be(ShopRefusal.NoMerchant);
+        result.ErrorMessage.Should().Be("There is no one to trade with here.");
+        charRepo.Verify(
+            r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "a refused purchase must not persist anything");
+    }
+
+    [Fact]
+    public async Task Handle_Refuses_When_The_Zone_Does_Not_Stock_The_Item()
+    {
+        var charId = Guid.NewGuid();
+        var charRepo = new Mock<ICharacterRepository>();
+        charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(MakeCharacter(charId, gold: 500));
+
+        var mediator = new Mock<ISender>();
+        mediator.Setup(m => m.Send(It.IsAny<GetItemCatalogQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CatalogWith("orb-of-decay", price: 400));
+
+        var result = await MakeHandler(
+                charRepo.Object,
+                mediator.Object,
+                stock: new FakeZoneStockReader().Offering("health-potion"))
+            .Handle(new BuyItemHubCommand(charId, "crestfall", "orb-of-decay"), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.Refusal.Should().Be(ShopRefusal.ItemNotInStock);
+        result.ErrorMessage.Should().Contain("does not stock");
     }
 
     [Fact]
@@ -80,6 +143,7 @@ public class BuyItemHubCommandHandlerTests
             .Handle(new BuyItemHubCommand(charId, "zone", "unknown-item"), CancellationToken.None);
 
         result.Success.Should().BeFalse();
+        result.Refusal.Should().Be(ShopRefusal.ItemNotFound);
         result.ErrorMessage.Should().Contain("not found in catalog");
     }
 
@@ -99,6 +163,7 @@ public class BuyItemHubCommandHandlerTests
             .Handle(new BuyItemHubCommand(charId, "zone", "sword"), CancellationToken.None);
 
         result.Success.Should().BeFalse();
+        result.Refusal.Should().Be(ShopRefusal.InsufficientGold);
         result.ErrorMessage.Should().Contain("Not enough gold");
     }
 
@@ -124,8 +189,30 @@ public class BuyItemHubCommandHandlerTests
 
         result.Success.Should().BeTrue();
         result.ItemRef.Should().Be("sword");
-        result.GoldSpent.Should().Be(100);
+        result.GoldSpent.Should().Be(100);   // the band's floor: value x 1.0
         result.RemainingGold.Should().Be(100);  // 200 - 100
+    }
+
+    [Fact]
+    public async Task Handle_Asks_The_Stock_Reader_About_The_Characters_Zone()
+    {
+        var charId = Guid.NewGuid();
+        var charRepo = new Mock<ICharacterRepository>();
+        charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(MakeCharacter(charId));
+        charRepo.Setup(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+        var mediator = new Mock<ISender>();
+        mediator.Setup(m => m.Send(It.IsAny<GetItemCatalogQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CatalogWith("sword", price: 10));
+
+        var stock = new FakeZoneStockReader().Offering("sword");
+
+        await MakeHandler(charRepo.Object, mediator.Object, stock: stock)
+            .Handle(new BuyItemHubCommand(charId, "crestfall", "sword"), CancellationToken.None);
+
+        stock.RequestedZones.Should().ContainSingle().Which.Should().Be("crestfall");
     }
 
     [Fact]

@@ -10,6 +10,7 @@ using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Data.Seeders;
+using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Chests;
 using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
@@ -143,21 +144,231 @@ public class LootChestsTests : IDisposable
         result.ErrorMessage.Should().Contain("another run");
     }
 
+    // ── Refusals and edge cases ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task Opening_Without_A_Character_Refuses()
+    {
+        await using var db = _factory.CreateContext();
+
+        var result = await Handler(db).Handle(
+            new OpenChestHubCommand(Guid.NewGuid(), Guid.NewGuid()), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("No character to open a chest with.");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_That_Is_No_Longer_There_Refuses()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+
+        var result = await Handler(db).Handle(
+            new OpenChestHubCommand(character.Id, Guid.NewGuid()), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("That chest is no longer there.");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_From_Another_Zone_Is_Refused()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "the-droveway", "old-clearing");
+
+        var result = await Handler(db).Handle(new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not standing where");
+        (await db.LootChests.AsNoTracking().FirstAsync(row => row.Id == chest.Id)).IsOpened.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_With_No_Loot_Tables_Refuses()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "ashlen-wood", "old-clearing", lootTableRefs: string.Empty);
+
+        var result = await Handler(db).Handle(new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("The Mossy Strongbox is empty.");
+        (await db.LootChests.AsNoTracking().FirstAsync(row => row.Id == chest.Id)).IsOpened
+            .Should().BeFalse("a chest nobody can loot must not be burned");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_With_Unreadable_Loot_Tables_Refuses()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "ashlen-wood", "old-clearing", lootTableRefs: "{not json");
+
+        var result = await Handler(db).Handle(new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("The Mossy Strongbox is empty.");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_With_No_Rolls_Opens_It_And_Says_It_Was_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "ashlen-wood", "old-clearing");
+        var table = new LootTableData
+        {
+            Slug = "forest-chest-loot",
+            Name = "Forest Chest Loot",
+            Context = "chests",
+            IsChest = true,
+            Entries = [],
+        };
+
+        var result = await Handler(db, new FixedLootTables(table)).Handle(
+            new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.Items.Should().BeEmpty();
+        result.Gold.Should().Be(0);
+        result.Message.Should().Be("The Mossy Strongbox was empty.");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_With_Gold_Pays_It_Through_AddGold_And_Counts_The_Stacks()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "ashlen-wood", "old-clearing");
+
+        var table = new LootTableData
+        {
+            Slug = "forest-chest-loot",
+            Name = "Forest Chest Loot",
+            Context = "chests",
+            IsChest = true,
+            Entries =
+            [
+                new LootTableEntryData
+                {
+                    ItemDomain = "items/general",
+                    ItemSlug = "health-potion",
+                    DropWeight = 100,
+                    QuantityMin = 2,
+                    QuantityMax = 2,
+                    IsGuaranteed = true,
+                },
+                new LootTableEntryData
+                {
+                    ItemDomain = "gold",
+                    ItemSlug = "gold",
+                    DropWeight = 100,
+                    QuantityMin = 5,
+                    QuantityMax = 5,
+                    IsGuaranteed = true,
+                },
+            ],
+        };
+
+        var sender = new Mock<ISender>();
+        sender.Returns(new AddGoldHubResult { Success = true, GoldAdded = 5, NewGoldTotal = 47 });
+
+        var result = await Handler(db, new FixedLootTables(table), sender).Handle(
+            new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.Gold.Should().Be(5);
+        result.NewGoldTotal.Should().Be(47,
+            "the hub announces the award from the writer's own total, not by re-adding the delta");
+        result.Items.Should().ContainSingle()
+            .Which.Should().Be(new ChestLootItem("@items/general:health-potion", "Health Potion", 2));
+        result.Message.Should().Be("Opened the Mossy Strongbox: Health Potion x2 and 5 gold.");
+
+        sender.Verify(
+            s => s.Send(
+                It.Is<AddGoldHubCommand>(command =>
+                    command.CharacterId == character.Id &&
+                    command.Amount == 5 &&
+                    command.Source == $"Chest:{chest.ChestId}"),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "gold lives in the attributes blob and an award goes through the command that owns the key");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_Reports_No_New_Total_When_The_Gold_Award_Failed()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "ashlen-wood", "old-clearing");
+        var table = new LootTableData
+        {
+            Slug = "forest-chest-gold-only",
+            Name = "Forest Chest Loot",
+            Context = "chests",
+            IsChest = true,
+            Entries =
+            [
+                new LootTableEntryData
+                {
+                    ItemDomain = "gold",
+                    ItemSlug = "gold",
+                    DropWeight = 100,
+                    QuantityMin = 5,
+                    QuantityMax = 5,
+                    IsGuaranteed = true,
+                },
+            ],
+        };
+
+        var sender = new Mock<ISender>();
+        sender.Returns(new AddGoldHubResult { Success = false, ErrorMessage = "Character not found" });
+
+        var result = await Handler(db, new FixedLootTables(table), sender).Handle(
+            new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue("the chest itself was claimed and emptied");
+        result.NewGoldTotal.Should().BeNull(
+            "there is no authoritative total to announce when the award failed");
+    }
+
+    [Fact]
+    public async Task Opening_A_Chest_Reports_The_Chests_Still_Standing_Here()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _) = await SeedStandingAsync(db, "ashlen-wood", "old-clearing");
+        var chest = await SeedChestAsync(db, "ashlen-wood", "old-clearing");
+        var neighbour = await SeedChestAsync(db, "ashlen-wood", "old-clearing", displayName: "Ironbound Coffer");
+        await SeedChestAsync(db, "ashlen-wood", "wood-road", displayName: "Road Strongbox");
+
+        var result = await Handler(db).Handle(new OpenChestHubCommand(character.Id, chest.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue(result.ErrorMessage);
+        result.RemainingChests.Should().ContainSingle().Which.Id.Should().Be(neighbour.Id);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static OpenChestHubCommandHandler Handler(ApplicationDbContext db)
+    private static OpenChestHubCommandHandler Handler(
+        ApplicationDbContext db,
+        ILootTableRepository? tables = null,
+        Mock<ISender>? sender = null)
     {
         var lootTables = new LootTableService(
             NullLogger<LootTableService>.Instance,
-            new ChestLootTables(),
-            new Mock<IDbContextFactory<ContentDbContext>>().Object);
+            tables ?? new ChestLootTables(),
+            new Mock<IDbContextFactory<ContentDbContext>>().Object,
+            seed: 11);
 
         return new OpenChestHubCommandHandler(
             new CharacterRepository(db),
             new PlayerSessionRepository(db),
             db,
             lootTables,
-            Mock.Of<ISender>(),
+            (sender ?? new Mock<ISender>()).Object,
             Options.Create(new ChestOptions()),
             NullLogger<OpenChestHubCommandHandler>.Instance);
     }
@@ -181,7 +392,9 @@ public class LootChestsTests : IDisposable
         ApplicationDbContext db,
         string zoneId,
         string locationSlug,
-        Guid? zoneInstanceId = null)
+        Guid? zoneInstanceId = null,
+        string displayName = "Mossy Strongbox",
+        string lootTableRefs = $"[\"{ForestChestLootRef}\"]")
     {
         var chest = new LootChest
         {
@@ -190,14 +403,28 @@ public class LootChestsTests : IDisposable
             ZoneId = zoneId,
             LocationSlug = locationSlug,
             ZoneInstanceId = zoneInstanceId,
-            DisplayName = "Mossy Strongbox",
-            LootTableRefs = $"[\"{ForestChestLootRef}\"]",
+            DisplayName = displayName,
+            LootTableRefs = lootTableRefs,
             SpawnedAt = DateTimeOffset.UtcNow,
         };
 
         db.LootChests.Add(chest);
         await db.SaveChangesAsync();
         return chest;
+    }
+
+    /// <summary>A chest table set supplied by the test, used for the gold and empty-roll paths.</summary>
+    private sealed class FixedLootTables(params LootTableData[] tables) : ILootTableRepository
+    {
+        private readonly List<LootTableData> _tables = [.. tables];
+
+        public Task<List<LootTableData>> GetAllAsync() => Task.FromResult(_tables.ToList());
+
+        public Task<LootTableData?> GetBySlugAsync(string slug) =>
+            Task.FromResult(_tables.FirstOrDefault(table => table.Slug == slug));
+
+        public Task<List<LootTableData>> GetByContextAsync(string context) =>
+            Task.FromResult(_tables.Where(table => table.Context == context).ToList());
     }
 
     /// <summary>A chest table whose one guaranteed entry is a potion, so a roll is deterministic.</summary>

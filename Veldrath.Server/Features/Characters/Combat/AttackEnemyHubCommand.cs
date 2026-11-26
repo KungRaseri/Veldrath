@@ -36,7 +36,8 @@ public record AttackEnemyHubResult
     /// <summary>Gets the remaining HP of the enemy after the player's attack.</summary>
     public int EnemyRemainingHealth { get; init; }
 
-    /// <summary>Gets whether the enemy was defeated this turn.</summary>
+    /// <summary>Gets whether this turn left the enemy dead. On a shared fight another caller's blow may be the one
+    /// that killed it; either way this caller's fight is over.</summary>
     public bool EnemyDefeated { get; init; }
 
     /// <summary>Gets the defeated enemy's display name, used to advance kill objectives.</summary>
@@ -63,6 +64,12 @@ public record AttackEnemyHubResult
     /// <summary>Gets the gold awarded to this player when the enemy was defeated.</summary>
     public int GoldEarned { get; init; }
 
+    /// <summary>
+    /// Gets the level and pool state this player's share of the kill left them at, or <see langword="null"/> when
+    /// the turn paid no experience (or the caller was not credited with the kill).
+    /// </summary>
+    public CombatProgression? Progression { get; init; }
+
     /// <summary>Gets the gold the death cost, or 0 when the character survived.</summary>
     public int GoldLost { get; init; }
 
@@ -73,10 +80,26 @@ public record AttackEnemyHubResult
     public string? EnemyArchetypeSlug { get; init; }
 
     /// <summary>
-    /// Gets every character credited with the kill, including party members who joined the fight but never landed a hit.
-    /// Only populated when <see cref="EnemyDefeated"/> is <see langword="true"/>.
+    /// Gets every character credited with the kill, including party members who joined the fight but never landed a
+    /// hit. Empty unless this caller won the death transition.
     /// </summary>
+    /// <remarks>
+    /// One kill credits its participants once. The set is read by the store's death transition, so only the caller
+    /// that won it reports ids; a caller whose stale copy also saw the enemy die reports none, because the winner
+    /// already credited everyone.
+    /// </remarks>
     public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
+
+    /// <summary>
+    /// Gets every character whose combat session this kill released — the killer and anyone else engaged with the
+    /// same enemy, including a defender who never landed a hit. Empty unless this caller won the death transition.
+    /// </summary>
+    /// <remarks>
+    /// The enemy row is shared, so killing it ends every fight pointed at it, not only this one. The hub sends
+    /// each of these characters a <c>CombatEnded</c>; without that they keep a panel for a fight the server has
+    /// already dropped and their next action is answered "Not in combat".
+    /// </remarks>
+    public IReadOnlyList<Guid> ReleasedCombatCharacterIds { get; init; } = [];
 
     /// <summary>Gets the run whose room this kill cleared, or <see langword="null"/> when it cleared nothing.</summary>
     public Guid? ClearedInstanceId { get; init; }
@@ -106,6 +129,42 @@ public record AttackEnemyHubResult
 public record CombatLootDrop(string ItemSlug, int Quantity);
 
 /// <summary>
+/// What a combat reward left the character at: the level, the experience still banked toward the next level, and
+/// the derived pools the award rewrote.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The caller's own turn carries this so the sheet can move without a reload. It mirrors the fields
+/// <see cref="Veldrath.Server.Features.LevelUp.GainExperienceHubResult"/> reports after a quest turn-in: a levelling
+/// award banks the remainder instead of adding it to the old bar, and it rewrites <c>MaxHealth</c>/<c>MaxMana</c>.
+/// </para>
+/// <para>
+/// A client that only added <see cref="AttackEnemyHubResult.XpEarned"/> to its own numbers would show the old
+/// level beside an experience bar past its threshold. <see cref="NewExperience"/> is the authoritative remainder;
+/// <see cref="XpEarned"/> stays the amount the kill paid, for the log line.
+/// </para>
+/// </remarks>
+/// <param name="OldLevel">The character's level before the award.</param>
+/// <param name="NewLevel">The character's level after the award.</param>
+/// <param name="NewExperience">The experience still banked toward the next level after the award.</param>
+/// <param name="LeveledUp">Whether this award crossed at least one level.</param>
+/// <param name="MaxHealth">The maximum health stored in the attributes blob after the award.</param>
+/// <param name="CurrentHealth">The current health stored in the blob after the award.</param>
+/// <param name="MaxMana">The maximum mana stored in the blob after the award.</param>
+/// <param name="CurrentMana">The current mana stored in the blob after the award.</param>
+/// <param name="UnspentAttributePoints">The attribute points the blob holds unspent after the award.</param>
+public record CombatProgression(
+    int OldLevel,
+    int NewLevel,
+    long NewExperience,
+    bool LeveledUp,
+    int MaxHealth,
+    int CurrentHealth,
+    int MaxMana,
+    int CurrentMana,
+    int UnspentAttributePoints);
+
+/// <summary>
 /// Handles <see cref="AttackEnemyHubCommand"/> by loading the player and enemy state,
 /// computing and applying damage in both directions, handling death outcomes,
 /// and persisting updated character state.
@@ -114,6 +173,7 @@ public class AttackEnemyHubCommandHandler
     : IRequestHandler<AttackEnemyHubCommand, AttackEnemyHubResult>
 {
     private readonly ICharacterRepository _characterRepo;
+    private readonly ICharacterClassRepository _classRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
     private readonly Veldrath.Server.Features.Zones.IZoneInstanceService _instances;
@@ -124,6 +184,9 @@ public class AttackEnemyHubCommandHandler
 
     /// <summary>Initializes a new instance of <see cref="AttackEnemyHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="classRepo">
+    /// Catalogue repository used to resolve the killer's class curve when a reward crosses a level.
+    /// </param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="instances">Instance-run service, used to record a cleared room.</param>
@@ -133,6 +196,7 @@ public class AttackEnemyHubCommandHandler
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public AttackEnemyHubCommandHandler(
         ICharacterRepository characterRepo,
+        ICharacterClassRepository classRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
         Veldrath.Server.Features.Zones.IZoneInstanceService instances,
@@ -142,6 +206,7 @@ public class AttackEnemyHubCommandHandler
         IRandomSource? randomSource = null)
     {
         _characterRepo = characterRepo;
+        _classRepo = classRepo;
         _enemies = enemies;
         _sessions = sessions;
         _instances = instances;
@@ -206,23 +271,17 @@ public class AttackEnemyHubCommandHandler
         // --- Enemy defeated ---
         if (!enemy.IsAlive)
         {
-            (Guid CharacterId, int Xp, int Gold) myReward = default;
-            IReadOnlyList<Guid> participants;
-            lock (enemy.SyncRoot)
-            {
-                participants = enemy.Participants.ToList();
-            }
-
-            // Only the caller that wins the death transition distributes rewards.
-            if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
-            {
-                var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
-                myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
-            }
+            // One kill, settled once: the caller that wins the death transition takes the credit, the rewards, the
+            // loot and the room clear. A caller holding a stale copy (this enemy row is shared, and each read
+            // materialises its own view) still ends its own fight, but must not credit the same kill again — that
+            // advanced every participant's kill objective twice and dropped a second copy of the loot.
+            var settlement = await CombatHelpers.SettleKillAsync(
+                enemy, entity, request.CharacterId, _enemies, _characterRepo, _classRepo, _sessions,
+                _lootTables, _instances, _random, cancellationToken, _logger);
 
             _logger.LogInformation(
                 "Enemy {EnemyName} defeated by {CharacterIdPrefix} with {ParticipantCount} participant(s)",
-                enemy.Name, request.CharacterId.ToString()[..8], participants.Count);
+                enemy.Name, request.CharacterId.ToString()[..8], settlement.ParticipantIds.Count);
 
             // Rewards were written straight to the character row, so re-read before writing the cooldowns back:
             // saving the pre-reward attribute blob here would silently undo the gold that was just awarded.
@@ -235,32 +294,6 @@ public class AttackEnemyHubCommandHandler
                 await _characterRepo.UpdateAsync(rewarded, cancellationToken);
             }
 
-            // The kill is the only moment the archetype's loot table means anything: it is wired in the seed, but
-            // until this ran nothing ever rolled it.
-            var droppedItems = await RollLootAsync(enemy, entity, cancellationToken);
-
-            // Clearing the floor is a location fact, not a combat fact: ask the store how many are still
-            // standing rather than trusting this one death.
-            Veldrath.Server.Features.Zones.LocationClearOutcome? cleared = null;
-            if (await _enemies.CountAliveAsync(enemy.ZoneGroup, enemy.LocationSlug, cancellationToken) == 0)
-            {
-                // A cleared room stays quiet for the cleared-room window, in a public dungeon as much as in a
-                // run: the promise in plans/dungeons.md §6 is "longer respawn", not no respawn.
-                await _enemies.ExtendClearedRespawnsAsync(
-                    enemy.ZoneGroup,
-                    enemy.LocationSlug,
-                    cancellationToken);
-
-                if (enemy.ZoneInstanceId is Guid runId)
-                {
-                    cleared = await _instances.RecordClearAsync(
-                        runId,
-                        enemy.LocationSlug,
-                        request.CharacterId,
-                        cancellationToken);
-                }
-            }
-
             return new AttackEnemyHubResult
             {
                 Success = true,
@@ -269,16 +302,18 @@ public class AttackEnemyHubCommandHandler
                 EnemyDefeated = true,
                 EnemyName = enemy.Name,
                 EnemyArchetypeSlug = enemy.ArchetypeSlug,
-                ParticipantIds = participants,
+                ParticipantIds = settlement.ParticipantIds,
+                ReleasedCombatCharacterIds = settlement.ReleasedCombatCharacterIds,
                 PlayerRemainingHealth = player.Health,
-                XpEarned = myReward.Xp,
-                GoldEarned = myReward.Gold,
-                ClearedInstanceId = cleared is { Cleared: true } ? enemy.ZoneInstanceId : null,
-                ClearedLocationSlug = cleared is { Cleared: true } ? enemy.LocationSlug : null,
-                FirstClearOfRun = cleared?.FirstClearOfRun ?? false,
-                FirstClearForCharacter = cleared?.FirstClearForCharacter ?? false,
-                UnlockedLocationSlugs = cleared?.UnlockedLocationSlugs ?? [],
-                ItemsDropped = droppedItems,
+                XpEarned = settlement.Reward?.Xp ?? 0,
+                GoldEarned = settlement.Reward?.Gold ?? 0,
+                Progression = settlement.Reward?.Progression,
+                ClearedInstanceId = settlement.Clear?.InstanceId,
+                ClearedLocationSlug = settlement.Clear?.LocationSlug,
+                FirstClearOfRun = settlement.Clear?.FirstClearOfRun ?? false,
+                FirstClearForCharacter = settlement.Clear?.FirstClearForCharacter ?? false,
+                UnlockedLocationSlugs = settlement.Clear?.UnlockedLocationSlugs ?? [],
+                ItemsDropped = settlement.ItemsDropped,
             };
         }
 
@@ -317,73 +352,5 @@ public class AttackEnemyHubCommandHandler
             GoldLost = death.GoldLost,
             XpLost = death.XpLost,
         };
-    }
-
-    /// <summary>
-    /// Rolls the defeated archetype's loot table and puts the result in the killer's bag.
-    /// </summary>
-    /// <param name="enemy">The enemy that just died; its template carries the loot-table slugs.</param>
-    /// <param name="characterName">The bag owner, keyed the way the inventory service expects.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>What dropped, in table order.</returns>
-    /// <remarks>
-    /// Each entry rolls independently against its own weight, which is what the seed authored ("drop weight", not
-    /// "pick one"), and a guaranteed entry always lands. A catalog read that fails is logged and skipped: a kill must
-    /// not fail because loot could not be read.
-    /// </remarks>
-    private async Task<IReadOnlyList<CombatLootDrop>> RollLootAsync(
-        SpawnedEnemy enemy,
-        Veldrath.Server.Data.Entities.Character entity,
-        CancellationToken ct)
-    {
-        var tableSlugs = enemy.Template?.LootTableIds ?? [];
-        if (tableSlugs.Count == 0) return [];
-
-        // The bag is the character's own `InventoryBlob` — the store the client reads. `IInventoryService`
-        // writes save-game records, so drops "added" through it were announced and never carried.
-        var bag = CharacterBag.Read(entity.InventoryBlob);
-        var drops = new List<CombatLootDrop>();
-
-        foreach (var tableSlug in tableSlugs)
-        {
-            LootTableData? table;
-            try
-            {
-                table = await _lootTables.GetBySlugAsync(tableSlug);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogError(ex, "Loot table {TableSlug} could not be read; the kill drops nothing", tableSlug);
-                continue;
-            }
-
-            if (table is null || table.Entries.Count == 0) continue;
-
-            var totalWeight = table.Entries.Sum(entry => Math.Max(1, entry.DropWeight));
-
-            foreach (var entry in table.Entries)
-            {
-                if (!entry.IsGuaranteed && _random.Next(totalWeight) >= Math.Max(1, entry.DropWeight)) continue;
-
-                var quantity = entry.QuantityMax > entry.QuantityMin
-                    ? _random.Next(entry.QuantityMin, entry.QuantityMax + 1)
-                    : Math.Max(1, entry.QuantityMin);
-
-                CharacterBag.Add(bag, entry.ItemSlug, quantity);
-                drops.Add(new CombatLootDrop(entry.ItemSlug, quantity));
-            }
-        }
-
-        if (drops.Count > 0)
-        {
-            entity.InventoryBlob = CharacterBag.Serialize(bag);
-            await _characterRepo.UpdateAsync(entity, ct);
-
-            _logger.LogInformation(
-                "Enemy {EnemyName} dropped {DropCount} stack(s) into {CharacterName}'s bag",
-                enemy.Name, drops.Count, entity.Name);
-        }
-
-        return drops;
     }
 }

@@ -14,7 +14,8 @@ import {
  *
  * The world's spawn pools are real content now, but which location has which enemy is a content decision that will
  * keep changing — so these specs use `the-droveway`, the level 1–4 wilderness next to the starter town: its
- * `drove-road` pools `giant-rat` and `goblin-scout`, and its `weathered-waypost` is the zone's `SafeRespawn` point.
+ * `drove-road` draws its roster from the zone's spawn pool, and its `weathered-waypost` is the zone's `SafeRespawn`
+ * point.
  *
  * The dev teleport only moves the character into the zone (the `playground` zone is hidden from the public API, so a
  * client cannot open it). Everything after that is the production path: the roster is spawned by walking onto the
@@ -55,8 +56,18 @@ test.describe('combat and death', () => {
 		throw new Error(`could not walk to ${nodeName} within six hops`);
 	}
 
-	/** A level-1 character standing on the drove road with a live enemy roster. */
-	async function characterOnTheRoad(browser: Browser, request: APIRequestContext) {
+	/**
+	 * A level-1 character standing on the drove road with a live enemy roster.
+	 *
+	 * `difficultyMode` is the character's own mode and therefore its zone group: a wilderness scope is
+	 * `zone:{zoneId}_{mode}`, so a `hardcore` character joins a roster the `normal` one cannot see. That is how a
+	 * spec that kills gets a roster of its own instead of emptying the one `a1-the-droveway.e2e.ts` counts rows in.
+	 */
+	async function characterOnTheRoad(
+		browser: Browser,
+		request: APIRequestContext,
+		difficultyMode: 'normal' | 'hardcore' = 'normal'
+	) {
 		const context = await browser.newContext();
 		const page = await context.newPage();
 		await register(page, makeAccount('e2efight'));
@@ -67,7 +78,7 @@ test.describe('combat and death', () => {
 			.slice(0, 6)}`;
 		const created = await request.post(`${apiBase}/api/characters`, {
 			headers: { authorization: `Bearer ${token}` },
-			data: { name, className: 'Warrior', difficultyMode: 'normal' }
+			data: { name, className: 'Warrior', difficultyMode }
 		});
 		expect(created.status(), await created.text()).toBe(201);
 		const character = (await created.json()) as { id: string };
@@ -95,7 +106,11 @@ test.describe('combat and death', () => {
 		// budget before any combat starts.
 		test.setTimeout(120_000);
 
-		const { context, page } = await characterOnTheRoad(browser, request);
+		// Hardcore, so the kill this spec lands sits in `zone:the-droveway_hardcore`. `a1-the-droveway.e2e.ts` runs
+		// in the same stack and asserts the drove road spawned at least two rows in the group its character joined — a
+		// pool draw here rolls 2–4 rows (`ActorPoolResolver.MinCount`/`MaxCount`), so when it rolls 2 one kill in the
+		// shared `_normal` roster would take it below that until the 2s respawn.
+		const { context, page } = await characterOnTheRoad(browser, request, 'hardcore');
 
 		// The HUD's "Local" panel lists what spawned; the button is the engage action.
 		const engageButtons = page.getByRole('button', { name: 'Engage' });
@@ -139,18 +154,66 @@ test.describe('combat and death', () => {
 
 		const { context, page } = await characterOnTheRoad(browser, request);
 
-		await page.getByRole('button', { name: 'Engage' }).first().click();
-		await expect(page.getByRole('heading', { name: /Combat/ })).toBeVisible({ timeout: 20_000 });
-
-		// Defend rather than attack: the point is to lose, and a level-1 warrior cannot outlast a clearing full of
-		// level 1–6 actors by trading blows.
+		const combat = page.getByRole('heading', { name: /Combat/ });
 		// Two places say it — the shell's banner and the combat log — so match the first.
 		const defeat = page.getByText('You have been defeated.').first();
 		const defend = page.getByRole('button', { name: /^Defend$/ });
+		const engage = page.getByRole('button', { name: 'Engage' });
+
+		/**
+		 * Steps off the drove road and back onto it, so the client re-reads the location's roster.
+		 *
+		 * The Local panel only learns a roster on arrival, so a row that died under this journey stays painted until
+		 * the client re-enters. The respawn sweeper revives it on its own clock (2s in the isolated stack), so the
+		 * wait is what gives a cleared road its roster back.
+		 */
+		async function reenterTheRoad() {
+			await walkTo(page, 'Arrival');
+			await walkTo(page, 'The Drove Road');
+			await page.waitForTimeout(1_500);
+		}
+
+		await engage.first().click();
+		await expect(combat).toBeVisible({ timeout: 20_000 });
+
+		// Defend rather than attack: the point is to lose, and a level-1 warrior cannot outlast a clearing full of
+		// level 1–6 actors by trading blows.
+		//
+		// `normal`, unlike the two specs that kill: hardcore never respawns, and this journey is the respawn test.
+		// Sharing the roster costs nothing here because defending removes no row — `a1-the-droveway.e2e.ts` can kill
+		// one under this journey, and that is handled below.
+		//
+		// The fight can also end without the character dying. A wilderness zone has one roster per zone scope, so
+		// `a1-the-droveway.e2e.ts` fights these same Drove Road rows in the same run; a kill there releases every
+		// combat session pointed at that enemy, this journey's included, and the server says so with `CombatEnded`.
+		// That is a clean end, not a lost journey: engage whatever is still standing and keep defending. A shared
+		// kill never heals, so the walk to 0 HP stays monotonic.
 		for (let round = 0; round < 80; round++) {
 			if (await defeat.isVisible().catch(() => false)) break;
-			await defend.click();
-			await page.waitForTimeout(300);
+
+			if (await defend.isVisible().catch(() => false)) {
+				await defend.click();
+				await page.waitForTimeout(300);
+				continue;
+			}
+
+			if (
+				await engage
+					.first()
+					.isVisible()
+					.catch(() => false)
+			) {
+				await engage.first().click();
+				await page.waitForTimeout(1_000);
+
+				// A row can die between the panel painting and this click (another character's kill), and the client
+				// only learns that by re-reading the location. That is not a failure — it is the branch below.
+				if (!(await combat.isVisible().catch(() => false))) await reenterTheRoad();
+				continue;
+			}
+
+			// Nothing left to fight and no panel: the road was cleared under this journey.
+			await reenterTheRoad();
 		}
 
 		await expect(defeat).toBeVisible({ timeout: 30_000 });
@@ -165,5 +228,64 @@ test.describe('combat and death', () => {
 		await expect(page.getByText('The Weathered Waypost').first()).toBeVisible({ timeout: 20_000 });
 
 		await context.close();
+	});
+
+	test('a kill by another character ends the fight here with a clean ending', async ({
+		browser,
+		request
+	}) => {
+		test.setTimeout(180_000);
+
+		// The character whose fight somebody else will finish. It stands still: the enemy only counter-attacks on a
+		// turn, so an idle fighter takes no damage and its session stays exactly as engaged.
+		//
+		// Both characters of this spec are `hardcore`, which gives it a roster of its own: a wilderness scope is
+		// `zone:{zoneId}_{difficultyMode}`, no other spec in the suite creates a hardcore droveway character, and the
+		// pool draw that fills this roster is therefore untouched by anyone else's kill — and touches no one else's.
+		// Neither character dies here, so hardcore's permanent death never comes into it.
+		const defender = await characterOnTheRoad(browser, request, 'hardcore');
+		const defenderCombat = defender.page.getByRole('heading', { name: /Combat/ });
+		await defender.page.getByRole('button', { name: 'Engage' }).first().click();
+		await expect(defenderCombat).toBeVisible({ timeout: 20_000 });
+
+		// A second character on the same roster — `zone:the-droveway_hardcore` — so its Local panel lists the very
+		// row the first character is fighting, in the same server order (spawn instant, then id), which is why the
+		// first Engage button on each page is the same enemy.
+		const killer = await characterOnTheRoad(browser, request, 'hardcore');
+
+		// Level the killer through the sanctioned dev preparation path so this spec does not depend on a level-1
+		// character outlasting a level 1–6 draw: at level 10 a blow lands for 10 and the fight is over in a few turns.
+		const killerId = killer.page.url().split('/').pop() ?? '';
+		const prepared = await request.post(`${apiBase}/api/dev/experience`, {
+			headers: { authorization: `Bearer ${await gameToken(killer.page)}` },
+			data: { characterId: killerId, amount: 4500, source: 'encounters shared-kill spec' }
+		});
+		expect(prepared.status(), await prepared.text()).toBe(200);
+
+		await killer.page.getByRole('button', { name: 'Engage' }).first().click();
+		const killerCombat = killer.page.getByRole('heading', { name: /Combat/ });
+		await expect(killerCombat).toBeVisible({ timeout: 20_000 });
+
+		const attack = killer.page.getByRole('button', { name: /^Attack$/ });
+		for (let round = 0; round < 40; round++) {
+			if (!(await killerCombat.isVisible().catch(() => false))) break;
+			await attack.click();
+			await killer.page.waitForTimeout(400);
+		}
+		await expect(killerCombat).toBeHidden({ timeout: 20_000 });
+
+		// The killing blow released this character's combat session too. Nothing clicks here — the server has to tell
+		// the losing client its fight is over, or the panel stays up for a fight that no longer exists and the next
+		// Defend is answered "Not in combat".
+		await expect(defenderCombat).toBeHidden({ timeout: 20_000 });
+		await expect(defender.page.getByText('Combat ended: shared kill.').first()).toBeVisible({
+			timeout: 20_000
+		});
+
+		// A shared kill is not a death: the character is still standing and lost nothing.
+		await expect(defender.page.getByText('You have been defeated.')).toBeHidden();
+
+		await defender.context.close();
+		await killer.context.close();
 	});
 });

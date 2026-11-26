@@ -1,4 +1,5 @@
 using System.Text.Json;
+using RealmEngine.Data.Content;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Validation.Content;
 
@@ -81,8 +82,21 @@ public class ContentWriteService(ContentDbContext db)
 
         var existing = await ContentEntityTypes.FindBySlugAsync(db, resolver, incoming.Slug, ct);
 
+        if (existing is not null)
+        {
+            // A submission payload is authored through a schema-shaped form, so it names only the fields the schema
+            // exposes. Fill the owned-JSON values it never mentions from the row being replaced before validation and
+            // application; otherwise approving a one-field correction would delete everything the form could not show.
+            payload = ContentValueCopy.FillUnnamedOwnedValues(existing, payload, db.Model);
+            incoming = ContentEntityTypes.Deserialize(resolver, payload);
+            if (incoming is null)
+            {
+                return ContentPromotion.Refused($"The payload does not describe a {type}.");
+            }
+        }
+
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
-        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
+        var result = ContentEntityTypes.Validate(resolver, incoming, db.Model, catalog);
         if (!result.IsValid)
         {
             var reasons = result.Errors.Select(issue => issue.Message).Take(3);
@@ -100,11 +114,15 @@ public class ContentWriteService(ContentDbContext db)
         }
         else
         {
-            // Id survives (foreign keys point at it); the server owns Version and UpdatedAt.
-            incoming.Id = existing.Id;
-            incoming.Version = existing.Version + 1;
-            incoming.UpdatedAt = DateTimeOffset.UtcNow;
-            db.Entry(existing).CurrentValues.SetValues(incoming);
+            // Id survives (foreign keys point at it); the server owns Version and UpdatedAt, so they are stamped on the
+            // tracked row rather than copied over with the rest of the authored values.
+            existing.Version += 1;
+            existing.UpdatedAt = DateTimeOffset.UtcNow;
+            ContentValueCopy.ApplyAuthoredValues(incoming, existing, db.Model);
+
+            // Child rows are reconciled by authored identity, not copied; a submission that never names a collection
+            // leaves the stored rows alone rather than deleting what the form could not show.
+            await ContentChildRows.ApplyNamedAsync(db, incoming, existing, payload, ct);
         }
 
         await db.SaveChangesAsync(ct);

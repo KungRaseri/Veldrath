@@ -21,8 +21,8 @@ Everything below was checked in the working tree, not assumed:
 |---|---|
 | The SvelteKit app is the only client and the only editing surface; every Avalonia project (desktop client, `RealmForge`, `RealmUI.Fonts`) is deleted | `AGENTS.md`, `plans/content-pipeline.md` §Scope shift |
 | Movement is a **DB map graph** (nodes + edges), rendered as panels — **no tilemap, no sprites, no TMX** | [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md): "panel-driven client UI (no tilemap/sprite rendering)"; `GetMapGraph`, `TravelToNode`, `EnterZone`, `LeaveZone`, `NavigateToLocation` in `GameHub` |
-| Login resumes the saved node (Session-72), and that seam is the intended hook for onboarding | `veldrath-memory.md` §Session-72 |
-| Quests are real: journal blob, objectives, accept/abandon/turn-in, and a client quest dialog | `QuestJournal`, `AcceptQuest`/`AbandonQuest`/`TurnInQuest`; [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:92) |
+| Login resumes the saved node (Session-72), and that seam is the intended hook for onboarding | [`work-items/2026-10-25-login-resumes-the-last-known-node.md`](../.github/agent-memory/work-items/2026-10-25-login-resumes-the-last-known-node.md) |
+| Quests are real: journal blob, objectives, accept/abandon/turn-in, and a client quest dialog | `QuestJournal`, `AcceptQuest`/`AbandonQuest`/`TurnInQuest`; [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:110) |
 | No guild, trade, duel or PvP code exists anywhere | repo-wide search: zero `Guild`/`TradeSession`/`Duel`/`Pvp` types |
 | Auth is Better Auth → JWT → JIT Identity provisioning; Identity owns RBAC only | `JwtClaimsEnrichment`, `AccountProvisioningService`, plan §W12 |
 
@@ -67,10 +67,11 @@ D4 #35 (multi-instance safety, reconnect grace, AFK service), D5 #36 (content va
 4. PvP (#5, rewritten; duels first).
 
 ### A — Death consequences + first hour → [`death-and-first-hour.md`](death-and-first-hour.md) — filed as #38
-5. **Death cost tuning.** A cost already exists — [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:185)
-   removes 10% of XP **and** 10% of gold at the moment of death. Agreed direction: make it **small and
+5. **Death cost tuning.** A cost already existed at filing — [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:235)
+   removed 10% of XP **and** 10% of gold at the moment of death. Agreed direction: make it **small and
    gold-first** — take a small share of carried gold, and only when the character carries (almost) no
-   gold take a small share of XP instead, never both. Exact percentages are a decision for the issue.
+   gold take a small share of XP instead, never both. Exact percentages were a decision for the issue; A1 (#44)
+   has since shipped the gold-first rule in [`death-and-first-hour.md`](death-and-first-hour.md) §2.1.
 6. **Respawn consequence.** Respawn must return the character to a safe node (not whatever node they
    died on) and apply a short *death sickness* status effect authored in the DB, using the existing
    `StatusEffect` machinery. The deleted `RespawnService` had an unwired version of exactly this.
@@ -374,17 +375,30 @@ Acceptance: server handlers + hub methods with tests, `payload-contract.test.ts`
 and a `GameSession` store test suite driven by `FakeHub`.
 ```
 
-#### NEW-9 — `docs: fix stale plan status and retired-command references`
+#### NEW-9 — `docs: drop the retired desktop build from the web-development skill`
+
+> **Updated 2026-11-24.** The body was drafted against a tree that no longer existed: `97080fb9`
+> ("docs: drop desktop-shell leftovers and mark the decommission plan complete") landed at 12:44 on
+> 2026-10-25, thirty minutes before this plan at 13:14. `plans/README.md` already read ✅ Complete
+> (W1–W12) at line 14 of that revision, line 22 today; `.vscode/tasks.json` had no `desktop` task at
+> all — `:622` was `web:test`, and the file is 465 lines today, so that anchor is past EOF; the skill
+> never mentioned `build:desktop`, though its `adapter-static` clause was live then and still is. §3
+> above records the same drift as removed.
+>
+> Corrected rather than frozen: the acceptance line also named `repo-hygiene`, deleted in the
+> seven-workflow consolidation; and NEW-1 … NEW-11 carry no issue number anywhere in this file — §6's
+> apply checklist is unchecked and blocked on `issues: write` — so no filing recorded here quoted the
+> old text. The title drops "stale plan status" for the same reason and §6a's copy of it is updated to
+> match. One bullet is left.
 
 ```markdown
-- `plans/README.md` still lists `blazor-decommission-and-cleanup.md` as 🟢 Active although the plan is
-  Done; it should be removed from the live table (or marked Done and kept as history).
-- `.vscode/tasks.json:622` still runs `npm run build:desktop`.
-- `.roo/skills/web-development/SKILL.md` still tells agents to run `npm run build:desktop` and mentions
-  `adapter-static`.
+- `.roo/skills/web-development/SKILL.md:16` still describes the build config as
+  "adapter-node vs adapter-static desktop build", although the desktop build was retired in W11 and
+  `web/client/vite.config.ts:20` records that the app is served by `adapter-node` only. The
+  parenthetical should name `adapter-node` alone.
 
-Acceptance: `grep -rn "build:desktop" -- . ':!web/llms'` returns nothing outside agent-memory history,
-`repo-hygiene` passes, and the plans index matches reality.
+Acceptance: `.roo/skills/web-development/SKILL.md` describes the build as `adapter-node` only, with no
+desktop build implied.
 ```
 
 #### NEW-10 — `ci: flip Codecov statuses from informational to blocking`
@@ -450,7 +464,7 @@ Titles for the new issues, in the order they should be created:
 6. `feat(web): quest HUD tracker and completion toast`
 7. `feat(engine,server): quest objective types beyond kill/collect/visit`
 8. `feat(web,server): party panel and invite flow`
-9. `docs: fix stale plan status and retired-command references`
+9. `docs: drop the retired desktop build from the web-development skill`
 10. `ci: flip Codecov statuses from informational to blocking`
 11. `ops(dev): Mailpit for local mail, and a NullEmailSender that logs nothing`
 

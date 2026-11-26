@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <!-- SQLite is the only provider here that stores a ToJson() owned graph as actual JSON, so it is what proves an
+         owned collection survives a save/load rather than merely existing in the CLR object. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Moq" />
   </ItemGroup>

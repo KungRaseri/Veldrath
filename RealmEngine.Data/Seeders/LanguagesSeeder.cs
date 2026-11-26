@@ -78,7 +78,7 @@ public static class LanguagesSeeder
             AllowedFinalClusters = ["-LD", "-LT", "-RN", "-TH", "-VN", "-RG", "-LN", "-ND"],
             JunctionRules =
             [
-                new LanguageJunctionRule { Cluster = "-d + r-",   Rule = "D drops before R (D-drop)",                                                    FormalExample = "vaeld + raeth → vaelraeth",        AdministrativeExample = "same" },
+                new LanguageJunctionRule { Cluster = "-d + r-",   Rule = "D drops before R (D-drop)",                                                    FormalExample = "vaeld + raeth → Vaelraeth",        AdministrativeExample = "same" },
                 new LanguageJunctionRule { Cluster = "-l + vr-",  Rule = "V-drop; formal register adds euphonic -d- bridge at l+r juncture",             FormalExample = "vel + vrath → veldrath",           AdministrativeExample = "vael + vren → vaelren (no bridge)" },
                 new LanguageJunctionRule { Cluster = "-ld + TH-", Rule = "D is preserved; epenthetic -i- inserted as a liaison vowel between -ld and TH-", FormalExample = "naeld + thorn → Naeldithorn", AdministrativeExample = "(no administrative variant attested)" },
             ],

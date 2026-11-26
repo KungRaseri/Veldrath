@@ -316,6 +316,27 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.CharacterDialogueChoice", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SpeakerSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("OptionKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("ChosenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CharacterId", "SpeakerSlug", "OptionKey");
+
+                    b.ToTable("CharacterDialogueChoices");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.CharacterUnlockedLocation", b =>
                 {
                     b.Property<int>("Id")
@@ -410,6 +431,10 @@ namespace Veldrath.Server.Migrations
                     b.Property<int>("GoldReward")
                         .HasColumnType("integer");
 
+                    b.Property<string>("InstanceSlug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<bool>("IsAlive")
                         .HasColumnType("boolean");
 
@@ -434,6 +459,9 @@ namespace Veldrath.Server.Migrations
 
                     b.Property<DateTimeOffset>("SpawnedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("StatsVersion")
+                        .HasColumnType("integer");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -1391,6 +1419,17 @@ namespace Veldrath.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.CharacterDialogueChoice", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.CharacterUnlockedLocation", b =>

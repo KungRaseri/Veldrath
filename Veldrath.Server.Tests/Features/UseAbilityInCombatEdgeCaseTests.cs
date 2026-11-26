@@ -28,10 +28,18 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
     private UseAbilityInCombatHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
             new CharacterRepository(db),
+            Mock.Of<ICharacterClassRepository>(),
             Mock.Of<IPowerRepository>(),
             _enemies,
             _sessions,
+            new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
+                db,
+                new CharacterRepository(db),
+                new CharacterUnlockedLocationRepository(db),
+                Mock.Of<IZoneLocationRepository>(),
+                NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             Options.Create(new DeathPenaltyOptions()),
+            Mock.Of<ILootTableRepository>(),
             NullLogger<UseAbilityInCombatHubCommandHandler>.Instance);
 
     private static async Task<Character> SeedCharacterAsync(
@@ -56,11 +64,12 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         return character;
     }
 
-    private SpawnedEnemy AddEnemy(int hp, int baseXp = 0, int goldReward = 0)
+    private SpawnedEnemy AddEnemy(int hp, int baseXp = 0, int goldReward = 0, string archetypeSlug = "golem")
     {
         var enemy = new SpawnedEnemy
         {
             Name = "Golem",
+            ArchetypeSlug = archetypeSlug,
             Level = 1,
             CurrentHealth = hp,
             MaxHealth = Math.Max(1, hp),
@@ -172,6 +181,7 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         result.AbilityDamage.Should().BeGreaterThan(0);
         result.EnemyRemainingHealth.Should().Be(0);
         result.EnemyName.Should().Be("Golem");
+        result.EnemyArchetypeSlug.Should().Be("golem", "the hub advances the kill objective by archetype slug, not just the display name");
         result.EnemyDamage.Should().Be(0, "a defeated enemy does not counter-attack");
         result.XpEarned.Should().Be(40, "a single contributor receives the enemy's whole XP pool");
         result.GoldEarned.Should().Be(25, "a single contributor receives the enemy's whole gold pool");
@@ -202,7 +212,7 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         SetSession(character.Id, enemy.Id);
         // A racing request already claimed the death transition for this enemy.
         (await _enemies.TryMarkDeadAsync(enemy.Id, CancellationToken.None))
-            .Should().BeTrue("arranging the lost-transition precondition");
+            .Should().NotBeNull("arranging the lost-transition precondition");
 
         var result = await MakeHandler(db).Handle(
             new UseAbilityInCombatHubCommand(character.Id, "fireball"), CancellationToken.None);

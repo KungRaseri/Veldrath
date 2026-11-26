@@ -64,14 +64,10 @@ const NO_WEB_CALLER: Record<string, string> = {
 	GetActiveCharacters:
 		'Multi-client diagnostic; the roster is server-rendered, so the UI never needs the live list.',
 
-	// Server-authoritative: the client never grants itself progression or applies its own damage.
-	GainExperience: 'Awarded by combat and quest handlers, never by the browser.',
-	AddGold: 'Awarded by loot and quest handlers, never by the browser.',
-	TakeDamage: 'Applied by combat handlers; a client-callable version would be a cheat.',
-	AwardSkillXp: 'Awarded by combat and quest handlers, never by the browser.',
-
-	// Deferred features: the hub bridge exists, the UI does not. See the plan file.
-	EnterDungeon: 'Deferred: dungeon UI does not exist yet.',
+	// Dungeons are entered on foot: the map graph moves the character into the dungeon zone, so the
+	// dedicated bridge is unused even though DungeonPanel ships. See plans/dungeons.md.
+	EnterDungeon:
+		'Dungeons are entered on foot through the map graph, so the client never calls EnterDungeon.',
 
 	// Navigation is fully covered by the map graph.
 	NavigateToLocation:

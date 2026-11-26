@@ -63,8 +63,19 @@ public class ArchetypeStats
     /// <summary>Health and stamina modifier.</summary>
     public int? Constitution { get; set; }
     /// <summary>Armor class (physical damage reduction).</summary>
+    /// <remarks>
+    /// Reserved content field: authored on the archetype, but deliberately not projected onto the spawned
+    /// <see cref="RealmEngine.Shared.Models.Enemy"/> and read by nothing. The template already mitigates physical
+    /// damage through <see cref="RealmEngine.Shared.Models.Enemy.Constitution"/>, so projecting armor class as well
+    /// would subtract twice for one defence.
+    /// </remarks>
     public int? ArmorClass { get; set; }
     /// <summary>Flat attack bonus applied to hit rolls.</summary>
+    /// <remarks>
+    /// Reserved content field: authored on the archetype, but deliberately not projected onto the spawned
+    /// <see cref="RealmEngine.Shared.Models.Enemy"/> and read by nothing — neither combat path rolls an attack that a
+    /// bonus could modify.
+    /// </remarks>
     public int? AttackBonus { get; set; }
     /// <summary>Damage dealt per hit.</summary>
     public int? Damage { get; set; }

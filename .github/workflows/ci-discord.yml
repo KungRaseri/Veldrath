@@ -9,11 +9,17 @@ name: CI - Discord (Veldrath.Discord)
 
 concurrency:
   group: ci-discord-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel only a superseded pull-request head: a run cancelled by this group is recorded as a
+  # *failing* status — `failure`, description "Has been cancelled" (measured on Forgejo
+  # 15.0.11) — so cancelling a base-branch run leaves the merged commit red with a verdict that
+  # never happened. Losing a run is safe only on a PR whose head is its own branch; the release
+  # PR (`development` → `main`) has `development` as its head, so its pull-request runs cancel
+  # against `development` commits too. See docs/ci-forgejo.md, "Branch protection".
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:
   push:
-    branches: [ main, development ]
+    branches: [ main ]
     paths:
       - 'Veldrath.Discord/**'
       - 'Veldrath.Discord.Tests/**'
@@ -29,7 +35,13 @@ on:
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-discord.yml'
   pull_request:
-    branches: [ main, development ]
+    # `development` only, deliberately: the sole pull request into `main` is the release PR
+    # (`development` → `main`), whose head commit is a `development` commit that already
+    # carries this workflow's `push` run at that commit. Running the matrix again duplicates
+    # that verdict and, when the next push supersedes it, records `failure / "Has been
+    # cancelled"` on the `development` commit the superseded run was started for. The merge
+    # gate lints main separately. docs/ci-forgejo.md, "What runs where".
+    branches: [ development ]
     paths:
       - 'Veldrath.Discord/**'
       - 'Veldrath.Discord.Tests/**'

@@ -19,6 +19,7 @@ using Serilog.Events;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Data.Seeders;
 using Veldrath.Server.Features.Account;
 using Veldrath.Server.Features.Admin;
 using Veldrath.Server.Features.Announcements;
@@ -167,6 +168,10 @@ try
     builder.Services.AddScoped<ICombatSessionStore, EfCoreCombatSessionStore>();
     builder.Services.AddScoped<Veldrath.Server.Features.Zones.IZoneInstanceService,
         Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>();
+    // The zone's lobby rule lives in one place so the reconnect and the respawn cannot resolve a hidden safe
+    // location differently.
+    builder.Services.AddScoped<Veldrath.Server.Features.Zones.IZoneLobbyResolver,
+        Veldrath.Server.Features.Zones.ZoneLobbyResolver>();
 
     // AFK is ephemeral by design: in-memory for the process lifetime, cleared on any action or reconnect.
     builder.Services.AddSingleton<IAfkTracker, AfkTracker>();
@@ -225,7 +230,14 @@ try
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
     builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();
+    // One roster read for every arrival: a walk and a resume must not be able to spawn two cohorts for one room.
+    builder.Services.AddScoped<Veldrath.Server.Features.Zones.LocationRosterReader>();
     builder.Services.AddScoped<Veldrath.Server.Features.Content.MapEditorService>();
+    // Shop gate: the merchant standing with a character, and the stock their town offers.
+    builder.Services.AddScoped<Veldrath.Server.Features.Shop.IShopMerchantResolver,
+        Veldrath.Server.Features.Shop.ShopMerchantResolver>();
+    builder.Services.AddScoped<Veldrath.Server.Features.Shop.IZoneStockReader,
+        Veldrath.Server.Features.Shop.ZoneStockReader>();
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
@@ -408,6 +420,65 @@ try
 
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
+
+            // The seeders above stop as soon as a table has a row, so a database migrated before a prose change
+            // keeps the old text forever. The sweep rewrites only fields that still carry a retired canon token,
+            // which makes it a no-op on a fresh database (just seeded with the current text) and never touches
+            // text an author edited later.
+            var canonSweep = await WorldCanonSweep.SweepAsync(appDb, contentDb);
+
+            if (canonSweep.FieldsChanged > 0)
+            {
+                app.Logger.LogWarning(
+                    "World canon sweep rewrote {FieldCount} field(s) across {RowCount} row(s): {Fields}",
+                    canonSweep.FieldsChanged,
+                    canonSweep.RowsChanged,
+                    string.Join(", ", canonSweep.ChangedFields));
+            }
+
+            if (canonSweep.UnresolvedFields.Count > 0)
+            {
+                app.Logger.LogWarning(
+                    "World canon sweep found {FieldCount} field(s) still carrying retired lore with no canon entry: {Fields}",
+                    canonSweep.UnresolvedFields.Count,
+                    string.Join(", ", canonSweep.UnresolvedFields));
+            }
+
+            // A canon-covered field that differs from the shipped text without a retired token is either a reword
+            // whose old value nobody recorded in WorldCanonText.KnownStaleValues, or a manual edit of a row only the
+            // seeder writes. Either way it stays as it is and is named here, so a migrated database cannot silently
+            // keep text the fresh seed no longer produces.
+            if (canonSweep.DriftedFields.Count > 0)
+            {
+                app.Logger.LogWarning(
+                    "World canon sweep found {FieldCount} field(s) that differ from the shipped canon but hold no retired token; left unchanged: {Fields}",
+                    canonSweep.DriftedFields.Count,
+                    string.Join("; ", canonSweep.DriftedFields));
+            }
+
+            // Enemy rows written before the roster scope was derived from the destination zone can stand under the
+            // group of the zone the character walked out of. Nothing rewrites them, so they stay visible to a read
+            // forever; the sweep deletes only rows whose group names no zone that owns their location, and leaves a
+            // slug the catalog no longer holds alone rather than deleting state on absence.
+            var zonesByLocationSlug = (await services.GetRequiredService<IZoneLocationRepository>().GetAllAsync())
+                .GroupBy(location => location.Slug, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlySet<string>)group
+                        .Select(location => location.ZoneId)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase),
+                    StringComparer.OrdinalIgnoreCase);
+
+            var foreignEnemyRows = await services
+                .GetRequiredService<IEnemyInstanceStore>()
+                .RemoveForeignZoneGroupRowsAsync(zonesByLocationSlug);
+
+            if (foreignEnemyRows > 0)
+            {
+                app.Logger.LogWarning(
+                    "Enemy roster scope sweep deleted {RowCount} row(s) stored under a group that names no zone owning their location",
+                    foreignEnemyRows);
+            }
 
             // Authored chests live in the application database, beside the ground items they resemble, and are
             // idempotent by chest id so a restart never refills a chest a player emptied a moment ago.

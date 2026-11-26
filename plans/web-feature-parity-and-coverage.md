@@ -24,8 +24,9 @@ Two outcomes, one gate:
 | Coverage gate | **90% global immediately**, with per-glob floors. No staged ratchet |
 | E2E scope | Journey and route parity, not statement coverage. Playwright cannot feed reliable v8 statement coverage back through sourcemaps |
 | Game loop e2e | Stays live against `Veldrath.Server`. Staff surfaces may be mocked; the wire contract check does not |
-| Deferred features | Crafting, NPC dialogue, dungeons, skills UI, and every engine-only system |
+| Deferred features | Crafting, NPC dialogue, dungeons, skills UI, and every engine-only system — all four features have since shipped; the engine-only systems and the product/UI pass (persisted settings, responsive shell) are still deferred (see "Closed since this list was written") |
 | PR 1 boundary | Phase 0 + matrix + plumbing fixes only. No new game features |
+| Coverage comment accounting | **The comment quotes the gate.** [`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) heads the sticky comment with the totals the `Coverage gate` step printed; the reporter's per-directory table is labelled as the other accounting. Decided 2026-11-20, see "Coverage comment accounting" below |
 
 ## Deferred explicitly (do not build in this pass)
 
@@ -34,13 +35,37 @@ features with design work, not test work, so they get their own plans after the 
 
 | Gap | Why deferred |
 |---|---|
-| Crafting UI | `CraftItem` and `ItemCrafted` exist; needs a recipe book design plus recipe content |
-| NPC dialogue | `TalkToNpc` exists; needs dialogue trees, NPC presentation, and quest-giver flow |
-| Dungeon entry | `EnterDungeon` exists; needs descent UI and dungeon content |
-| Skills UI | `AwardSkillXp` / `SkillXpGained` exist; needs a skill sheet and rank display |
-| Harvesting, enchanting, salvaging, socketing, upgrading | Engine-only. No server endpoint, no hub method |
+| Enchanting, salvaging, socketing, upgrading | Engine-only. No server endpoint, no hub method |
 | Reputation, achievement listing, New Game Plus | Engine-only. Achievements are evaluated but never surfaced |
-| Persisted game settings, responsive game shell | Product/UI pass. [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:613) is diagnostics-only; [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:1) has no breakpoints |
+| Persisted game settings, responsive game shell | Product/UI pass. [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:596) is diagnostics-only; [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:1) has no breakpoints |
+
+**Closed since this list was written:** every game feature this table used to hold has shipped except
+the engine-only systems above. The product/UI pass — persisted settings and a responsive game shell — is
+still open.
+
+- The skills UI shipped in milestone E (PR #66) —
+  [`SkillsOverlay.svelte`](../web/client/src/lib/game/SkillsOverlay.svelte) over
+  [`skills.ts`](../web/client/src/lib/game/skills.ts), with the session folding `SkillXpGained`; the
+  client-callable `AwardSkillXp` bridge was retired in PR #269.
+- Crafting shipped in the same milestone (PR #69). The recipe book that row asked for is
+  [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte):
+  `GetCraftableRecipes` fills it with the recipes resolved against the bag, and `CraftItem` re-sends
+  `CraftableRecipes` after every craft
+  ([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1692)) so the list stays current; `ItemCrafted`
+  announces the outcome in the log and refreshes the bag, and `craftBlockedReason`
+  ([`crafting.ts`](../web/client/src/lib/game/crafting.ts:58)) is the per-recipe disabled reason.
+  Harvesting shipped beside it — `HarvestNode`, the `Harvested` event and a Gather button per node.
+- NPC dialogue shipped as E4 (PR #98) —
+  [`DialogueOverlay.svelte`](../web/client/src/lib/game/DialogueOverlay.svelte) over `TalkToNpc` and
+  `ChooseNpcOption`, with authored greetings and a requirement and consequence per option.
+- Dungeons shipped as F4 of [`dungeons.md`](dungeons.md) —
+  [`DungeonPanel.svelte`](../web/client/src/lib/game/DungeonPanel.svelte) for the room list, the rooms
+  already cleared, progress and an always-available exit. The `EnterDungeon` hub method is still
+  uncalled there: a dungeon is entered on foot through the map graph, which is the model that plan
+  chose.
+
+They are recorded here rather than in the table because the table lists only what still has no web
+surface.
 
 ## In scope for PR 1: baseline, harness, gates, matrix
 
@@ -58,7 +83,7 @@ That keeps the coverage number meaningful as a baseline.
    already documents that a coverage number there would be meaningless. Root
    `npm run coverage` therefore measures the client only, which is correct. Do not add the
    script back until that package owns real logic.
-3. Configure coverage in [`vite.config.ts`](../web/client/vite.config.ts:30):
+3. Configure coverage in [`vite.config.ts`](../web/client/vite.config.ts:57):
    - reporters `text`, `lcov`, `json-summary` (the summary enables sticky PR comments later)
    - global thresholds 90 for lines, statements, functions, branches
    - per-glob floors:
@@ -96,7 +121,7 @@ it is test-only code that never ships):
 
 Constraints to respect:
 
-- `requireAssertions: true` is set in [`vite.config.ts`](../web/client/vite.config.ts:25).
+- `requireAssertions: true` is set in [`vite.config.ts`](../web/client/vite.config.ts:38).
   Every test needs an assertion, including guard tests that only assert a redirect.
 - Server-only modules stay lazy. A module-scope client makes the whole route file untestable.
 - [`src/test-setup.ts`](../web/client/src/test-setup.ts:1) already stubs `ResizeObserver`,
@@ -110,8 +135,8 @@ proves the technique already works for one of them.
 
 | Check | Source of truth | Compared against | Allow-list rule |
 |---|---|---|---|
-| Hub methods | `public` methods in [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:210) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `GainExperience`, `AddGold`, `TakeDamage`, `AwardSkillXp`, `GetActiveCharacters`) |
-| Hub events | `SendAsync("<Event>"` in `GameHub.cs` | `hub.on('<Event>'` in [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:560) | Each ignored event listed with a reason. An entry with no reason fails the test |
+| Hub methods | `public` methods in [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:50) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `GetActiveCharacters`, `Ping`, `NavigateToLocation`) |
+| Hub events | `SendAsync("<Event>"` in `GameHub.cs` | `hub.on('<Event>'` in [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:758) | Each ignored event listed with a reason. An entry with no reason fails the test |
 | REST routes | `group.MapGet/Post/Put/Delete` in `Veldrath.Server/Features/**/*Endpoints.cs` | Functions in `web/client/src/lib/server/*-api.ts` | Dev, internal bridge, Foundry, and Discord-only endpoints listed with a reason |
 | Content schema | Keys in `ContentSchemaRegistry` | Foundry editor type list and `web/shared` contracts | Every key must appear in both, or the test names the missing side |
 | Routes | `web/client/src/routes/**` tree | Playwright `tests/*.e2e.ts` | Exemptions listed in-file with a reason; a route with neither fails |
@@ -124,10 +149,10 @@ without pretending a journey test measures lines.
 These are dead server paths that the matrix will flag, and fixing them keeps the coverage
 pass from having to explain unreachable code:
 
-1. Route chat through [`GameHub.SendChatMessage`](../Veldrath.Server/Hubs/GameHub.cs:2846)
+1. Route chat through [`GameHub.SendChatMessage`](../Veldrath.Server/Hubs/GameHub.cs:3548)
    so slash commands work, and expose `GetChatCommands` for a help affordance.
 2. Subscribe the events the client drops today in
-   [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:560):
+   [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:758):
    `OnWarned`, `OnMuted`, `OnEmote`, `OnAnnouncement`, `OnTeleported`, `OnSummoned`,
    `OnItemReceived`, `CharacterIgnored`, `ZoneLeft`. Each needs a visible treatment, not a
    silent log.
@@ -136,7 +161,7 @@ pass from having to explain unreachable code:
 
 ### Phase 1.75 — CI
 
-Extend [`ci-web.yml`](../.github/workflows/ci-web.yml:115):
+Extend [`ci-web.yml`](../.github/workflows/ci-web.yml:178):
 
 - the existing `Unit test coverage` step fails automatically once thresholds exist
 - upload `coverage/lcov.info` and `coverage/coverage-summary.json`
@@ -146,19 +171,22 @@ Extend [`ci-web.yml`](../.github/workflows/ci-web.yml:115):
 
 ## Pre-matrix gap inventory
 
-Gathered by inspection on 2026-11-02. PR 1 replaces this with measured results.
+Gathered by inspection on 2026-11-02. PR 1 replaces this with measured results. The Bucket column
+records what has since happened to each row, so `Close in PR 1` and `Closed` stay listed as the gap
+this plan measured rather than as open work.
 
-### Server capability with no web surface
+### Server capability with no web surface (as measured 2026-11-02)
 
 | Capability | Evidence | Bucket |
 |---|---|---|
-| Slash commands, `/help`, `/who`, moderation commands | [`SendChatMessage`](../Veldrath.Server/Hubs/GameHub.cs:2846), `GetChatCommands` | Close in PR 1 |
+| Slash commands, `/help`, `/who`, moderation commands | [`SendChatMessage`](../Veldrath.Server/Hubs/GameHub.cs:3548), `GetChatCommands` | Close in PR 1 |
 | Moderation and item events to the player | `OnWarned`, `OnMuted`, `OnEmote`, `OnAnnouncement`, `OnTeleported`, `OnSummoned`, `OnItemReceived`, `CharacterIgnored`, `ZoneLeft` broadcasts | Close in PR 1 |
-| Crafting | [`CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1430), `ItemCrafted`, `GET /api/content/recipes` | Deferred |
-| NPC dialogue | [`TalkToNpc`](../Veldrath.Server/Hubs/GameHub.cs:1407), `GET /api/content/dialogues` | Deferred |
-| Dungeons | [`EnterDungeon`](../Veldrath.Server/Hubs/GameHub.cs:1480), `DungeonEntered` | Deferred |
-| Skills | [`AwardSkillXp`](../Veldrath.Server/Hubs/GameHub.cs:1163), `SkillXpGained` | Deferred |
-| Harvesting, enchanting, salvaging, socketing, upgrading, reputation, achievements, NG+ | `RealmEngine.Core/Features/` only; no folder under `Veldrath.Server/Features/` | Deferred |
+| Crafting | [`CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632), `ItemCrafted`, `GET /api/content/recipes` | Closed — crafting overlay shipped in milestone E |
+| NPC dialogue | [`TalkToNpc`](../Veldrath.Server/Hubs/GameHub.cs:1442), `GET /api/content/dialogues` | Closed — dialogue overlay shipped as E4 |
+| Dungeons | [`EnterDungeon`](../Veldrath.Server/Hubs/GameHub.cs:1937), `DungeonEntered` | Closed — dungeon panel shipped as F4; the entry method is still uncalled because dungeons are entered on foot |
+| Skills | `SkillXpGained`, broadcast from [`CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632); no client-callable award method — the old `AwardSkillXp` bridge was retired in PR #269 | Closed — skill sheet shipped in milestone E |
+| Harvesting | `HarvestNode`, the `Harvested` event, a Gather button per node in `GameScreen.svelte` | Closed — shipped with crafting |
+| Enchanting, salvaging, socketing, upgrading, reputation, achievements, NG+ | `RealmEngine.Core/Features/` only; no folder under `Veldrath.Server/Features/` | Deferred |
 | Unused client-facing calls | `GetActiveCharacters` | Deferred, evaluate when multi-character is designed |
 
 ### Current test inventory
@@ -387,7 +415,7 @@ of which work under Vitest unchanged. The `data` fixture is cast once at the ren
 
 ### PR 7 — app-module stubs and the auth page components
 
-`$app/state` and `$app/navigation` are now aliased in [`vite.config.ts`](../web/client/vite.config.ts:24)
+`$app/state` and `$app/navigation` are now aliased in [`vite.config.ts`](../web/client/vite.config.ts:43)
 to [`app-state.ts`](../web/client/src/lib/testing/app-state.ts:1) and
 [`app-navigation.ts`](../web/client/src/lib/testing/app-navigation.ts:1). Both are `test.alias`
 entries only, so the real modules are untouched in the build. The navigation stubs are typed
@@ -684,6 +712,112 @@ There is a small residual on lines too, so 99.19% should not be read as full cov
 without a live server, hub and character: the e2e suite (`tests/game-auth.e2e.ts`) only asserts their
 unauthenticated redirects, so today they are covered by nothing. That is 13 lines of wiring rather
 than a gate, but it is why the line number is 99.19% and not 100%.
+
+## Coverage comment accounting (decided 2026-11-20)
+
+The web coverage **gate** and the web coverage **comment** disagreed on branch coverage for the same
+run, and the comment read as a gate failure: `Branches : 90.33% ( 4428/4902 )` in the
+`Build and Test SvelteKit Web` log beside `Branch coverage | 89.8% (3,752 of 4,180)` in the sticky
+comment (PR #88, head `3a128de0`, run 2171). Neither number was wrong; only one of them was the
+number being enforced, and the comment did not say which.
+
+### Why the two differ
+
+- The gate is vitest/v8: `coverage.thresholds` in [`web/client/vite.config.ts`](../web/client/vite.config.ts:78)
+  counts branch **sites** — 4,902 of them on that run, 4,428 covered.
+- The comment's table is `scripts/coverage-report.sh` → `codecov/codecov-report` (pinned
+  `v1.0.3`) fed `web/client/coverage/cobertura-coverage.xml`. `CoberturaReader.ReadLines`
+  (`src/CoverageReport/CoberturaReader.cs:119-160` in that repository) sums the per-line
+  `condition-coverage="x% (c/t)"` attributes and never reads the root
+  `<coverage branches-valid=… branches-covered=…>` attributes.
+- istanbul writes a line-level condition only for a branch site it can attach to a source line, so
+  that sum is a **subset** of v8's branch map: 4,180 of 4,902 sites on the same run. The gap is not
+  a coverage regression and not a broken report — it is two different branch models.
+- The Cobertura root attributes are istanbul's branch-map totals and therefore agree with v8
+  exactly. Reproduced on `development@44422ac2` with `reportOnFailure` on:
+  gate `Branches : 89.41% ( 4383/4902 )`, reporter `88.8% (3,713 of 4,180)`, XML root
+  `branches-valid="4902" branches-covered="4383"`. So the lossy step is the per-line conversion,
+  not the file as a whole.
+
+### The decision, and the two options not taken
+
+**Option 1 — the comment quotes the gate.** The sticky comment's `web` section now opens with the
+totals the `Coverage gate` step printed, and the reporter's per-directory table follows, explicitly
+labelled as Cobertura accounting with both numbers for the run spelled out. A reviewer scanning the
+PR cannot read a percentage that contradicts the check next to it.
+
+- *Option 2 alone* (keep the reporter's number, label it "not the enforced gate") was rejected as
+  insufficient: the number a reviewer reads first would still be the one nothing enforces, and the
+  difference would have to be re-derived by hand on every run. The labelling survives, but beneath
+  the gate block rather than instead of it.
+- *Option 3* (declare the Cobertura branch count authoritative and move the gate onto it) was
+  rejected as the most expensive and the least defensible: it would loosen the gate by 722 branch
+  sites, need the per-glob floors rebuilt on a branch model that silently drops sites, and pin the
+  gate to a third-party tool's line-level conversion.
+
+### What implements it
+
+- [`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) parses the last
+  `Statements/Branches/Functions/Lines` block from the coverage step's log (ANSI-stripped) and every
+  `ERROR: Coverage for …` threshold line, so **per-glob floor breaches appear in the comment too** —
+  no machine-readable artifact carries them. It cross-checks the log against
+  `coverage-summary.json` (v8's own totals) and against the Cobertura root attributes, and prints a
+  warning instead of silently preferring one when they drift. Fixture tests:
+  [`scripts/tests/web-coverage-gate.test.mjs`](../scripts/tests/web-coverage-gate.test.mjs).
+- [`ci-web.yml`](../.github/workflows/ci-web.yml:182) tees the coverage step to
+  `$RUNNER_TEMP/web-coverage.log`, keeps npm's exit status via `pipefail`, renders the block and
+  concatenates it ahead of `SummaryGithub.md` into `CoverageReport/WebSection.md`, which is what the
+  commenter posts.
+- `coverage.reportOnFailure: true` ([`vite.config.ts`](../web/client/vite.config.ts:67)) so a failed
+  gate still writes the report — previously a red run produced no Cobertura at all, so the comment
+  kept the *previous* head's numbers beside a red check. The comment step now also runs with
+  `if: always()`.
+- Recorded in [`scripts/README.md`](../scripts/README.md) and [`docs/ci-forgejo.md`](../docs/ci-forgejo.md)
+  ("Coverage reports").
+
+### Verified on a run, not just locally
+
+The reporting path was exercised end to end by CI on a throwaway branch that stacked this change on
+PR #88's head (whose branch fixes the five `web/client/tests/run-e2e.mjs` typecheck errors that stop
+`build-test` before the coverage step on `development@44422ac2`): run 2176, `Build and Test SvelteKit
+Web`, **successful in 11m51s**. From that one run:
+
+```text
+Statements   : 96.77% ( 10901/11264 )
+Branches     : 90.33% ( 4428/4902 )        <- the gate
+...
+Line 96.7% · branch 89.8% · function 95.1% · full function 95.1%   <- the reporter, unchanged
+```
+
+and the comment it posted (PR #90, comment 1084):
+
+```markdown
+| Statements | 96.77% | 10,901 / 11,264 |
+| Branches | 90.33% | 4,428 / 4,902 |
+```
+
+with the contrast paragraph reading *"It counts 3,752 of 4,180 branch conditions against the gate's
+4,428 of 4,902 branch sites: 722 sites carry no line-level condition"*. The gate line and the
+comment's branch row are the same number, which is the property the old comment lacked.
+
+### Fixed upstream, adopted here
+
+The residual was the reporter's own headline, and it belongs to
+[`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report), not to this
+repository. It was fixed there (PR #1, merged as `f6a5681`) and tagged **`v1.0.4`**: the reader now
+takes the root `branches-valid`/`branches-covered` attributes when a file provides them and falls
+back to the per-line sum for coverlet, whose per-line conditions are complete. Both on-demand paths
+pin that tag — [`scripts/coverage-report.sh`](../scripts/coverage-report.sh) and
+[`generate-coverage-report.ps1`](../scripts/generate-coverage-report.ps1) — so on the PR #88 file
+the reporter's Total row reads `4,428 of 4,902`: the gate's pair, rendered with one decimal
+(`90.3%`) instead of two (`90.33%`). The counts are the contract; the precision difference is not a
+defect.
+
+What remains is only the **per-directory table**: its rows are still built on istanbul's per-line
+conditions (`3,752 of 4,180` on that run), so they do not sum to the Total.
+[`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) says exactly that in the
+comment, and switches to a "this file is not from this run" paragraph when the root counters
+disagree with the gate — the gate block itself is unchanged.
 
 ## Traps
 

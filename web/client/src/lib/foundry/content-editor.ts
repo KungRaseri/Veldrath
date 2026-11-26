@@ -228,6 +228,58 @@ export function buildPayload(
 	return payload;
 }
 
+/**
+ * The payload a submission proposes: the stored row it replaces, with the author's edits written over it.
+ *
+ * The create form renders every scalar field of the type's schema and posts them all, so a value the author
+ * left alone arrives looking exactly like one they set — and `buildPayload` would write those untouched
+ * defaults over what the catalog holds. That is how a proposal kept the seeded `traits.hasCooldown` while
+ * blanking the `stats.cooldown` it depends on, a shape the content rules then refuse. A correction therefore
+ * writes only the fields whose submitted value differs from the one the form rendered; a submission with no
+ * stored row has nothing to keep, so every field it was handed is written as before.
+ *
+ * The limitation this buys: the form cannot tell "set it to the schema default" from "leave it alone" on a
+ * correction, nor can it turn off a Boolean it never checked.
+ *
+ * @param original The stored payload, or `{}` when the catalog has no entry at this slug.
+ * @param schema The content type's schema.
+ * @param values The submitted form values.
+ * @returns The payload to send to the write path.
+ */
+export function submissionPayload(
+	original: Record<string, unknown>,
+	schema: ContentTypeSchema | null,
+	values: FieldValues
+): Record<string, unknown> {
+	if (Object.keys(original).length === 0) return buildPayload(original, schema, values);
+
+	const edited: FieldValues = {};
+
+	for (const field of allFields(schema)) {
+		if (!(field.name in values)) continue;
+		// A Boolean renders as an unchecked checkbox, which submits nothing at all, so a submitted one is an edit.
+		if (field.fieldType !== 'Boolean' && String(values[field.name]) === renderedValue(field))
+			continue;
+		edited[field.name] = values[field.name];
+	}
+
+	return buildPayload(original, schema, edited);
+}
+
+/**
+ * The value the create form renders for a scalar field — what a submission must differ from to count as an edit.
+ *
+ * The form renders a select with an empty first option and everything else with the schema's default; kept
+ * here beside the payload builder rather than inline in `submissions/[id]/+page.svelte` so a test can pin it.
+ *
+ * @param field A scalar field descriptor.
+ * @returns The rendered value, as the string the form would submit.
+ */
+function renderedValue(field: ContentField): string {
+	if (field.enumValues && field.enumValues.length > 0) return '';
+	return toInputValue(field.default);
+}
+
 /** Seeds the form state from a payload, falling back to the schema default for empty fields. */
 export function initialValues(
 	payload: Record<string, unknown>,

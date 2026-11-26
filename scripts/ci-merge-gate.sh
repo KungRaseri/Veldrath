@@ -20,15 +20,21 @@
 #
 # Run it locally with: bash scripts/ci-merge-gate.sh --lint
 #
-# `--lint` enforces the four rules the documentation states (docs/ci-forgejo.md,
+# `--lint` enforces the five rules the documentation states (docs/ci-forgejo.md,
 # "The always-on check that keeps * satisfiable"):
 #   L1  every workflow file declares a top-level `name:` — that string is the status
 #       context prefix.
 #   L2  every real `uses:` names an action mirrored on this instance (see the table in
 #       docs/ci-forgejo.md). Comment lines are ignored; local actions (`uses: ./...`)
 #       are exempt.
-#   L3  every `pull_request` workflow triggers on both `main` and `development`.
+#   L3  every workflow with a `pull_request` trigger lists `development`, so a pull request
+#       into `development` is always judged. `main` is optional: the only pull request into
+#       `main` is the release PR (`development` → `main`), whose head commit already carries
+#       that workflow's `push` run — a `pull_request` run there duplicates the verdict and,
+#       when superseded, writes a failing status on a `development` commit.
 #   L4  at least one `pull_request` workflow declares neither `paths` nor `paths-ignore`.
+#   L5  `.github/workflows/merge-gate.yml` — the always-on check — lists both `main` and
+#       `development`, because it is the only workflow a release PR still runs.
 #
 # `--uncovered` re-implements the workflow-filter glob semantics so the inventory in
 # docs/ci-forgejo.md can be regenerated: `**/` -> `(.+/)?`, `**` -> `.*`,
@@ -359,7 +365,15 @@ run_lint() {
     done < <(scan_values "${SCANS[$idx]}" USES)
   done
 
-  # L3 — every pull_request workflow triggers on both main and development.
+  # L3 — every pull_request workflow triggers on development.
+  #
+  # `main` is deliberately optional, except in merge-gate.yml, which L5 keeps on both. The only
+  # pull request into `main` is the release PR (`development` → `main`), whose head commit is a
+  # `development` commit that already carries that workflow's `push` run at the same commit. A
+  # `pull_request` run there duplicates that verdict, and when the next push supersedes it Forgejo
+  # records the superseded run as `failure / "Has been cancelled"` on the `development` commit it
+  # was started for. Session-92's bug — every workflow said `branches: [ main ]` while pull
+  # requests targeted `development` — stays caught, because `development` is still mandatory.
   for idx in "${!FILES[@]}"; do
     rel="${FILES[$idx]}"
     [ -n "$(scan_get "${SCANS[$idx]}" PR)" ] || continue
@@ -372,12 +386,20 @@ run_lint() {
       [ "$br" = "main" ] && main_v=1
       [ "$br" = "development" ] && dev_v=1
     done < <(scan_values "${SCANS[$idx]}" BR)
-    if [ "$main_v" -eq 0 ] || [ "$dev_v" -eq 0 ]; then
+    if [ "$dev_v" -eq 0 ]; then
       local found
       found="$(scan_values "${SCANS[$idx]}" BR | awk -F'\t' '{ printf "%s%s", sep, $2; sep = ", " }')"
-      printf '✗ L3 %s:%s: pull_request.branches does not list both main and development (found: %s)\n' \
+      printf '✗ L3 %s:%s: pull_request.branches does not list development (found: %s)\n' \
         "$rel" "$brln" "${found:-none}"
-      printf '  fix: use `branches: [ main, development ]` — a pull request into development otherwise runs nothing (the bug fixed in #24)\n'
+      printf '  fix: use `branches: [ development ]` — a pull request into development otherwise runs nothing (the bug fixed in #24); `merge-gate.yml` stays `[ main, development ]`, because L5 requires `main` there\n'
+      fail=1
+    fi
+    # L5 — the always-on workflow must still cover main: it is the only status a release PR
+    # is guaranteed to get, and without it a head commit matching no `paths` list deadlocks
+    # the merge to main (docs/ci-forgejo.md, "The always-on check that keeps * satisfiable").
+    if [ "$rel" = ".github/workflows/merge-gate.yml" ] && [ "$main_v" -eq 0 ]; then
+      printf '✗ L5 %s:%s: merge-gate.yml must trigger on pull requests into main as well\n' "$rel" "$brln"
+      printf '  fix: use `branches: [ main, development ]` — the release PR is the only pull request into main, and this is the one status it always gets\n'
       fail=1
     fi
   done

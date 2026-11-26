@@ -1,0 +1,443 @@
+# game-context/budget.yaml — Veldrath level bands and spawn/loot semantics.
+# Produced by card t_f1609eed (D0). STATUS: approved 2026-11-20.
+# merchants section appended by card t_2f9c409a (C2), approved 2026-11-20; landed by card t_190ecb14 (L2).
+# bands extended to level 30 (b27-30) by card t_259ac697 (C4), approved 2026-11-20; the tail roster
+#   it anchors on is D6/L6 (archetypes.md). No other band moved.
+# merchants.town_level_basis reworded by card t_afa56434, approved 2026-11-20: its hostile-ladder
+#   analogy now points at b27-30, which C4 made the top of the ladder.
+# merchants.wiring rewritten 2026-11-20 by card t_a304ad79 (docs truth pass): T1 (t_444d0159) made the
+#   band enforced, so the status text below describes the live shop. No band value moved. The numbers
+#   in merchants are parsed by MerchantBandTests.
+# wiring.hp/xp/gold flipped to live:true 2026-11-20 by card t_d7f1fee8 (docs truth pass): the archetype
+#   projection has assigned MaxHealth, XP and GoldReward since PR #103 (d119b9f1), so the "never assigned /
+#   stays 25 / stays 10" sentences had been false since that PR, not since #136 (which placed instances on
+#   top of them). Flags, details and sibling anchors re-derived at d0050f96. No band value moved.
+# wiring.damage_per_hit flipped to live:true and omitted.mana reworded 2026-11-20 by card t_9c04f053
+#   (docs truth pass), together with the stale file:line citations in the same wiring/spawn/omitted
+#   blocks: Stats.Damage and Stats.Mana have been projected since PR #103 (d119b9f1), and those
+#   sentences still named the pre-projection repository lines and the display-only CombatHelpers
+#   helpers. Re-derived at 1bcf4cdd, the post-#173 tree. No band value moved.
+# merchants.wiring.gold's merchant-purse contrast reworded 2026-11-20 by the same card (review
+#   round 2): it said the hostile `gold:` in the wiring block "is still not projected", which
+#   #173 made false; it is the per-kill reward and it is live. No band value moved.
+# wiring.damage_per_hit's named-instance examples corrected 2026-11-22 by card t_841a4822: the two
+#   seeded bosses' damage overrides were boss-banded to 16 (elder-goblin-chief, b4-6 x2 floor of 8)
+#   and 20 (captain-blackthorn, b7-10 x2 floor of 10) in ActorInstancesSeeder, so the detail's
+#   "12 … 18" examples were stale. No band value moved.
+# dev-content may choose values INSIDE a band; it may not invent a curve.
+# wiring says whether the engine reads each keyed stat TODAY, with file:line.
+# bands[].seeded_archetypes lists seeded hostile non-boss archetypes by MinLevel (inclusive levels).
+# It is not a pool or the D1/D6 authored roster; MaxLevel overlap and boss ceiling anchors do not count.
+
+schema_version: 6
+status: >-
+  approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20;
+  b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20;
+  wiring.hp/xp/gold corrected to live 2026-11-20; wiring.damage_per_hit corrected to live and
+  omitted.mana reworded 2026-11-20; merchants.wiring.gold's hostile-gold contrast corrected 2026-11-20;
+  wiring.damage_per_hit's named-instance examples re-based to 16/20 2026-11-22
+covers_levels: [1, 30]
+level_range_justification: >-
+  Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
+  (ZoneLocationsSeeder.cs: the ashfields, smoldering-reach and kaldrek-maw zone
+  headers) and, as of 2026-11-20, hostile archetypes reached MinLevel 26
+  (fire-ancient; ArchetypeSeeder.cs:1615). 1-26 covers 1-20 with no gap, so it is
+  the 1-20 table plus the three zones that would otherwise be stranded. See
+  decision 1. Extended to 1-30 on 2026-11-20 by C4, because the seeded content
+  already reaches level 30 on its own: fire-ancient is seeded 26-30 (:1615-1616)
+  and all three kaldrek-maw rooms run to L30 (ZoneLocationsSeeder.cs: the
+  maw-descent, fire-ancients-chamber and kaldreks-heart room blocks — 26-30, 26-30
+  and 28-30), so with 1-26 the top band stops four levels short of the rooms it
+  has to describe. Levels 27-30 are the four the ladder was missing, not new content.
+
+units:
+  hp: "absolute HP, authored as ArchetypeStats.Health"
+  damage_per_hit: >-
+    authored base, ArchetypeStats.Damage. The level-scaled base physical damage is
+    max(1, projected damage + enemy level - 1), before defense (CombatHelpers.cs:88-95).
+  xp: "total XP the enemy is worth before the damage-share split (CombatRewards.cs:69-86)"
+  gold: "total gold the enemy is worth before the split; per-kill roll between min and max"
+  drop_chance: >-
+    probability ONE non-guaranteed loot row lands on a kill (AttackEnemyHubCommand.cs:362-366);
+    not the raw DropWeight — see loot.weight_semantics
+
+bands:
+  - id: b1-3
+    levels: [1, 3]
+    hp: [15, 60]
+    damage_per_hit: [3, 7]
+    xp: [8, 45]
+    gold: [1, 15]
+    drop_chance: [0.30, 0.60]
+    intended_for: "the-droveway L1, ashlen-wood L1, grevenmire L3"
+    seeded_archetypes: [giant-rat, goblin-scout, drove-cur, peat-adder, forest-wolf, bandit-ruffian]
+
+  - id: b4-6
+    levels: [4, 6]
+    hp: [60, 110]
+    damage_per_hit: [8, 12]
+    xp: [30, 75]
+    gold: [5, 20]
+    drop_chance: [0.25, 0.55]
+    intended_for: "the-halrow L4 dungeon, drowning-pits L4 dungeon; aldenmere L5 is a town"
+    seeded_archetypes: [sump-crawler, mire-boar, moor-wight]
+    note: "bandit-captain is boss-tier here — see bosses.hp_multiplier"
+
+  - id: b7-10
+    levels: [7, 10]
+    hp: [90, 150]
+    damage_per_hit: [10, 16]
+    xp: [55, 125]
+    gold: [8, 30]
+    drop_chance: [0.20, 0.50]
+    intended_for: "pale-moor L7, soddenfen L9; tolvaren L10 is a town"
+    seeded_archetypes: [barrow-bear, moor-tollman, cairn-haunt, fen-lurker, burrow-worm, bog-lantern]
+
+  - id: b11-14
+    levels: [11, 14]
+    hp: [140, 220]
+    damage_per_hit: [16, 22]
+    xp: [90, 200]
+    gold: [12, 45]
+    drop_chance: [0.15, 0.45]
+    intended_for: "barrow-deeps L11 dungeon, tidewrack-flats L12, saltcliff-heights L14"
+    seeded_archetypes: [drowned-revenant, tide-strider, gull-rider-skirmisher, gull-rider-brute]
+
+  - id: b15-18
+    levels: [15, 18]
+    hp: [210, 280]
+    damage_per_hit: [22, 27]
+    xp: [120, 250]
+    gold: [20, 55]
+    drop_chance: [0.12, 0.40]
+    intended_for: "sunken-name L16 dungeon; skarhold L18 is a town"
+    seeded_archetypes: [storm-harrower, cliff-breaker, undertow]
+
+  - id: b19-22
+    levels: [19, 22]
+    hp: [260, 320]
+    damage_per_hit: [26, 30]
+    xp: [150, 300]
+    gold: [25, 60]
+    drop_chance: [0.10, 0.35]
+    intended_for: "ashfields L20, first Cinderplain zone"
+    seeded_archetypes: [cinderling, drowned-cantor, ash-jack, forge-deserter]
+
+  - id: b23-26
+    levels: [23, 26]
+    hp: [300, 380]
+    damage_per_hit: [30, 44]
+    xp: [180, 380]
+    gold: [30, 75]
+    drop_chance: [0.08, 0.30]
+    intended_for: "smoldering-reach L23, kaldrek-maw L26 dungeon — b27-30 is the ladder's top band"
+    seeded_archetypes: [pyreling, vent-stalker, crust-crawler, ash-picker, ash-eater]
+    note: "fire-ancient is boss-tier here — see bosses"
+
+  - id: b27-30
+    levels: [27, 30]
+    hp: [340, 450]
+    damage_per_hit: [34, 48]
+    xp: [210, 460]
+    gold: [35, 90]
+    drop_chance: [0.06, 0.25]
+    intended_for: "kaldrek-maw only — fire-ancients-chamber L26-30 and kaldreks-heart L28-30; no other zone reaches level 27"
+    seeded_archetypes: [maw-serpent]
+    basis:
+      - "hp min 340 = b23-26 min 300 + 40, the step b19-22's 260 -> b23-26's 300 took."
+      - "hp max 450 = fire-ancient's seeded 900 HP / 2; C4 used fire-ancient as the ceiling anchor at the floor of bosses.hp_multiplier."
+      - "damage min 34 = 30 + 4, the step b19-22's 26 -> b23-26's 30 took; max 48 = 44 + the same 4, not the +14 that stretched b23-26's max to reach fire-ancient's 42."
+      - "damage max stays above fire-ancient's authored 42 because bosses multiply HP, XP and gold — never damage (see bosses)."
+      - "xp: both ends take the +30/+80 step b19-22's [150, 300] -> b23-26's [180, 380] took; fire-ancient's 1200 is 2.6x the ceiling, inside bosses.xp_multiplier."
+      - "gold: both ends take the +5/+15 step b19-22's [25, 60] -> b23-26's [30, 75] took; fire-ancient's 150-300 is inside band x bosses.gold_multiplier [2, 4] = [70, 360]."
+      - "drop_chance continues the -0.02/-0.05 step (b23-26's 0.08-0.30 from b19-22's 0.10-0.35); the floor is a range, not a trend to zero."
+    note: >-
+      fire-ancient is the only boss seeded for this band (26-30, 900 HP, ArchetypeSeeder.cs:1622),
+      and D0 holds it out of every pool (bosses.placement). The band's non-boss rows, ash-eater (26-30)
+      and maw-serpent (28-30), are seeded too (D6/L6, archetypes.md). No boss is authored for this
+      band: boss placement stays held for a uniqueness mechanism.
+
+wiring:
+  level:
+    live: true
+    detail: >-
+      pooled spawn level is the archetype's MinLevel, with no level roll
+      (ActorTemplateProjection.cs:87); MaxLevel feeds the seeded-encounter overlap rule
+      (SeededEncounterCoverageTests.cs:207-239). One archetype per band, not per level.
+      Because nothing rolls, an archetype banded 26-30 spawns at 26 in every room it is pooled
+      in — including a room whose floor is 28. That is the whole reason b27-30 has two authored
+      rows instead of one 26-30 row: ash-eater (26-30) spawns at 26 for fire-ancients-chamber,
+      and maw-serpent (28-30) is the only row that can stand on kaldreks-heart's floor of 28.
+  hp:
+    live: true
+    detail: >-
+      Stats.Health lands on Enemy.Health AND Enemy.MaxHealth (ActorTemplateProjection.cs:122-126 — the
+      archetype value, or a named instance's override composed over it, ActorInstancesSeeder.cs:111, :137),
+      and the spawn copies MaxHealth into CurrentHealth and MaxHealth (ActorPoolResolver.cs:186-187).
+      Every spawn therefore carries its authored HP; 50 (Enemy.cs:86, :91) survives only for a row that
+      authors no health.
+  damage_per_hit:
+    live: true
+    detail: >-
+      Stats.Damage lands on Enemy.BasePhysicalDamage (ActorTemplateProjection.cs:128-131 — the
+      archetype value, or a named instance's override composed over it: 16 for elder-goblin-chief
+      and 20 for captain-blackthorn, ActorInstancesSeeder.cs:114, :141). CombatHelpers.cs:88-95
+      adds enemy level minus one and floors the level-scaled base at one. Constitution reduces
+      that base by a nonnegative amount, defending blocks half the scaled base (rounded down),
+      and the final damage cannot drop below one. Every hostile seeded
+      archetype authors it (3 giant-rat, 7 bandit-ruffian, 42 fire-ancient —
+      SpawnedEnemyStatProjectionTests.cs:57, :117, :41), so 5 (Enemy.cs:136) is only the unauthored
+      default.
+  xp:
+    live: true
+    detail: >-
+      Stats.ExperienceReward lands on Enemy.XP (ActorTemplateProjection.cs:133-136 — the archetype value,
+      or a named instance's override composed over it, ActorInstancesSeeder.cs:115, :142), and the spawn
+      copies it into BaseXp (ActorPoolResolver.cs:188). The seeded archetypes author it
+      (ArchetypeSeeder.cs:142, 187, 322, 367 …), so a kill is worth the authored reward; 25 (Enemy.cs:147)
+      is only the unauthored default.
+  gold:
+    live: true
+    detail: >-
+      The archetype authors a range, and the projection rolls one value per spawn from the composed pair
+      (ActorTemplateProjection.cs:147-153; RollGold at :176-187; an instance override composes pair-first,
+      ActorInstancesSeeder.cs:116-117, :143-144). The spawn copies the roll (ActorPoolResolver.cs:189)
+      and EfCoreEnemyInstanceStore writes it on the instance row (EfCoreEnemyInstanceStore.cs:556-558),
+      which every later read takes back (:520-521) — so the stored number is what a kill pays, and 10
+      (Enemy.cs:152) is only the unauthored default.
+  drop_chance:
+    live: true
+    detail: "rolled per entry on every kill (AttackEnemyHubCommand.cs:362-366)"
+  armour_class:
+    live: false
+    detail: >-
+      omitted from bands on purpose: Stats.ArmorClass (ActorArchetype.cs:72) and Stats.AttackBonus
+      (:79) are read nowhere; mitigation is the PLAYER's Constitution (CombatHelpers.cs:91-95).
+  boss_and_elite_flags:
+    live: false
+    detail: >-
+      Traits.Boss/Elite are labels with no stat effect (ActorArchetype.cs:118-121). The projection
+      copies both into the enemy template (ActorTemplateProjection.cs:101-102); CombatHelpers.ResolveTier
+      selects the display tier (CombatHelpers.cs:68-76). The encounter response sends it as EnemyTier
+      (EngageEnemyHubCommand.cs:150), and the combat client maps it into the enemy display
+      (session.svelte.ts:897, :920). The loot-table guard checks the archetype flag
+      (SeededEncounterCoverageTests.cs:241-265).
+
+spawn:
+  roster_size: [2, 4]
+  roster_size_source: "ActorPoolResolver.cs:32-33 (MinCount 2, MaxCount 4), rolled at :94"
+  roster_size_semantics: >-
+    a fill target, not a cap. The location's placed hostile instances go in first (a non-hostile
+    placement is dropped with a warning, :100-106), then pool draws fill from spawned.Count up to the
+    roll (ActorPoolResolver.cs:117) — so with a pool the roster is at most max(placements, the roll),
+    and short of the roll whenever a draw is dropped for an unknown archetype (:121-128) or a
+    non-hostile entry (:133-139). With placements and NO pool it is exactly those placements
+    (:111-115); with neither it is nothing (:86-92).
+  weight_semantics: >-
+    relative integer per pool entry; each roster slot draws independently, weighted by
+    ActorPoolEntry.Weight, and weight <= 0 counts as 1 (ActorPoolResolver.cs:193-204). The same
+    archetype can fill every slot, so a pool never guarantees variety.
+  roster_lifetime: >-
+    rolled ONCE per location, then stored as EnemyInstances rows; later visits read the stored
+    roster and never re-roll it (EfCoreEnemyInstanceStore.cs:63-97). Composition, archetype and
+    level stay fixed until the rows are deleted.
+  respawn: >-
+    per enemy instance, never per archetype or location. On death
+    RespawnAt = now + RespawnDelaySeconds (EfCoreEnemyInstanceStore.cs:253); a sweeper every
+    SweepIntervalSeconds revives due rows at full HP with participants cleared
+    (EnemyRespawnService.cs:50-58, EfCoreEnemyInstanceStore.cs:279-333). Defaults 60 s and 5 s
+    (EnemyWorldOptions.cs:21-25). The SAME row revives — same id, archetype and level, so a
+    respawn is never a re-roll. No per-archetype respawn field exists.
+  cleared_room: >-
+    when the last enemy at a location dies, every dead row's RespawnAt moves to
+    now + delay x ClearedRoomRespawnMultiplier (AttackEnemyHubCommand.cs:245-249 ->
+    EfCoreEnemyInstanceStore.cs:103-130; multiplier 3 at EnemyWorldOptions.cs:40), i.e. 60-180 s.
+  empty_pool: >-
+    spawns nothing and substitutes nothing (ActorPoolResolver.cs:86-92). Placed hostile instances
+    are the exception: they spawn on their own, exactly as placed, never topped up (:111-115); a
+    non-hostile placement is dropped with a warning and never counts (:100-106).
+  non_hostile: >-
+    excluded from the roster with a warning (ActorPoolResolver.cs:133-139). Hostility defaults to
+    TRUE when unset (ActorTemplateProjection.cs:97), so an NPC must state hostile: false. Meetable
+    townspeople are LocationNpc rows keyed by zone+location (NpcHubCommands.cs:155-158), never
+    pool entries.
+  unknown_archetype: "logged as Error and skipped, no substitute (ActorPoolResolver.cs:121-128)"
+  level_roll: none
+
+loot:
+  weight_semantics: >-
+    relative integer, rolled per entry INDEPENDENTLY against the table total
+    (AttackEnemyHubCommand.cs:362-366): a row lands with probability DropWeight / sum(DropWeight).
+    One kill can yield several rows. A table summing to 100 makes DropWeight read as a percentage
+    (how the seeded common tables are authored); the seeded boss table sums to 185 because of its
+    guaranteed row, which halves its other rows' nominal chances.
+  guaranteed_rows: >-
+    yes: LootTableEntry.IsGuaranteed (LootTableEntry.cs:27-28) skips the roll
+    (AttackEnemyHubCommand.cs:366). A guaranteed row's weight still counts in the denominator, so
+    it dilutes every other row in its table.
+  quantities: >-
+    uniform in [QuantityMin, QuantityMax] inclusive; when Max <= Min the engine takes Min
+    (AttackEnemyHubCommand.cs:368-370).
+  gold: >-
+    NOT a loot row for enemies. The kill path only adds ItemSlug to the bag
+    (AttackEnemyHubCommand.cs:372), and the "gold" domain is honoured only by the chest path
+    (LootTableService.cs:274-277). Enemy gold is SpawnedEnemy.GoldReward (ActorPoolResolver.cs:189).
+  tables_per_archetype: >-
+    zero or one (nullable ActorArchetype.LootTableId, ActorArchetype.cs:31-32). The projection
+    emits a one-element list when it resolves a slug, otherwise an empty list
+    (ActorTemplateProjection.cs:91, :161; AttackEnemyHubCommand.cs:339-340).
+  recipient: >-
+    the character landing the killing blow takes every drop (AttackEnemyHubCommand.cs:335-344),
+    while XP and gold split across damage contributors (CombatRewards.cs:69-86). Loot is not
+    shared or rolled per participant.
+  harvesting_differs: >-
+    the harvesting path uses a DIFFERENT rule for the same field — a flat d100 comparison
+    (LootTableService.cs:72-77, 130-135), not a share of the table total. DropWeight 60 means 60%
+    when harvested, 60/185 when the seeded fire-ancient drops it.
+
+bosses:
+  hp_multiplier: [2, 4]
+  xp_multiplier: [2, 4]
+  gold_multiplier: [2, 4]
+  multiplier_basis: >-
+    measured, not assumed: bandit-captain 220 HP vs moor-wight 90 in the same band (2.4x,
+    ArchetypeSeeder.cs:493 vs :538); fire-ancient 900 vs pyreling 320 (2.8x, :1622 vs :1352). The
+    card's 4-6 placeholder would put a b15-18 boss at 1120-1680 HP.
+  placement: >-
+    one per dungeon zone, on its deepest location — only a dungeon has a lobby, an instance
+    boundary and a reset notion (ZoneLocation.cs:85-90). NOT ENFORCEABLE TODAY: nothing marks a
+    pool entry unique, so a pooled boss can fill every slot of the 2-4 roll
+    (ActorPoolResolver.cs:117-142). See the gap list.
+  flag: "Traits.Boss = true; no stat effect (ActorArchetype.cs:118-119)"
+
+elites:
+  hp_multiplier: [1.5, 2.5]
+  xp_multiplier: [1.5, 2.5]
+  flag: "Traits.Elite = true; also a label with no stat effect (ActorArchetype.cs:120-121)"
+
+omitted:
+  ac: >-
+    no combat behaviour. Stats.ArmorClass is read nowhere (ActorArchetype.cs:72); mitigation is the
+    player's Constitution (CombatHelpers.cs:91-95). An AC band would promise reduction that does
+    not exist.
+  attack_bonus: >-
+    Stats.AttackBonus (ActorArchetype.cs:79) is never read and there is no hit roll to modify —
+    damage lands unconditionally (AttackEnemyHubCommand.cs:191-201).
+  mana: >-
+    Stats.Mana IS projected (ActorArchetype.cs:56 -> Enemy.Mana and Enemy.MaxMana,
+    ActorTemplateProjection.cs:139-143; 200 on fire-ancient, SpawnedEnemyStatProjectionTests.cs:43),
+    but it is inert once it is there: the server's fight reads BasePhysicalDamage for its damage
+    (CombatHelpers.cs:88-95), and the engine's spell AI has no production caller here — its only
+    entry point, CombatService.ExecuteEnemySpell (CombatService.cs:538-561), returns early at
+    EnemySpellCastingService.cs:35-41 unless Enemy.SpellIds is populated, which the projection never
+    does. So an enemy never spends mana: it is never given a spell to cast, not one it cannot afford.
+  respawn_time: "no per-archetype field; one global config pair (EnemyWorldOptions.cs:21-25) plus the cleared-room multiplier (:40)"
+  rarity_weight: >-
+    ActorArchetype.RarityWeight is inert for spawning: pools use ActorPoolEntry.Weight
+    (ActorPoolResolver.cs:193-204), and RarityWeight only feeds the category-based
+    GenerateEnemiesAsync (EnemyGenerator.cs:52-64), which the spawn path never calls.
+  guaranteed_gold: "enemy gold is not a loot row at all; see loot.gold"
+
+# ---------------------------------------------------------------------------------------------
+# merchants — approved 2026-11-20 by card t_2f9c409a (C2); landed by card t_190ecb14 (L2).
+# An insertion: not one hostile band, spawn rule or loot semantic above is altered by this section.
+# ---------------------------------------------------------------------------------------------
+merchants:
+  status: approved 2026-11-20
+  town_level_basis: >-
+    Banded by the TOWN's own level, not the player's: Zone.MinLevel
+    (Veldrath.Server/Data/Entities/Zone.cs:17-18). The seeded merchant towns and their MinLevel are crestfall 0,
+    aldenmere 5, tolvaren 10 and skarhold 18 (Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:77, :84, :89,
+    :94). The fifth HasMerchant zone is the dev playground (:99) and is excluded as IsDevOnly. A town authored
+    above L18 uses the L18 band; no band is invented for it, the same way b27-30 is the top of the hostile ladder.
+  gold_by_town_level:
+    L0:  [100, 250]    # crestfall — 8 x 0.40 x 30 = 96 .. 16 x 0.50 x 30 = 240; ceiling 30 = rune-of-fire (ItemsSeeder.cs:59)
+    L5:  [250, 650]    # aldenmere — 8 x 0.40 x 80 = 256 .. 16 x 0.50 x 80 = 640; ceiling 80 = rune-of-power (ItemsSeeder.cs:61)
+    L10: [650, 1600]   # tolvaren  — 8 x 0.40 x 200 = 640 .. 16 x 0.50 x 200 = 1600; ceiling 200 = fire-ruby (ItemsSeeder.cs:54)
+    L18: [1300, 3200]  # skarhold  — 8 x 0.40 x 400 = 1280 .. 16 x 0.50 x 400 = 3200; ceiling 400 = orb-of-decay (ItemsSeeder.cs:70)
+  gold_basis: >-
+    A purse is one shelf of the town's own wares bought back at the published buyback rate: min =
+    stock_size min x buyback_rate min x shelf ceiling, max = stock_size max x buyback_rate max x shelf ceiling,
+    rounded to the nearest 50. The shelf CEILING is the anchor because it is the single payout that can drain a
+    purse, and because it is the one figure that moves with town level. A median over the catalog is the wrong
+    anchor and the numbers prove why: the median purchasable item is 32.5 gold everywhere, so a median-anchored
+    purse would come out the same at crestfall and at skarhold.
+  gold_max_item_price: >-
+    The dearest single buyback a purse can pay is 2 x gold_max, i.e. 500 / 1300 / 3200 / 6400 at L0 / L5 / L10 /
+    L18 (buyback pays half of the item's printed value — ShopPricing.SellPrice, SellItemHubCommand.cs:103).
+    That is the whole "a starting merchant cannot buy your end-game loot" rule — it falls out of the band, it is
+    not authored beside it.
+  stock_size: [8, 16]        # distinct items a merchant offers
+  stock_size_basis: >-
+    The catalogue holds 24 purchasable items, and the shop narrows it twice at GetShopCatalogHubCommand.cs:121.
+    Price > 0 drops exactly one of the 25 seeded rows (lost-cargo, value 0, ItemsSeeder.cs:80), leaving 24; the
+    zone-stock half of the same filter narrows those 24 to the town's own shelf — nine at crestfall, twelve at
+    aldenmere, eleven at tolvaren, twelve at skarhold (ZoneStockSeeder.cs:70-143). 8-16 is a merchant carrying a
+    third to two thirds of the CATALOGUE, not of a shelf. The low end brackets the legacy per-type defaults of 10
+    (weaponsmith, armorer) and 15 (apothecary, and the fallback for any other type) at ShopEconomyService.cs:422-429;
+    the high end stops short of the 20 a general store hands out, because "the whole catalog" is the vending-machine
+    bug stock_size closes, not a shop.
+  price_markup: [1.0, 1.5]   # multiplier over base item value
+  price_markup_basis: >-
+    Both endpoints already exist in the code. 1.0 is the live buy price: the player pays item.Price unchanged
+    (ShopPricing.BuyPrice, GetShopCatalogHubCommand.cs:126; BuyItemHubCommand.cs:112 and :122). 1.5 is the
+    modifier the engine's own merchant-info query declares — "Player buys at 1.5x base price"
+    (GetMerchantInfoQueryHandler.cs:74). Nothing between the two is invented, and 1.0 is a floor rather than an
+    average.
+  markup_floor: >-
+    price_markup min >= buyback_rate max, always. Below that a merchant sells an item for less than the same
+    merchant pays for it, so buy -> sell repeats for free gold (BuyItemHubCommand.cs:122 deducts the buy price
+    while SellItemHubCommand.cs:103 credits the buyback). A band that crosses 0.50 markup is a gold pump, not a shop.
+  buyback_rate: [0.40, 0.50] # fraction of value paid when the player sells
+  buyback_basis: >-
+    The two rates the code already implements: 0.50 live (ShopPricing.SellPrice, ShopPricing.cs:36-43 — the
+    Math.Max(1, value x 50 / 100) at :38) and 0.40 in the engine's economy service (ShopEconomyService.cs:106), which
+    resells a bought-back item at 0.80 of its price (:133). The player is never paid more than half of printed
+    value; that is the invariant, not a knob.
+  wiring:
+    gold: >-
+      Live — as the merchant's purse, not as a per-kill reward. ActorArchetype.Stats.TradeGold is defined
+      (RealmEngine.Data/Entities/Content/ActorArchetype.cs:91), seeded at 250 on village-blacksmith, 200 on
+      tavern-keeper and 0 on wayfarer-elder (RealmEngine.Data/Seeders/ArchetypeSeeder.cs:1687, :1720, :1753), and
+      offered to the Foundry editor as an integer field (Veldrath.Contracts/Content/ContentSchema.cs:279). The shop
+      resolver copies it onto the merchant it hands the handler (ShopMerchantResolver.cs:104-110), and a buyback
+      larger than it is refused as ShopRefusal.MerchantCannotAfford, with the purse in the message
+      (SellItemHubCommand.cs:105-113). 250 sits inside crestfall's L0 band [100, 250], and MerchantBandTests fails
+      the build when a seeded shopkeeper's purse leaves its town's band. What is NOT live is a depleting balance:
+      TradeGold is content, nothing writes it back after a sale (SellItemHubCommand.cs:127-133 credits the player
+      and saves the character, and no purse row is touched), so the authored figure caps every transaction instead
+      of draining. The hostile `gold:` in the wiring block at the top of this file is a different key —
+      the per-kill reward, which *is* projected (`wiring.gold`) — not this purse.
+    prices: >-
+      Live and fixed at the band's two ends. ShopPricing is the shop's pricing rule, in two methods: BuyPrice is the
+      item's printed value at MerchantBands.PriceMarkupPercent (100, i.e. 1.0), SellPrice is that value at
+      MerchantBands.BuybackRatePercent (50, i.e. 0.50), and SellPrice is clamped below BuyPrice so a buy -> sell
+      loop cannot print gold (BuyPrice at ShopPricing.cs:24-31, SellPrice at :36-44, the clamp at :43). The catalogue
+      carries both (GetShopCatalogHubCommand.cs:126-127), though the hub still forwards only Price = BuyPrice to the
+      client (Veldrath.Server/Hubs/GameHub.cs:2100-2108), so the buyback surfaces only in the sell result. The one
+      price ShopPricing does not set is the sell handler's flat 1 gold for an item the catalogue no longer holds
+      (SellItemHubCommand.cs:103). The constants are not read from this file at run time; they are mirrored, and
+      MerchantBandTests parses merchants.price_markup and merchants.buyback_rate here and fails the build when the
+      two disagree. Pricing a town above the band's floor — the 1.5 the engine's own merchant-info query declares —
+      is still engine work.
+    stock: >-
+      Authored per zone and live. ZoneStockItems (RealmEngine.Data/Entities/Content/ZoneStockItem.cs) holds one row
+      per item per town, unique on (ZoneId, ItemSlug); migration 20261121004324_AddZoneStockItems creates the table,
+      and RealmEngine.Data/Seeders/ZoneStockSeeder.cs authors the four reaching settlements at 9 / 12 / 11 / 12
+      rows — inside stock_size [8, 16], and no two towns offering the same shelf. GetShopCatalogHubCommand.cs:115-127
+      reads that list instead of the whole catalogue, so a zone offers only what it stocks. What the table is not
+      is a stock level: ZoneStockItem.cs:13-16 states the model — availability, not inventory depth — and no
+      handler writes a row, the seeder being its only author (ZoneStockSeeder.cs:58), so within its shelf a
+      merchant's depth is infinite and a restart restocks nothing. playground is IsDevOnly and authors no rows.
+    other_gaps: >-
+      Three, listed so they are not discovered twice. (1) Closed by the merchant gate: buy, sell and the catalogue
+      all resolve the merchant from the character's own zone and location before pricing anything, and refuse with
+      ShopRefusal.NoMerchant or .ZoneMismatch otherwise (ShopMerchantResolver.cs:36-122), so nothing is priced in
+      the wilderness. (2) Half closed: the shop does join to placed people now — a LocationNpc at the character's
+      location whose archetype has Traits.Shopkeeper (:96-113) — but only crestfall has shopkeeper placements
+      seeded (Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs:43-66), so aldenmere, tolvaren and skarhold refuse
+      trade until the rosters in docs/design/content/towns.md §4.2-4.4 are placed. (3) The engine's purse-bearing
+      shop is still registered (RealmEngine.Core/ServiceCollectionExtensions.cs:94) and resolved by no server
+      handler, so it is a reference implementation: npc.Gold at ShopEconomyService.cs:161, shopCoreCount /
+      shopDynamicCount at :414-444. Revive it knowingly — BrowseShopHandler labels its two prices backwards
+      (BuyPrice = CalculateSellPrice, SellPrice = CalculateBuyPrice, BrowseShopHandler.cs:82-83 and :90-91).

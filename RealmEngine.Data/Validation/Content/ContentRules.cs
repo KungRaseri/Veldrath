@@ -5,8 +5,8 @@ namespace RealmEngine.Data.Validation.Content;
 /// </summary>
 /// <remarks>
 /// The ids are the contract between the startup audit, the write path and the CI guard — changing a value breaks
-/// "same defect, same rule" and must be treated as a breaking change. The four reference ids keep the values the
-/// audit used before the rules moved into this library, so existing logs stay comparable.
+/// "same defect, same rule" and must be treated as a breaking change. The reference ids that predate the move into
+/// this library keep the values the audit used, so existing logs stay comparable.
 /// </remarks>
 public static class ContentRules
 {
@@ -37,6 +37,19 @@ public static class ContentRules
     /// <summary>A field that only makes sense together with another is set without it.</summary>
     public const string FieldInconsistent = "field_inconsistent";
 
+    /// <summary>
+    /// A child-row collection is present as JSON <c>null</c>. An explicit null is not an authored set: it must be
+    /// refused rather than read as "the author wrote an empty list" and delete the stored rows.
+    /// </summary>
+    public const string ChildCollectionNull = "child_collection_null";
+
+    /// <summary>
+    /// An owned-object navigation (<c>stats</c>, <c>traits</c>, <c>phonology</c>, …) is present as JSON <c>null</c>.
+    /// An explicit null is not an authored object: the deserialiser yields a null owned reference that the write path's
+    /// validators and copy both dereference, so it must be refused rather than stored.
+    /// </summary>
+    public const string OwnedObjectNull = "owned_object_null";
+
     /// <summary>A numeric field is negative or zero where that makes no sense.</summary>
     public const string ValueOutOfRange = "value_out_of_range";
 
@@ -57,6 +70,9 @@ public static class ContentRules
 
     /// <summary>A map edge points at a node that is not on its map.</summary>
     public const string MissingMapNode = "missing-map-node";
+
+    /// <summary>A zone shop-stock row is stored for a shelf that no longer lists it, so a data migration is missing.</summary>
+    public const string UnclaimedZoneStock = "unclaimed-zone-stock";
 
     /// <summary>A loot table has no entries, so it can never drop anything.</summary>
     public const string LootTableWithoutEntries = "loot_table_without_entries";
@@ -82,6 +98,30 @@ public static class ContentRules
     /// <summary>An actor instance has no archetype.</summary>
     public const string InstanceWithoutArchetype = "instance_without_archetype";
 
+    /// <summary>An actor instance is placed at a zone location that does not exist.</summary>
+    public const string MissingPlacementLocation = "missing-placement-location";
+
+    /// <summary>An actor instance's loot-table override points at a loot table that does not exist.</summary>
+    public const string MissingLootTable = "missing-loot-table";
+
     /// <summary>A dialogue has no lines, so it can never be spoken.</summary>
     public const string DialogueWithoutLines = "dialogue_without_lines";
+
+    /// <summary>A dialogue option is structurally unusable: no key, no label, no response, a duplicate key, or too many.</summary>
+    public const string DialogueOptionInvalid = "dialogue_option_invalid";
+
+    /// <summary>
+    /// A requirement or grant entry is unreadable: an unknown kind, the wrong number of parts, or a kind on the wrong
+    /// side (a grant in <c>requires</c>, a requirement in <c>grants</c>).
+    /// </summary>
+    public const string DialogueEffectInvalid = "dialogue_effect_invalid";
+
+    /// <summary>An option names an item, quest or dialogue that does not exist.</summary>
+    public const string MissingDialogueReference = "missing-dialogue-reference";
+
+    /// <summary>
+    /// An option grants an item, gold or a quest but is marked repeatable. Warning only: repeatable grants are a
+    /// design decision, but they are how a conversation becomes a money printer, so the audit says so out loud.
+    /// </summary>
+    public const string DialogueRepeatableGrant = "dialogue_repeatable_grant";
 }

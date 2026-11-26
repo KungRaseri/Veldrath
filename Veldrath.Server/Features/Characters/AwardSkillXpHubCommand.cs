@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 
 namespace Veldrath.Server.Features.Characters;
@@ -21,6 +22,17 @@ public record AwardSkillXpHubCommand : IRequest<AwardSkillXpHubResult>
 
     /// <summary>Gets the amount of XP to award. Must be positive.</summary>
     public required int Amount { get; init; }
+
+    /// <summary>
+    /// Gets the character to award the experience to when the caller already holds it and owns the write.
+    /// </summary>
+    /// <remarks>
+    /// Crafting owns the character-row write, so it hands over the character it already loaded. The handler then
+    /// applies the award to that instance's attributes blob in memory and does not persist it; the craft writes
+    /// the row once, with both the crafted bag (<c>InventoryBlob</c>) and the award (<c>Attributes</c>). The engine's
+    /// inventory service is not on the craft path, so there is no second store to overwrite.
+    /// </remarks>
+    internal Character? LoadedCharacter { get; init; }
 }
 
 /// <summary>Result returned by <see cref="AwardSkillXpHubCommandHandler"/>.</summary>
@@ -46,9 +58,9 @@ public record AwardSkillXpHubResult
 }
 
 /// <summary>
-/// Handles <see cref="AwardSkillXpHubCommand"/> by loading the server-side character,
-/// deserialising the attributes JSON blob, adding the specified XP to the named skill,
-/// deriving the new rank, persisting the result, and returning whether a rank-up occurred.
+/// Handles <see cref="AwardSkillXpHubCommand"/> by resolving the character (loading it unless the caller handed
+/// one over), deserialising the attributes JSON blob, adding the specified XP to the named skill, deriving the
+/// new rank, persisting the result when it owns the write, and returning whether a rank-up occurred.
 /// </summary>
 public class AwardSkillXpHubCommandHandler
     : IRequestHandler<AwardSkillXpHubCommand, AwardSkillXpHubResult>
@@ -83,6 +95,10 @@ public class AwardSkillXpHubCommandHandler
     /// <param name="request">The command containing character ID, skill ID, and XP amount.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An <see cref="AwardSkillXpHubResult"/> describing the outcome.</returns>
+    /// <remarks>
+    /// When <see cref="AwardSkillXpHubCommand.LoadedCharacter"/> is set the award is applied to that instance and
+    /// left unsaved for the caller; otherwise the character is loaded and persisted here.
+    /// </remarks>
     public async Task<AwardSkillXpHubResult> Handle(
         AwardSkillXpHubCommand request,
         CancellationToken cancellationToken)
@@ -93,8 +109,10 @@ public class AwardSkillXpHubCommandHandler
         if (request.Amount <= 0)
             return Fail("Amount must be positive.");
 
-        var character = await _characterRepo.GetByIdAsync(request.CharacterId, cancellationToken);
-        if (character is null)
+        var ownsTheWrite = request.LoadedCharacter is null;
+        var character = request.LoadedCharacter
+            ?? await _characterRepo.GetByIdAsync(request.CharacterId, cancellationToken);
+        if (character is null || character.Id != request.CharacterId)
             return Fail($"Character {request.CharacterId} not found.");
 
         // Parse the attributes blob; default to empty if blank / invalid
@@ -129,7 +147,8 @@ public class AwardSkillXpHubCommandHandler
         attrs[rankKey] = newRank;
 
         character.Attributes = JsonSerializer.Serialize(attrs);
-        await _characterRepo.UpdateAsync(character, cancellationToken);
+        if (ownsTheWrite)
+            await _characterRepo.UpdateAsync(character, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterId} earned {Amount} XP in skill {SkillId}: total {TotalXp}, rank {Rank}{RankedUp}",

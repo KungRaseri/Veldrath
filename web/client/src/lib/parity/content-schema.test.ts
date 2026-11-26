@@ -1,5 +1,7 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { matchAll, readRepoFile, stripComments } from '#lib/testing/source';
+import { matchAll, readRepoFile, repoRoot, stripComments } from '#lib/testing/source';
 
 /**
  * Content vocabulary parity.
@@ -8,11 +10,19 @@ import { matchAll, readRepoFile, stripComments } from '#lib/testing/source';
  * whether a listed type can actually be opened and edited:
  *
  * - `ContentEndpoints.BrowseAsync` / `BrowseDetailAsync` for reads;
- * - `ContentEntityTypes` for the write path and the validator lookup.
+ * - `ContentEntityTypes` for the write path, the pack importer and the validator lookup.
  *
  * They are maintained by hand, and in this pass they disagreed: the registry advertised
  * `weapon` and `armor`, both switches omitted them, and the Foundry browser 404'd on the two
  * largest item catalogs. This test is what makes that impossible to reintroduce.
+ *
+ * `ContentEntityTypes` moved out of `Veldrath.Server/Features/Content/` into
+ * `RealmEngine.Data/Content/` when the content-pack importer landed, so the offline importer
+ * (`Veldrath.ContentPack`) can resolve a family without loading ASP.NET Core, and so there is one
+ * map instead of a server copy and a tool copy that drift. Read it from the data library: there is
+ * deliberately no server copy to fall back to. A stale path here fails the whole file at module
+ * scope (ENOENT) and takes every assertion below with it — that is how this guard silently stopped
+ * guarding on `development` once already, so a move must repoint this constant in the same commit.
  *
  * The web side is intentionally not checked against a hardcoded list: the Foundry portal reads
  * `GET /api/content/schema`, so the server registry is the single source of truth.
@@ -22,8 +32,10 @@ const schemaSource = stripComments(readRepoFile('Veldrath.Contracts/Content/Cont
 const endpointsSource = stripComments(
 	readRepoFile('Veldrath.Server/Features/Content/ContentEndpoints.cs')
 );
+// The type-key → entity-type map. It lives in the data library so the HTTP write path, the pack
+// validator and the offline importer share one map; there is no server copy to fall back to.
 const entityTypesSource = stripComments(
-	readRepoFile('Veldrath.Server/Features/Content/ContentEntityTypes.cs')
+	readRepoFile('RealmEngine.Data/Content/ContentEntityTypes.cs')
 );
 const contentApiSource = readRepoFile('web/client/src/lib/server/content-api.ts');
 
@@ -75,8 +87,18 @@ describe('content vocabulary parity', () => {
 
 		expect(
 			missing,
-			'ContentEntityTypes has no entity mapping for a type the Foundry editor can open'
+			'ContentEntityTypes._byTypeKey (RealmEngine.Data/Content) has no entity mapping for a type the Foundry editor can open'
 		).toEqual([]);
+	});
+
+	it('keeps the type-key map in one place', () => {
+		// The map moved to the data library so the offline importer can resolve a family without
+		// loading ASP.NET Core. Restoring a copy under Veldrath.Server "to fix an ENOENT" would
+		// bring back the second map this move removed, and the two would drift.
+		expect(
+			existsSync(join(repoRoot(), 'Veldrath.Server/Features/Content/ContentEntityTypes.cs')),
+			'ContentEntityTypes has a second copy under Veldrath.Server — the map belongs to RealmEngine.Data/Content only'
+		).toBe(false);
 	});
 
 	it('keeps read aliases explicit', () => {

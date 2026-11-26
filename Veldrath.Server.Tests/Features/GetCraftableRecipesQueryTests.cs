@@ -4,6 +4,7 @@ using Moq;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Queries;
 using CharacterEntity = Veldrath.Server.Data.Entities.Character;
 
@@ -25,16 +26,18 @@ public class GetCraftableRecipesQueryTests
 
     private readonly Mock<ICharacterRepository> _characters = new();
     private readonly Mock<IRecipeRepository> _recipes = new();
-    private readonly Mock<IInventoryService> _inventory = new();
 
     private GetCraftableRecipesQueryHandler Handler() =>
         new(
             _characters.Object,
             _recipes.Object,
-            _inventory.Object,
             NullLogger<GetCraftableRecipesQueryHandler>.Instance);
 
-    private static CharacterEntity Character(int level = 1, string attributes = "{}", string name = "Crafty") =>
+    private static CharacterEntity Character(
+        int level = 1,
+        string attributes = "{}",
+        string name = "Crafty",
+        string inventoryBlob = "[]") =>
         new()
         {
             AccountId = Guid.NewGuid(),
@@ -43,7 +46,17 @@ public class GetCraftableRecipesQueryTests
             SlotIndex = 1,
             Level = level,
             Attributes = attributes,
+            InventoryBlob = inventoryBlob,
         };
+
+    /// <summary>Builds an <c>InventoryBlob</c> the way harvesting writes one: bare slugs.</summary>
+    private static string Bag(params (string ItemRef, int Quantity)[] entries)
+    {
+        var bag = CharacterBag.Read(null);
+        foreach (var (itemRef, quantity) in entries)
+            CharacterBag.Add(bag, itemRef, quantity);
+        return CharacterBag.Serialize(bag);
+    }
 
     private static Recipe Recipe(
         string slug,
@@ -77,9 +90,6 @@ public class GetCraftableRecipesQueryTests
             .Setup(characters => characters.GetByIdAsync(CharacterId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(character);
         _recipes.Setup(catalog => catalog.GetAllAsync()).ReturnsAsync([.. recipes]);
-        _inventory
-            .Setup(inventory => inventory.GetItemCountAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(0);
     }
 
     private Task<IReadOnlyList<CraftableRecipeDto>> QueryAsync() =>
@@ -119,7 +129,7 @@ public class GetCraftableRecipesQueryTests
     public async Task Prices_every_material_and_ignores_blank_or_zero_ones()
     {
         Given(
-            Character(name: "Smith"),
+            Character(name: "Smith", inventoryBlob: Bag(("iron-ingot", 3))),
             Recipe(
                 "iron-dagger",
                 materials:
@@ -128,10 +138,6 @@ public class GetCraftableRecipesQueryTests
                     Material("  ", 5),
                     Material("@items/leather-strip", 0),
                 ]));
-
-        _inventory
-            .Setup(inventory => inventory.GetItemCountAsync("Smith", "@items/iron-ingot"))
-            .ReturnsAsync(3);
 
         var recipe = (await QueryAsync()).Should().ContainSingle().Subject;
 
@@ -198,18 +204,27 @@ public class GetCraftableRecipesQueryTests
     public async Task Lists_every_shortfall_in_one_reason()
     {
         Given(
-            Character(),
+            Character(inventoryBlob: Bag(("iron-ingot", 1))),
             Recipe(
                 "iron-dagger",
                 materials: [Material("@items/iron-ingot", 4), Material("@items/leather-strip", 2)]));
 
-        _inventory
-            .Setup(inventory => inventory.GetItemCountAsync(It.IsAny<string>(), "@items/iron-ingot"))
-            .ReturnsAsync(1);
-
         var recipe = (await QueryAsync()).Should().ContainSingle().Subject;
 
         recipe.UnavailableReason.Should().Be("Short of 3 more @items/iron-ingot, 2 more @items/leather-strip.");
+    }
+
+    [Fact]
+    public async Task Counts_a_material_held_under_its_full_reference_as_owned()
+    {
+        Given(
+            Character(inventoryBlob: Bag(("@items/iron-ingot", 2))),
+            Recipe("iron-dagger", materials: [Material("@items/iron-ingot", 2)]));
+
+        var recipe = (await QueryAsync()).Should().ContainSingle().Subject;
+
+        recipe.Materials[0].Owned.Should().Be(2);
+        recipe.Available.Should().BeTrue();
     }
 
     [Fact]

@@ -69,6 +69,9 @@ coverage/
 /CoverageReport/
 /.coverage-report/
 
+# Generated e2e summary (scripts/e2e-summary.mjs) — the comment on the PR is the copy that matters.
+E2EReport/
+
 # DocFX static site output
 /_site/
 
@@ -83,3 +86,6 @@ coverage/
 
 # Local e2e stack pid file (scripts/e2e-stack.sh)
 .e2e-server.pid
+
+# output of `assetkit derive docs/design/specs/asset-derivation-2026-11-19.json`
+_derived/

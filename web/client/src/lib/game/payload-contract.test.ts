@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readRepoFile, repoRoot } from '#lib/testing/source';
 
 /**
  * Hub payload contract check.
@@ -17,26 +18,14 @@ import { describe, expect, it } from 'vitest';
  * only mirrors what it consumes.
  */
 
-/** Vitest runs with cwd inside the workspace, so walk up until the repo root is recognisable. */
-function findRepoRoot(): string {
-	let current = process.cwd();
-
-	for (let depth = 0; depth < 6; depth += 1) {
-		if (
-			existsSync(join(current, 'Veldrath.Server')) &&
-			existsSync(join(current, 'web', 'client'))
-		) {
-			return current;
-		}
-		current = dirname(current);
-	}
-
-	throw new Error(`Could not locate the repository root from ${process.cwd()}.`);
-}
-
-const repoRoot = findRepoRoot();
-const hubFile = join(repoRoot, 'Veldrath.Server', 'Hubs', 'GameHub.cs');
-const typesFile = join(repoRoot, 'web', 'client', 'src', 'lib', 'game', 'types.ts');
+/**
+ * The two files this suite compares, named once so the source-path guard
+ * (`src/lib/parity/source-paths.test.ts`) can see them: it lists this suite as an external source
+ * reader and resolves these constants. Both reads go through `readRepoFile`, which walks up to the
+ * repository root, so the suite no longer carries its own copy of that search.
+ */
+const HUB_SOURCE = 'Veldrath.Server/Hubs/GameHub.cs';
+const TYPES_SOURCE = 'web/client/src/lib/game/types.ts';
 
 /** Removes line and block comments so brace/comma scanning is not confused by prose. */
 function stripComments(source: string): string {
@@ -91,10 +80,13 @@ function topLevelProperties(body: string): string[] {
 		.filter((name) => /^[A-Za-z_]\w*$/.test(name));
 }
 
-/** Every event the hub broadcasts with an anonymous-object payload, keyed by event name. */
-function readWirePayloads(): Map<string, string[]> {
-	const source = stripComments(readFileSync(hubFile, 'utf8'));
-	const shapes = new Map<string, string[]>();
+/**
+ * Every event the hub broadcasts with an anonymous-object payload, keeping each literal separately.
+ * Keyed by event name; each entry is one `SendAsync` call's top-level property names.
+ */
+function readWirePayloadVariants(): Map<string, string[][]> {
+	const source = stripComments(readRepoFile(HUB_SOURCE));
+	const variants = new Map<string, string[][]>();
 
 	for (const match of source.matchAll(/SendAsync\(\s*"(\w+)"\s*,\s*([\w.]+)/g)) {
 		const eventName = match[1];
@@ -130,17 +122,29 @@ function readWirePayloads(): Map<string, string[]> {
 		const properties = topLevelProperties(body);
 		if (properties.length === 0) continue;
 
-		// One event can be broadcast with different shapes (CombatTurn sends one payload per
-		// action); the client must be able to describe every variant, so union them.
-		const existing = shapes.get(eventName) ?? [];
-		shapes.set(eventName, [...new Set([...existing, ...properties])]);
+		// One event can be broadcast with different shapes (CombatTurn sends one payload per action). Keep each
+		// literal separately so a variant that forgets a field another variant sends can be told apart: a union
+		// would hide it, which is how an ability kill silently stopped reporting its loot.
+		variants.set(eventName, [...(variants.get(eventName) ?? []), properties]);
+	}
+
+	return variants;
+}
+
+/** Every event the hub broadcasts with an anonymous-object payload, keyed by event name. */
+function readWirePayloads(): Map<string, string[]> {
+	const shapes = new Map<string, string[]>();
+
+	for (const [eventName, variants] of readWirePayloadVariants()) {
+		// The client must be able to describe every variant of an event, so its interface is the union of them.
+		shapes.set(eventName, [...new Set(variants.flat())]);
 	}
 
 	return shapes;
 }
 
 function readTypescriptInterfaces(): Map<string, string[]> {
-	const source = readFileSync(typesFile, 'utf8');
+	const source = readRepoFile(TYPES_SOURCE);
 	const interfaces = new Map<string, string[]>();
 
 	for (const match of source.matchAll(/export interface (\w+)\s*\{([\s\S]*?)\n\}/g)) {
@@ -156,8 +160,11 @@ const normalize = (name: string) => name.replace(/_/g, '').toLowerCase();
 
 describe('hub payload contract', () => {
 	it('finds the hub and the payload types', () => {
-		expect(existsSync(hubFile), `missing ${hubFile}`).toBe(true);
-		expect(existsSync(typesFile), `missing ${typesFile}`).toBe(true);
+		const missing = [HUB_SOURCE, TYPES_SOURCE].filter(
+			(sourcePath) => !existsSync(join(repoRoot(), sourcePath))
+		);
+
+		expect(missing, `missing ${missing.join(', ')}`).toEqual([]);
 		expect(readWirePayloads().size).toBeGreaterThan(0);
 	});
 
@@ -189,10 +196,28 @@ describe('hub payload contract', () => {
 		).toEqual([]);
 	});
 
+	it('carries the kill loot on every CombatTurn variant that can report a kill', () => {
+		const variants = readWirePayloadVariants().get('CombatTurn') ?? [];
+		expect(variants.length, 'CombatTurn variants found in GameHub.cs').toBeGreaterThan(1);
+
+		// The shell re-reads the bag only when `itemsDropped` is non-empty, so a variant that reports a kill but
+		// omits the drop loses it silently — which is what an ability kill did while a melee kill did not.
+		const missing = variants
+			.map((properties, index) => ({ index, names: new Set(properties.map(normalize)) }))
+			.filter(({ names }) => names.has('enemydefeated') && !names.has('itemsdropped'))
+			.map(({ index }) => `CombatTurn variant #${index + 1}`);
+
+		expect(
+			missing,
+			'Every CombatTurn variant that can report EnemyDefeated must send result.ItemsDropped too.'
+		).toEqual([]);
+	});
+
 	it('mirrors the payloads the game shell consumes', () => {
 		const interfaces = readTypescriptInterfaces();
 		const expected = [
 			'CharacterSelectedPayload',
+			'ExperienceGainedPayload',
 			'ZoneEnteredPayload',
 			'MapGraphReceivedPayload',
 			'NodeTraveledPayload',

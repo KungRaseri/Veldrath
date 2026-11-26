@@ -36,6 +36,14 @@ public class EnemyInstance
     public string ArchetypeSlug { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the actor instance slug this enemy was spawned from, or <see langword="null"/> when it came from a
+    /// bare pool entry. <see cref="ArchetypeSlug"/> stays the archetype on purpose — the spawn instant's unique index
+    /// and the reconciliation pass both key on it — but a reload has to resolve the <em>instance</em> to rebuild the
+    /// composed template, because the overrides are not on the archetype.
+    /// </summary>
+    public string? InstanceSlug { get; set; }
+
+    /// <summary>
     /// Gets or sets the display name captured at spawn time. Snapshotted on purpose: renaming or deleting the
     /// archetype must not rename an enemy that is already mid-fight.
     /// </summary>
@@ -55,6 +63,23 @@ public class EnemyInstance
 
     /// <summary>Gets or sets the base gold awarded on death, captured at spawn time.</summary>
     public int GoldReward { get; set; }
+
+    /// <summary>
+    /// The <see cref="StatsVersion"/> a row is stamped with when it is built from the current spawn projection.
+    /// </summary>
+    /// <remarks>
+    /// A row below this value was written before the archetype stats were projected onto spawned enemies, so its
+    /// stored stats are the old template defaults rather than the archetype's. The store reconciles those rows on
+    /// the next read of their location (and before a respawn revives them) and stamps them with this value, which
+    /// is what makes the reconciliation one-off instead of a re-projection on every read.
+    /// </remarks>
+    public const int CurrentStatsVersion = 1;
+
+    /// <summary>
+    /// Gets or sets the spawn-projection version this row's stats were built from. Zero means the row predates
+    /// <see cref="CurrentStatsVersion"/> and still has to be reconciled from its archetype.
+    /// </summary>
+    public int StatsVersion { get; set; }
 
     /// <summary>Gets or sets a value indicating whether the enemy still has health.</summary>
     public bool IsAlive { get; set; } = true;

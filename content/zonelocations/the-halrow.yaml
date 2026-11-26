@@ -1,0 +1,105 @@
+# content/zonelocations/the-halrow.yaml
+#
+# The import shape of docs/design/content/pools/the-halrow.yaml (D4, pool-matrix.md §8), translated
+# by card t_835e7914 (A1). The design file stays the design set; this is the pack the importer reads.
+#
+# Every spawn entry below resolves: both pooled archetypes are in content/archetypes/b4-6.yaml
+# (bandit-ruffian and sump-crawler, both band 4-6), and each names a loot table the landed
+# content/loottables pack carries (bandit-ruffian-drops, sump-crawler-drops). The design file's
+# header was written when sump-crawler was still "to be seeded 4-6"; PR #210 seeded the b4-6 roster,
+# so that blocker is gone and the file moves here unchanged in its pool values.
+#
+# A pack entity owns the whole row (docs/content-packs.md, "Limits worth knowing"), so every authored
+# value below is the one RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs writes for that slug —
+# displayName, typeKey, zoneId, rarityWeight, stats and traits. The one authored value that is NOT the
+# seeder's is `actorPool`: the seeder's interim pools for rootbound-cellars and collapsed-vault are
+# pre-roster pairs written as percentage-looking weights (both: bandit 70 / wight 30), and the design
+# replaced them with relative-integer pools that name no wight at all. Importing this pack is what
+# replaces them; a second run reports zero changes because the importer compares the stored row with
+# this file value for value, owned collections included and in their authored order.
+#
+# Weights are relative integers (ActorPoolResolver.cs:193-204), never percentages, and must be >= 1.
+# The importer does not normalise them; only the ratio is meaningful. Slugs and weights are the
+# design's, preserved entry for entry.
+#
+# halrow-threshold is authored here with an empty pool on purpose: it is the zone's dungeon lobby —
+# the `IsDungeon = false` + `SafeRespawn` pair the design reads as "the instance boundary" — and the
+# design excludes it (exclusion_class: dungeon_lobby, pool-matrix.md §4). An empty pool is authored
+# content, not an omission: it spawns nothing, and the trait that makes the exclusion true
+# (safeRespawn) is below. The design's `excluded` / `exclusion_class` / `exclusion_reason` are
+# reviewer annotations; the importer writes nothing for them.
+#
+# collapsed-vault is hidden behind a quest unlock (`UnlockKey = collapsed-vault`, its own slug — the
+# fix `plans/dungeons.md` §5 F1.2 prescribes for the hidden deep rooms). That is a map trait and does
+# not change its pool: the design pools it, so this pack pools it. Both pooled rooms are walkable from
+# Arrival; the map graph, not this pack, is what routes a character in.
+#
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 (rootbound-cellars, collapsed-vault) | excluded 1 (halrow-threshold)
+family: zonelocation
+entities:
+  - slug: rootbound-cellars
+    displayName: The Rootbound Cellars
+    typeKey: dungeons
+    zoneId: the-halrow
+    rarityWeight: 80
+    isActive: true
+    stats:
+      size: 5
+      dangerLevel: 4
+      population: 30
+      minLevel: 4
+      maxLevel: 6
+    traits:
+      isIndoor: true
+      isDungeon: true
+    # band: b4-6 (D0 budget) | location L4-6 | design: bandit-ruffian 5, sump-crawler 5
+    actorPool:
+      - archetypeSlug: bandit-ruffian
+        weight: 5
+      - archetypeSlug: sump-crawler
+        weight: 5
+
+  - slug: collapsed-vault
+    displayName: The Collapsed Vault
+    typeKey: dungeons
+    zoneId: the-halrow
+    rarityWeight: 40
+    isActive: true
+    stats:
+      size: 3
+      dangerLevel: 5
+      population: 15
+      minLevel: 5
+      maxLevel: 6
+    traits:
+      isIndoor: true
+      isDungeon: true
+      isHidden: true
+      unlockType: quest
+      unlockKey: collapsed-vault
+    # band: b4-6 (D0 budget) | location L5-6 | design: sump-crawler 6, bandit-ruffian 4
+    actorPool:
+      - archetypeSlug: sump-crawler
+        weight: 6
+      - archetypeSlug: bandit-ruffian
+        weight: 4
+
+  - slug: halrow-threshold
+    displayName: The Halrow Threshold
+    typeKey: locations
+    zoneId: the-halrow
+    rarityWeight: 100
+    isActive: true
+    stats:
+      size: 2
+      dangerLevel: 3
+      population: 5
+      minLevel: 4
+      maxLevel: 6
+    traits:
+      safeRespawn: true
+      isDungeon: false
+    # Empty by design: the zone's dungeon lobby and SafeRespawn point, excluded by the design
+    # (exclusion_class: dungeon_lobby).
+    actorPool: []

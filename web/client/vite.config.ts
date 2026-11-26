@@ -60,6 +60,11 @@ export default defineConfig(() => {
 				// which is what renders the HTML report and the PR comment; lcov stays for
 				// external viewers and json-summary for tooling that wants per-file numbers.
 				reporter: ['text', 'text-summary', 'lcov', 'json-summary', 'cobertura'],
+				// A failing threshold is exactly when the numbers matter. With this off, a red gate
+				// wrote no report at all, so the PR comment kept whatever the previous head said —
+				// stale percentages beside a red check. The comment now quotes the gate's own
+				// totals (scripts/web-coverage-gate.mjs); it has to exist on a failed run to do that.
+				reportOnFailure: true,
 				include: ['src/**/*.{ts,svelte}'],
 				exclude: [
 					'src/**/*.{test,spec}.{js,ts}',

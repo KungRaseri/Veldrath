@@ -16,7 +16,10 @@ public class PlayerSessionRepositoryTests : IDisposable
 
     public void Dispose() => _factory.Dispose();
 
-    private static async Task<Character> SeedCharacterAsync(ApplicationDbContext db, string name)
+    private static async Task<Character> SeedCharacterAsync(
+        ApplicationDbContext db,
+        string name,
+        string difficultyMode = "normal")
     {
         var account = new PlayerAccount { UserName = $"acct_{Guid.NewGuid():N}" };
         account.NormalizedUserName = account.UserName.ToUpperInvariant();
@@ -27,6 +30,7 @@ public class PlayerSessionRepositoryTests : IDisposable
             Name = name,
             ClassName = "Warrior",
             SlotIndex = 1,
+            DifficultyMode = difficultyMode,
         };
         db.Characters.Add(character);
         if (!await db.Worlds.AnyAsync(world => world.Id == "world-1"))
@@ -76,6 +80,80 @@ public class PlayerSessionRepositoryTests : IDisposable
         var result = await repo.GetOnRegionMapAsync("region-1");
 
         result.Should().ContainSingle().Which.ConnectionId.Should().Be("conn-map");
+    }
+
+    [Fact]
+    public async Task GetOnSharedScopeAsync_ReadsTheSharedScopeWhileTheZoneCountStillSeesRunMembers()
+    {
+        await using var db = _factory.CreateContext();
+        var resident = await SeedCharacterAsync(db, "Aria");
+        var delver = await SeedCharacterAsync(db, "Bran");
+        var elsewhere = await SeedCharacterAsync(db, "Cass");
+
+        var delverSession = Session(delver, "conn-delving", "crestfall");
+        delverSession.ZoneInstanceId = Guid.NewGuid();
+        db.PlayerSessions.AddRange(
+            Session(resident, "conn-shared", "crestfall"),
+            delverSession,
+            Session(elsewhere, "conn-other-zone", "the-droveway"));
+        await db.SaveChangesAsync();
+        var repo = new PlayerSessionRepository(db);
+
+        var shared = await repo.GetOnSharedZoneAsync("crestfall", difficultyMode: null);
+        var wholeZone = await repo.GetByZoneIdAsync("crestfall");
+
+        shared.Should().ContainSingle().Which.ConnectionId.Should().Be(
+            "conn-shared", "a character inside a run is in another SignalR group, so not in the shared roster");
+        wholeZone.Select(s => s.ConnectionId).Should().BeEquivalentTo(
+            ["conn-shared", "conn-delving"],
+            "the public zone count publishes the whole zone's population, run members included");
+    }
+
+    [Fact]
+    public async Task GetOnSharedZoneAsync_ReadsOnlyTheCallersDifficultyShard_InAWildernessZone()
+    {
+        await using var db = _factory.CreateContext();
+        var normal = await SeedCharacterAsync(db, "Aria");
+        var hardcore = await SeedCharacterAsync(db, "Bran", difficultyMode: "hardcore");
+
+        // Both are standing in the Droveway's shared rooms, but the zone's group is difficulty-scoped, so each is
+        // in a group the other can neither see nor chat with.
+        db.PlayerSessions.AddRange(
+            Session(normal, "conn-normal", "the-droveway"),
+            Session(hardcore, "conn-hardcore", "the-droveway"));
+        await db.SaveChangesAsync();
+        var repo = new PlayerSessionRepository(db);
+
+        var normalShard = await repo.GetOnSharedZoneAsync("the-droveway", "normal");
+        var hardcoreShard = await repo.GetOnSharedZoneAsync("the-droveway", "hardcore");
+        var wholeZone = await repo.GetByZoneIdAsync("the-droveway");
+
+        normalShard.Should().ContainSingle().Which.ConnectionId.Should().Be(
+            "conn-normal", "the hardcore character is in zone:the-droveway_hardcore, not in the caller's group");
+        hardcoreShard.Should().ContainSingle().Which.ConnectionId.Should().Be("conn-hardcore");
+        wholeZone.Should().HaveCount(2, "the zone's population still counts both shards");
+    }
+
+    [Fact]
+    public async Task GetOnSharedZoneAsync_SpansDifficulties_WhenTheZoneIsNotSplitByThem()
+    {
+        await using var db = _factory.CreateContext();
+        var normal = await SeedCharacterAsync(db, "Aria");
+        var hardcore = await SeedCharacterAsync(db, "Bran", difficultyMode: "hardcore");
+
+        // A town's group carries no difficulty suffix, so both difficulties stand in the same room and a roster
+        // that filtered them apart would hide a player the caller can see and chat with.
+        db.PlayerSessions.AddRange(
+            Session(normal, "conn-normal", "crestfall"),
+            Session(hardcore, "conn-hardcore", "crestfall"));
+        await db.SaveChangesAsync();
+        var repo = new PlayerSessionRepository(db);
+
+        var shared = await repo.GetOnSharedZoneAsync("crestfall", difficultyMode: null);
+
+        shared.Select(s => s.ConnectionId).Should().BeEquivalentTo(
+            ["conn-normal", "conn-hardcore"],
+            "a zone whose shared scope is not difficulty-scoped keeps one roster for everyone");
     }
 
     [Fact]

@@ -1,0 +1,10 @@
+{
+	"$comment": "Fixture allowlist for the F2-landed tree. Only the pair D5 declined to block remains: a bold name inside a rename note is a citation, so the retired forms need no permit, and a permit left here would cover a re-introduced one (see the negative controls).",
+	"allow": [
+		{
+			"names": ["Draekeld", "Drakeld"],
+			"reason": "Drakeld is the root dictionary's example compound for drak (stone), not an attested name or place, and D5 declined to block.",
+			"ticket": "t_d805cdf4"
+		}
+	]
+}

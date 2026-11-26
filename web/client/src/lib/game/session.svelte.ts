@@ -8,9 +8,11 @@ import {
 	applyDamageToStats,
 	applyRestToStats,
 	describeCombatTurn,
-	outcomeFrom
+	outcomeFrom,
+	outcomeFromCombatEndReason
 } from './reducers';
 import { craftedSummary } from './crafting';
+import { toArchetypeTier } from './archetype-portraits';
 import { resolvePowers, type PowerContext } from './powers';
 import { applySkillProgress, resolveSkills, skillLabel } from './skills';
 import type {
@@ -35,6 +37,8 @@ import type {
 	CraftableRecipesPayload,
 	ChestOpenedPayload,
 	EmotePayload,
+	ExperienceGainedPayload,
+	GoldChangedPayload,
 	GroundItem,
 	InventoryItem,
 	InventoryLoadedPayload,
@@ -48,10 +52,13 @@ import type {
 	LocationChestsPayload,
 	LocationNpc,
 	LocationNpcsPayload,
+	NpcDialoguePayload,
+	NpcOptionChosenPayload,
 	NpcTalkedPayload,
 	LocationEnteredPayload,
 	LocationNode,
 	LocationNodesPayload,
+	LocationRosterPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
 	MutedPayload,
@@ -176,6 +183,10 @@ export class GameSession {
 	chests = $state<LocationChest[]>([]);
 	/** People standing in this location, refreshed whenever the location changes. */
 	npcs = $state<LocationNpc[]>([]);
+	/** The conversation currently open, or null when the panel is closed. */
+	dialogue = $state<NpcDialoguePayload | null>(null);
+	/** The option key in flight, so one choice cannot be submitted twice. */
+	dialogueBusy = $state<string | null>(null);
 	/** Slash commands the caller may run, already filtered by permission server-side. */
 	chatCommands = $state<ChatCommandInfo[]>([]);
 	/** Characters muted locally with `/ignore`; their chat is hidden in every channel. */
@@ -411,11 +422,57 @@ export class GameSession {
 		await this.hub.invoke('GetLocationNpcs');
 	}
 
+	/**
+	 * Asks for the enemies standing where the character already is; the server answers with `LocationRoster`.
+	 *
+	 * The roster only ever arrives with a travel result, so a resumed session has to ask for it — otherwise a
+	 * room with an active pool looks empty until the player walks to a neighbour.
+	 */
+	async requestLocationRoster(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationRoster');
+	}
+
 	/** Speaks to one of them. Their line arrives as `NpcTalked`. */
 	async talkToNpc(npcSlug: string): Promise<void> {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('TalkToNpc', npcSlug);
+	}
+
+	/**
+	 * Opens a conversation: the greeting (which still advances `talk:` objectives) and then the choices.
+	 *
+	 * Both calls on purpose. `TalkToNpc` is what quests count as "having spoken to them", and the conversation is
+	 * what the player actually answers; dropping either would break something that works today.
+	 */
+	async startConversation(npcSlug: string): Promise<void> {
+		if (!this.hub) return;
+		await this.talkToNpc(npcSlug);
+		await this.hub.invoke('GetNpcDialogue', { npcSlug, entrySlug: null });
+	}
+
+	/** Takes one choice. The server re-validates it and answers with `NpcOptionChosen`. */
+	async chooseNpcOption(optionKey: string): Promise<void> {
+		if (!this.hub || !this.dialogue) return;
+		// One choice at a time: a second click while the first is in flight would be a second claim.
+		if (this.dialogueBusy) return;
+
+		this.dialogueBusy = optionKey;
+		try {
+			await this.hub.invoke('ChooseNpcOption', {
+				npcSlug: this.dialogue.speakerSlug,
+				optionKey,
+				entrySlug: this.dialogue.entrySlug || null
+			});
+		} finally {
+			this.dialogueBusy = null;
+		}
+	}
+
+	/** Closes the panel without choosing anything. */
+	closeDialogue(): void {
+		this.dialogue = null;
 	}
 
 	/** Opens the item detail dialog for a bag or equipment entry. */
@@ -724,9 +781,15 @@ export class GameSession {
 		});
 
 		hub.on('ZoneEntered', (payload: ZoneEnteredPayload) => {
+			// The server also sends this snapshot for a scope change inside one zone — walking between a
+			// zone's shared rooms and an instanced room of the same zone repaints the roster without an
+			// arrival, and the walk's own "Travelled to …" line is the one the player should read. So the
+			// snapshot always refreshes the zone and its occupants, but only a snapshot naming a different
+			// zone is an arrival worth announcing.
+			const arrived = this.zone?.id !== payload.id;
 			this.zone = payload;
 			this.occupants = payload.occupants ?? [];
-			this.addSystemMessage(`Entered ${payload.name}.`);
+			if (arrived) this.addSystemMessage(`Entered ${payload.name}.`);
 		});
 
 		hub.on('MapGraphReceived', (payload: MapGraphReceivedPayload) => {
@@ -795,9 +858,54 @@ export class GameSession {
 			this.npcs = payload.npcs ?? [];
 		});
 
+		hub.on('LocationRoster', (payload: LocationRosterPayload) => {
+			const slug = payload.locationSlug ?? null;
+
+			// The read can outlive a move: a roster for a room the character has already left must not replace the
+			// one they are standing in. The node the graph draws the character on is the durable answer to "which
+			// room is this?" — it has already changed after a move — and a node that is not a Location (an entry
+			// point, a zone exit, a region node) is a place to stand, not a room that can hold a roster.
+			const standingNode = this.currentNode;
+			const standingSlug = this.location?.locationSlug ?? standingNode?.refId ?? null;
+			const standingInRoom = !standingNode || standingNode.nodeType === 'Location';
+			if (slug && (!standingInRoom || (standingSlug !== null && standingSlug !== slug))) return;
+
+			// The enemy already being fought belongs to the combat panel, not the location list — the same filter
+			// `LocationEntered` applies, so a fight resumed after a reconnect does not appear twice.
+			const engagedEnemyId = this.combat.enemy?.id;
+			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
+
+			// A resumed character woke inside this room and has no location object at all — the roster is the only
+			// thing that names it. Build it the way `LocationEntered` does, or the room name stays off the map
+			// header, `canRest` stays false and `engageEnemy` has no slug to key the enemy row with (it returns).
+			if (!this.location && slug) {
+				this.location = {
+					locationSlug: slug,
+					locationDisplayName: standingNode?.displayName ?? slug,
+					typeKey: standingNode?.nodeType ?? 'Location',
+					spawnedEnemies: this.enemies
+				};
+			} else if (this.location) {
+				this.location.spawnedEnemies = this.enemies;
+			}
+		});
+
 		hub.on('NpcTalked', (payload: NpcTalkedPayload) => {
 			// The server words the line; the client only shows it, so the same line reads the same everywhere.
 			if (payload.line) this.addSystemMessage(`${payload.displayName}: “${payload.line}”`);
+		});
+
+		hub.on('NpcDialogue', (payload: NpcDialoguePayload) => {
+			this.dialogue = payload;
+		});
+
+		hub.on('NpcOptionChosen', (payload: NpcOptionChosenPayload) => {
+			// The reply goes in the log as well as the panel: the panel closes, and what was said should survive it.
+			if (payload.response) this.addSystemMessage(`${payload.displayName}: “${payload.response}”`);
+			if (payload.applied.length > 0) this.addSystemMessage(payload.applied.join(', '));
+
+			// A chained entry replaces the panel's contents; an ending closes it, which is how the conversation ends.
+			this.dialogue = payload.next ?? null;
 		});
 
 		hub.on('ChestOpened', (payload: ChestOpenedPayload) => {
@@ -836,7 +944,10 @@ export class GameSession {
 					level: payload.enemyLevel,
 					currentHealth: payload.enemyCurrentHealth,
 					maxHealth: payload.enemyMaxHealth,
-					abilities: payload.enemyAbilityNames ?? []
+					abilities: payload.enemyAbilityNames ?? [],
+					archetypeSlug: payload.enemyArchetypeSlug ?? null,
+					typeKey: payload.enemyArchetypeTypeKey ?? null,
+					tier: toArchetypeTier(payload.enemyTier, payload.enemyArchetypeTypeKey)
 				},
 				log: [`Combat started: ${payload.enemyName} (level ${payload.enemyLevel}).`],
 				participants: [],
@@ -856,7 +967,10 @@ export class GameSession {
 					level: payload.enemyLevel,
 					currentHealth: payload.enemyCurrentHealth,
 					maxHealth: payload.enemyMaxHealth,
-					abilities: payload.enemyAbilityNames ?? []
+					abilities: payload.enemyAbilityNames ?? [],
+					archetypeSlug: payload.enemyArchetypeSlug ?? null,
+					typeKey: payload.enemyArchetypeTypeKey ?? null,
+					tier: toArchetypeTier(payload.enemyTier, payload.enemyArchetypeTypeKey)
 				},
 				participants: payload.participants ?? []
 			};
@@ -891,20 +1005,19 @@ export class GameSession {
 		});
 
 		hub.on('CombatEnded', (payload: CombatEndedPayload) => {
+			const reason = payload.reason.trim();
+
+			// A fight can end without the player winning or dying: another character sharing the same enemy row can
+			// land the killing blow, and the server releases every session pointed at it (reason `shared kill`).
+			// That is a clean end, so it closes the panel and keeps whatever summary the player's own turns earned
+			// instead of being read as a defeat.
 			this.combat = {
 				...this.combat,
 				active: false,
-				log: [...this.combat.log, `Combat ended: ${payload.reason}.`].slice(-200),
-				outcome: this.combat.outcome ?? {
-					kind: payload.reason.toLowerCase() === 'fled' ? 'fled' : 'defeat',
-					xpEarned: 0,
-					goldEarned: 0,
-					xpLost: 0,
-					goldLost: 0,
-					hardcore: false
-				}
+				log: [...this.combat.log, `Combat ended: ${reason}.`].slice(-200),
+				outcome: this.combat.outcome ?? outcomeFromCombatEndReason(reason)
 			};
-			this.addSystemMessage(`Combat ended: ${payload.reason}.`);
+			this.addSystemMessage(`Combat ended: ${reason}.`);
 		});
 
 		hub.on('EnemyDefeated', () => {
@@ -913,6 +1026,19 @@ export class GameSession {
 
 		hub.on('CharacterRespawned', (payload?: CharacterRespawnedPayload) => {
 			this.dead = false;
+
+			// The server restores the bar and removes the combat session before it answers, so the shell
+			// takes both facts from this payload. Without them the sheet keeps the 0 HP the death left and
+			// a fight the server no longer owns stays on screen (the death itself already sends
+			// `CombatEnded`; this is the belt for a respawn that arrives first).
+			if (payload) {
+				this.stats = {
+					...this.stats,
+					currentHealth: payload.currentHealth,
+					currentMana: payload.currentMana
+				};
+			}
+			this.combat = { ...this.combat, active: false };
 
 			// A2: death moves the character to the zone's safe location, so the view has to follow them.
 			if (payload?.locationSlug) {
@@ -923,6 +1049,11 @@ export class GameSession {
 					spawnedEnemies: []
 				};
 				void this.requestGroundItems();
+
+				// The server moves the map node as well as the location, so the graph the shell is already drawing is
+				// one move out of date. Re-read it from the server rather than guessing the node: the current-node
+				// marker and the travel panel both come back in the same answer.
+				void this.requestMapGraph(null);
 			}
 
 			const sickness = payload?.sicknessExpiresAt
@@ -935,20 +1066,29 @@ export class GameSession {
 			);
 		});
 
-		hub.on(
-			'ExperienceGained',
-			(payload: { newLevel: number; newXP: number; leveledUp: boolean; leveledUpTo: number }) => {
-				this.stats = {
-					...this.stats,
-					level: payload.newLevel,
-					experience: payload.newXP
-				};
-				if (payload.leveledUp)
-					this.addSystemMessage(`Level up! You are now level ${payload.leveledUpTo}.`);
-			}
-		);
+		hub.on('ExperienceGained', (payload: ExperienceGainedPayload) => {
+			// A level-up rewrites the derived pools on the server, so the payload carries them: without this the
+			// sheet would keep drawing the old bar next to the new level until the next character load. The banked
+			// attribute points come along for the same reason — the allocation panel budgets from them, so a level
+			// that banks points must enable it without a re-select. A payload without the field (an older server)
+			// leaves the balance alone; 0 is a real balance, so the check is undefined, not truthiness.
+			this.stats = {
+				...this.stats,
+				level: payload.newLevel,
+				experience: payload.newExperience,
+				...(payload.maxHealth ? { maxHealth: payload.maxHealth } : {}),
+				...(payload.currentHealth !== undefined ? { currentHealth: payload.currentHealth } : {}),
+				...(payload.maxMana ? { maxMana: payload.maxMana } : {}),
+				...(payload.currentMana !== undefined ? { currentMana: payload.currentMana } : {}),
+				...(payload.unspentAttributePoints !== undefined
+					? { unspentAttributePoints: payload.unspentAttributePoints }
+					: {})
+			};
+			if (payload.leveledUp)
+				this.addSystemMessage(`Level up! You are now level ${payload.leveledUpTo}.`);
+		});
 
-		hub.on('GoldChanged', (payload: { goldAdded: number; newGoldTotal: number }) => {
+		hub.on('GoldChanged', (payload: GoldChangedPayload) => {
 			this.stats = { ...this.stats, gold: payload.newGoldTotal };
 		});
 
@@ -956,7 +1096,9 @@ export class GameSession {
 			'DamageTaken',
 			(payload: { damage: number; currentHP: number; maxHP: number; isDead: boolean }) => {
 				this.stats = applyDamageToStats(this.stats, payload);
-				if (payload.isDead) this.dead = true;
+				// The flag follows the server on both edges: a GM heal through /sethealth sends isDead false with the
+				// restored pool, and without this the death banner would stay up until a reload.
+				this.dead = payload.isDead;
 			}
 		);
 
@@ -1310,7 +1452,20 @@ export class GameSession {
 		await this.openInventory();
 
 		if (payload.currentZoneId) await this.enterZone(payload.currentZoneId);
+
+		// The graph comes first: the roster names its room by slug only, and the location object a resumed session
+		// builds from that answer takes the room's name and type from the node the character wakes on. It is asked
+		// for after `EnterZone` because the resume may have moved the character (a swept run wakes them in the
+		// lobby), and the node the server just wrote is the one the graph has to report.
 		await this.requestMapGraph(null);
+
+		if (payload.currentZoneId) {
+			// `EnterZone` has just put the character back on the node they logged out on (or in the zone's lobby when
+			// their run was swept), but the roster is only ever pushed with a travel result: without this the room
+			// they resumed into renders empty until their next move. The server reads the position it just wrote, so
+			// no node is sent from here.
+			void this.requestLocationRoster();
+		}
 
 		// A resumed character already stands somewhere, and the location lists are only pushed on a *move*: ask
 		// for them once here so the panel is right on arrival instead of after the player walks to a neighbour.

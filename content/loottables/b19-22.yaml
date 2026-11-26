@@ -1,0 +1,185 @@
+# Content pack — enemy drop tables for budget band b19-22 (levels 19-22).
+#
+# family: loottable. One table per hostile archetype; slug `<archetype>-drops`.
+#
+# Band b19-22 (game-context/budget.yaml): gold [25, 60], drop_chance [0.10, 0.35].
+# Every table sums to 100, so DropWeight reads as that row's landing probability
+# (loot.weight_semantics). Every row lands with 0.10 <= p <= 0.35: inside the band.
+# No guaranteed row: nothing in the design says a b19-22 kill always yields something.
+# Item ceiling: 180 gold = 3 x the band's gold max. The 200-gold gems (fire-ruby, frost-sapphire)
+# are above it and are held to b23-26; storm-topaz and void-shard (150) are inside it.
+#
+# All four roster rows banded 19-20 belong to this band: the band that contains a floor of 19 is
+# b19-22. ash-jack and forge-deserter must be seeded 19-22 so that scorched-battlefield (L21-25) can
+# carry them at all (pool-matrix §6); their drop band follows the floor, not the widened ceiling.
+
+family: loottable
+entities:
+  - slug: cinderling-drops
+    # band: b19-22 — cinderling, roster band 19-20, seeded 20-26; spawns at scorched-battlefield
+    # (L21-25), vent-fields (L23-26), pyreling-den (L24-26), fire-ancients-chamber (L26-30)
+    # Why: a knot of cinder and heat. Fire essence is the only honest drop; the soul crystal is what a
+    # thing made of heat leaves when it stops, and the iron is what it fused the ground with.
+    typeKey: enemies
+    displayName: Cinderling Drops
+    rarityWeight: 60
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 35
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-fire
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-fire
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: drowned-cantor-drops
+    # band: b19-22 — drowned-cantor, roster band 19-20; spawns at tidelocked-vault (L17-20)
+    # Why: it sings in the drowned hall and the water carries the note further than the hall is long.
+    # A caster's table, and the only one at this band that carries mana: what a cantor spends.
+    typeKey: enemies
+    displayName: Drowned Cantor Drops
+    rarityWeight: 60
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: mana-potion
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-frost
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-shadow
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: void-shard
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: ash-jack-drops
+    # band: b19-22 — ash-jack, roster band 19-20, must be seeded 19-22; spawns at scorched-battlefield
+    # (L21-25)
+    # Why: a crow of the ash plains that knows the sound of a dying animal and calls the rest. It has
+    # no pockets — everything on it came off the field and off what the field killed.
+    typeKey: enemies
+    displayName: Ash Jack Drops
+    rarityWeight: 60
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-fire
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-fire
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: forge-deserter-drops
+    # band: b19-22 — forge-deserter, roster band 19-20, must be seeded 19-22; spawns at scorched-battlefield
+    # (L21-25)
+    # Why: he took a master's tools out of the Forge Quarter and makes for whoever pays. The plate and
+    # the blade are the master's; the ingots are the stock he carried out.
+    typeKey: enemies
+    displayName: Forge Deserter Drops
+    rarityWeight: 60
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 35
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-sword
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-chestplate
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-power
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false

@@ -24,6 +24,7 @@ public static class MapGraphSeeder
         var now = DateTimeOffset.UtcNow;
         var maps = GetMaps(now);
         ConnectZoneEntriesToLocations(maps);
+        ConnectVisibleLocationsAcrossHiddenNodes(maps);
         LinkRegionZonesToZoneMaps(maps);
         db.Maps.AddRange(maps);
         await db.SaveChangesAsync();
@@ -104,6 +105,117 @@ public static class MapGraphSeeder
         }
     }
 
+    /// <summary>
+    /// Reconnects the visible locations that a hidden location in the middle of the chain cuts off.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="ConnectZoneEntriesToLocations"/> chains every location in sort order, hidden ones included,
+    /// because that chain is also the path a discovery unlock opens. That is correct until a hidden location
+    /// sits between two visible ones: the visible walk stops at the node before it, so every location authored
+    /// after it is unreachable until the player happens to unlock the hidden one. Measured consequence:
+    /// Grevenmire's Bone Hollow cut the Mire Crossing and the Sunken Estate off from Arrival, and Ashlen Wood's
+    /// Strangled Oak cut off the Wood Road.
+    /// </para>
+    /// <para>
+    /// Additive, not a reshuffle: the authored chain stays exactly as it is — including the hidden node's own
+    /// links, which still work once it is unlocked — and one bypass walk is added in both directions between
+    /// the last visible node before the hidden span and the first visible location after it. Nothing is
+    /// removed, no sort order or unlock metadata changes, and a zone that is already walkable is untouched.
+    /// </para>
+    /// <para>
+    /// Only a real gap is bridged: the preceding node must already be walkable from Arrival and the location
+    /// must not be. Reachability is recomputed after each successful bypass so a span of several hidden nodes
+    /// costs one edge pair instead of one per node, and the next slot is never spent on a redundant edge.
+    /// </para>
+    /// <para>
+    /// A pair is only added when both directions have a free slot — <see cref="FirstFreeDirection"/> is derived
+    /// from the edges already on the node, so the two hops are checked before either is written. A one-way
+    /// bypass would walk the player past a hidden span and strand them there. When no direction is free nothing
+    /// is invented to route around the validator: the unreachable location is left for
+    /// <c>SeedAsync_EveryVisibleZoneLocationIsWalkableFromArrival</c> to report.
+    /// </para>
+    /// </remarks>
+    /// <param name="maps">The authored maps, before they are added to the context.</param>
+    private static void ConnectVisibleLocationsAcrossHiddenNodes(IEnumerable<Map> maps)
+    {
+        foreach (var map in maps.Where(candidate => candidate.MapType == MapType.Zone))
+        {
+            var entry = map.Nodes.FirstOrDefault(node => node.Id == map.EntryNodeId);
+            if (entry is null) continue;
+
+            var visibleLocations = map.Nodes
+                .Where(node => node.NodeType == MapNodeType.Location && !node.IsHidden)
+                .OrderBy(node => node.SortOrder)
+                .ThenBy(node => node.Id, StringComparer.Ordinal)
+                .ToList();
+            if (visibleLocations.Count == 0) continue;
+
+            var reachable = ReachableNodeIds(map, entry.Id);
+            var predecessorId = entry.Id;
+
+            foreach (var location in visibleLocations)
+            {
+                if (!reachable.Contains(location.Id) && reachable.Contains(predecessorId))
+                {
+                    var forward = FirstFreeDirection(map, predecessorId, MapDirection.East);
+                    var backward = FirstFreeDirection(map, location.Id, MapDirection.West);
+
+                    if (forward is not null && backward is not null)
+                    {
+                        AddWalkEdge(map, predecessorId, location.Id, MapDirection.East);
+                        AddWalkEdge(map, location.Id, predecessorId, MapDirection.West);
+                        reachable = ReachableNodeIds(map, entry.Id);
+                    }
+                }
+
+                predecessorId = location.Id;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Collects every node a character can walk to inside one map, starting from its arrival node.
+    /// </summary>
+    /// <remarks>
+    /// This is deliberately narrower than the validator's own reachability check, which follows every edge it
+    /// can find: here hidden nodes are skipped (the player cannot see them, so they cannot be walked through)
+    /// and an edge is only usable when it is traversable and visible. A node that names another map is not
+    /// expanded either — <c>TravelToNodeHubCommand</c> loads that map instead of walking on this one.
+    /// </remarks>
+    /// <param name="map">The map being built, before it is added to the context.</param>
+    /// <param name="entryNodeId">Node the walk starts from.</param>
+    /// <returns>The identifiers of every reachable visible node, including the entry node.</returns>
+    private static HashSet<string> ReachableNodeIds(Map map, string entryNodeId)
+    {
+        var nodes = map.Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
+        var outgoing = map.Edges
+            .Where(edge => edge.IsTraversable && !edge.IsHidden && nodes.ContainsKey(edge.ToNodeId))
+            .ToLookup(edge => edge.FromNodeId, StringComparer.Ordinal);
+
+        var reachable = new HashSet<string>(StringComparer.Ordinal);
+        if (!nodes.TryGetValue(entryNodeId, out var entry)) return reachable;
+
+        reachable.Add(entry.Id);
+        var queue = new Queue<MapNode>();
+        queue.Enqueue(entry);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!string.IsNullOrWhiteSpace(current.TargetMapId)) continue;
+
+            foreach (var edge in outgoing[current.Id])
+            {
+                var next = nodes[edge.ToNodeId];
+                if (next.IsHidden) continue;
+                if (reachable.Add(next.Id)) queue.Enqueue(next);
+            }
+        }
+
+        return reachable;
+    }
+
     private static void AddWalkEdge(Map map, string fromNodeId, string toNodeId, MapDirection preferred)
     {
         if (map.Edges.Any(edge => edge.FromNodeId == fromNodeId && edge.ToNodeId == toNodeId)) return;
@@ -153,7 +265,7 @@ public static class MapGraphSeeder
             MapType = MapType.Region,
             OwnerId = "cinderplain",
             Name = "Cinderplain",
-            Description = "Kaldrek's scorched expanse of ash and cooled lava, where forge-tempered warbands and fire-touched creatures stake their claim.",
+            Description = "A scorched expanse of ash and cooled lava, where fire-touched creatures and those who work the heat stake their claim.",
             EntryNodeId = "region:cinderplain:entry",
             IsActive = true,
             Version = 1,
@@ -162,14 +274,20 @@ public static class MapGraphSeeder
             [
                 new MapNode { Id = "region:cinderplain:entry", MapId = "region:cinderplain", NodeType = MapNodeType.EntryPoint, RefId = null, DisplayName = "Arrival", Description = "Arrival point for Cinderplain.", IconKey = "login", LayoutX = 2, LayoutY = 20, IsEntryPoint = true, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 0 },
                 new MapNode { Id = "region:cinderplain:zone:ashfields", MapId = "region:cinderplain", NodeType = MapNodeType.Zone, RefId = "ashfields", DisplayName = "The Ashfields", Description = "Grey ash plains stretching to the horizon, dotted with fused obsidian trees and the scorched skulls of fallen armies.", IconKey = "map", LayoutX = 34, LayoutY = 14, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
-                new MapNode { Id = "region:cinderplain:zone:skarhold", MapId = "region:cinderplain", NodeType = MapNodeType.Zone, RefId = "skarhold", DisplayName = "Skarhold", Description = "A Kaldrek forge-city built inside a dormant caldera, where the best smiths in Veldrath ply their trade under sulphur skies.", IconKey = "map", LayoutX = 14, LayoutY = 20, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
+                new MapNode { Id = "region:cinderplain:zone:skarhold", MapId = "region:cinderplain", NodeType = MapNodeType.Zone, RefId = "skarhold", DisplayName = "Skarhold", Description = "A forge-city built inside a dormant caldera, where the best smiths in Veldrath ply their trade under sulphur skies.", IconKey = "map", LayoutX = 14, LayoutY = 20, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "region:cinderplain:zone:smoldering-reach", MapId = "region:cinderplain", NodeType = MapNodeType.Zone, RefId = "smoldering-reach", DisplayName = "The Smoldering Reach", Description = "A cracked lava field where vents of superheated gas erupt without warning and heat-adapted predators hunt at dusk.", IconKey = "map", LayoutX = 38, LayoutY = 30, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
-                new MapNode { Id = "region:cinderplain:zone:kaldrek-maw", MapId = "region:cinderplain", NodeType = MapNodeType.Zone, RefId = "kaldrek-maw", DisplayName = "Kaldrek's Maw", Description = "A vast volcanic vent complex known as the Maw, lair of Kaldrek's fire-bound ancient and final test of the worthy.", IconKey = "map", LayoutX = 20, LayoutY = 36, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
-                new MapNode { Id = "region:cinderplain:exit:greymoor", MapId = "region:cinderplain", NodeType = MapNodeType.RegionExit, RefId = "greymoor", DisplayName = "Greymoor", Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.", IconKey = "public", LayoutX = 0, LayoutY = 20, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:greymoor", TargetNodeId = "region:greymoor:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
+                new MapNode { Id = "region:cinderplain:zone:kaldrek-maw", MapId = "region:cinderplain", NodeType = MapNodeType.Zone, RefId = "kaldrek-maw", DisplayName = "The Maw", Description = "A vast volcanic vent complex, lair of a fire-bound ancient and the final test of the worthy.", IconKey = "map", LayoutX = 20, LayoutY = 36, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
+                new MapNode { Id = "region:cinderplain:exit:greymoor", MapId = "region:cinderplain", NodeType = MapNodeType.RegionExit, RefId = "greymoor", DisplayName = "Greymoor", Description = "Fog-wreathed highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.", IconKey = "public", LayoutX = 0, LayoutY = 20, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:greymoor", TargetNodeId = "region:greymoor:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
             ],
             Edges =
             [
                 new MapEdge { Id = new Guid("b3cd2f00-d1f6-7012-dfb6-92677d07b7e9"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:entry", ToNodeId = "region:cinderplain:exit:greymoor", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
+                // Arrival's only edge used to lead west to the Greymoor portal. A portal carries a TargetMapId, so
+                // travelling to it loads the region map instead of letting the character pass over it: every zone on
+                // this board was two hops away across a map change and none could be entered on foot. Skarhold is the
+                // marker the board's door chain starts from, and East is the free slot beside Arrival (West is the
+                // portal). Greymoor and Varenmark have carried this hop all along; this board and Saltcliff had not.
+                new MapEdge { Id = new Guid("9fe48038-d744-4052-959e-91fb32adc5c9"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:entry", ToNodeId = "region:cinderplain:zone:skarhold", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("1ad207ad-0970-f82b-ce19-9a1e92dfea3d"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:exit:greymoor", ToNodeId = "region:cinderplain:zone:skarhold", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToRegion, Label = "skarhold-greymoor", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("4c22f343-cd20-7c58-99bf-20006abcc1ce"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:zone:ashfields", ToNodeId = "region:cinderplain:zone:smoldering-reach", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = "ashfields-smoldering-reach", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("1d1cf32b-6480-a9a0-7cfe-abea02312102"), MapId = "region:cinderplain", FromNodeId = "region:cinderplain:zone:ashfields", ToNodeId = "region:cinderplain:zone:skarhold", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = "skarhold-ashfields", IsTraversable = true, IsHidden = false },
@@ -188,7 +306,7 @@ public static class MapGraphSeeder
             MapType = MapType.Region,
             OwnerId = "greymoor",
             Name = "Greymoor",
-            Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.",
+            Description = "Fog-wreathed highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.",
             EntryNodeId = "region:greymoor:entry",
             IsActive = true,
             Version = 1,
@@ -197,12 +315,12 @@ public static class MapGraphSeeder
             [
                 new MapNode { Id = "region:greymoor:entry", MapId = "region:greymoor", NodeType = MapNodeType.EntryPoint, RefId = null, DisplayName = "Arrival", Description = "Arrival point for Greymoor.", IconKey = "login", LayoutX = 12, LayoutY = 20, IsEntryPoint = true, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 0 },
                 new MapNode { Id = "region:greymoor:zone:pale-moor", MapId = "region:greymoor", NodeType = MapNodeType.Zone, RefId = "pale-moor", DisplayName = "The Pale Moor", Description = "Endless fog-blanketed moors where waymarks shift overnight and travellers learn quickly to trust local guides.", IconKey = "map", LayoutX = 30, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
-                new MapNode { Id = "region:greymoor:zone:aldenmere", MapId = "region:greymoor", NodeType = MapNodeType.Zone, RefId = "aldenmere", DisplayName = "Aldenmere", Description = "A grey-stoned Dravan waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.", IconKey = "map", LayoutX = 12, LayoutY = 18, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
+                new MapNode { Id = "region:greymoor:zone:aldenmere", MapId = "region:greymoor", NodeType = MapNodeType.Zone, RefId = "aldenmere", DisplayName = "Aldenmere", Description = "A grey-stoned waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.", IconKey = "map", LayoutX = 12, LayoutY = 18, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "region:greymoor:zone:soddenfen", MapId = "region:greymoor", NodeType = MapNodeType.Zone, RefId = "soddenfen", DisplayName = "Soddenfen", Description = "A waterlogged fenland buzzing with plague insects and half-submerged ruins, avoided by all with good sense.", IconKey = "map", LayoutX = 36, LayoutY = 28, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
-                new MapNode { Id = "region:greymoor:zone:barrow-deeps", MapId = "region:greymoor", NodeType = MapNodeType.Zone, RefId = "barrow-deeps", DisplayName = "The Barrow Deeps", Description = "A sprawling underground burial network carved through the moorland, where ancestor-beasts guard ancient Dravan relics.", IconKey = "map", LayoutX = 18, LayoutY = 34, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
+                new MapNode { Id = "region:greymoor:zone:barrow-deeps", MapId = "region:greymoor", NodeType = MapNodeType.Zone, RefId = "barrow-deeps", DisplayName = "The Barrow Deeps", Description = "A sprawling underground burial network carved through the moorland, where ancestor-beasts guard relics older than the moor above them.", IconKey = "map", LayoutX = 18, LayoutY = 34, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
                 new MapNode { Id = "region:greymoor:exit:varenmark", MapId = "region:greymoor", NodeType = MapNodeType.RegionExit, RefId = "varenmark", DisplayName = "Varenmark", Description = "The oldest settled march in the lowlands. Farmsteads, drove roads and market crossings gave way to wilder land. Whatever was here before the settlers is still here.", IconKey = "public", LayoutX = 0, LayoutY = 20, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:varenmark", TargetNodeId = "region:varenmark:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
-                new MapNode { Id = "region:greymoor:exit:cinderplain", MapId = "region:greymoor", NodeType = MapNodeType.RegionExit, RefId = "cinderplain", DisplayName = "Cinderplain", Description = "Kaldrek's scorched expanse of ash and cooled lava, where forge-tempered warbands and fire-touched creatures stake their claim.", IconKey = "public", LayoutX = 47, LayoutY = 20, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:cinderplain", TargetNodeId = "region:cinderplain:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
-                new MapNode { Id = "region:greymoor:exit:saltcliff", MapId = "region:greymoor", NodeType = MapNodeType.RegionExit, RefId = "saltcliff", DisplayName = "Saltcliff", Description = "Thysmara sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remnants of a sunken empire.", IconKey = "public", LayoutX = 24, LayoutY = 39, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:saltcliff", TargetNodeId = "region:saltcliff:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 80 },
+                new MapNode { Id = "region:greymoor:exit:cinderplain", MapId = "region:greymoor", NodeType = MapNodeType.RegionExit, RefId = "cinderplain", DisplayName = "Cinderplain", Description = "A scorched expanse of ash and cooled lava, where fire-touched creatures and those who work the heat stake their claim.", IconKey = "public", LayoutX = 47, LayoutY = 20, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:cinderplain", TargetNodeId = "region:cinderplain:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
+                new MapNode { Id = "region:greymoor:exit:saltcliff", MapId = "region:greymoor", NodeType = MapNodeType.RegionExit, RefId = "saltcliff", DisplayName = "Saltcliff", Description = "Sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remains of whatever stood here before them.", IconKey = "public", LayoutX = 24, LayoutY = 39, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:saltcliff", TargetNodeId = "region:saltcliff:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 80 },
             ],
             Edges =
             [
@@ -228,7 +346,7 @@ public static class MapGraphSeeder
             MapType = MapType.Region,
             OwnerId = "saltcliff",
             Name = "Saltcliff",
-            Description = "Thysmara sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remnants of a sunken empire.",
+            Description = "Sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remains of whatever stood here before them.",
             EntryNodeId = "region:saltcliff:entry",
             IsActive = true,
             Version = 1,
@@ -236,16 +354,21 @@ public static class MapGraphSeeder
             Nodes =
             [
                 new MapNode { Id = "region:saltcliff:entry", MapId = "region:saltcliff", NodeType = MapNodeType.EntryPoint, RefId = null, DisplayName = "Arrival", Description = "Arrival point for Saltcliff.", IconKey = "login", LayoutX = 24, LayoutY = 2, IsEntryPoint = true, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 0 },
-                new MapNode { Id = "region:saltcliff:zone:saltcliff-heights", MapId = "region:saltcliff", NodeType = MapNodeType.Zone, RefId = "saltcliff-heights", DisplayName = "The Saltcliff Heights", Description = "Wind-blasted clifftops above the Thysmara sea, dotted with lighthouse ruins and contested by rival gull-rider clans.", IconKey = "map", LayoutX = 30, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
-                new MapNode { Id = "region:saltcliff:zone:tolvaren", MapId = "region:saltcliff", NodeType = MapNodeType.Zone, RefId = "tolvaren", DisplayName = "Tolvaren", Description = "A salt-caked Thysmara port city clinging to the cliff face, its harbour full of storm-worn ships and bold-faced traders.", IconKey = "map", LayoutX = 12, LayoutY = 22, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
+                new MapNode { Id = "region:saltcliff:zone:saltcliff-heights", MapId = "region:saltcliff", NodeType = MapNodeType.Zone, RefId = "saltcliff-heights", DisplayName = "The Saltcliff Heights", Description = "Wind-blasted clifftops above a sea that never settles, dotted with lighthouse ruins and contested by rival gull-rider clans.", IconKey = "map", LayoutX = 30, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
+                new MapNode { Id = "region:saltcliff:zone:tolvaren", MapId = "region:saltcliff", NodeType = MapNodeType.Zone, RefId = "tolvaren", DisplayName = "Tolvaren", Description = "A salt-caked port city clinging to the cliff face, its harbour full of storm-worn ships and bold-faced traders.", IconKey = "map", LayoutX = 12, LayoutY = 22, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "region:saltcliff:zone:tidewrack-flats", MapId = "region:saltcliff", NodeType = MapNodeType.Zone, RefId = "tidewrack-flats", DisplayName = "The Tidewrack Flats", Description = "Tide-scoured mudflats littered with shipwreck timber and kelp-draped bones, hunted by scavengers and wading predators.", IconKey = "map", LayoutX = 34, LayoutY = 28, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
-                new MapNode { Id = "region:saltcliff:zone:sunken-name", MapId = "region:saltcliff", NodeType = MapNodeType.Zone, RefId = "sunken-name", DisplayName = "The Sunken Name", Description = "The drowned heart of a once-great Thysmara empire, now a flooded ruin accessible only to the brave and the waterproofed.", IconKey = "map", LayoutX = 16, LayoutY = 34, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
-                new MapNode { Id = "region:saltcliff:exit:greymoor", MapId = "region:saltcliff", NodeType = MapNodeType.RegionExit, RefId = "greymoor", DisplayName = "Greymoor", Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.", IconKey = "public", LayoutX = 24, LayoutY = 0, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:greymoor", TargetNodeId = "region:greymoor:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
-                new MapNode { Id = "region:saltcliff:exit:cinderplain", MapId = "region:saltcliff", NodeType = MapNodeType.RegionExit, RefId = "cinderplain", DisplayName = "Cinderplain", Description = "Kaldrek's scorched expanse of ash and cooled lava, where forge-tempered warbands and fire-touched creatures stake their claim.", IconKey = "public", LayoutX = 36, LayoutY = 0, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:cinderplain", TargetNodeId = "region:cinderplain:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
+                new MapNode { Id = "region:saltcliff:zone:sunken-name", MapId = "region:saltcliff", NodeType = MapNodeType.Zone, RefId = "sunken-name", DisplayName = "The Sunken Name", Description = "The drowned heart of a city no surviving record names, now a flooded ruin accessible only to the brave and the waterproofed.", IconKey = "map", LayoutX = 16, LayoutY = 34, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
+                new MapNode { Id = "region:saltcliff:exit:greymoor", MapId = "region:saltcliff", NodeType = MapNodeType.RegionExit, RefId = "greymoor", DisplayName = "Greymoor", Description = "Fog-wreathed highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.", IconKey = "public", LayoutX = 24, LayoutY = 0, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:greymoor", TargetNodeId = "region:greymoor:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
+                new MapNode { Id = "region:saltcliff:exit:cinderplain", MapId = "region:saltcliff", NodeType = MapNodeType.RegionExit, RefId = "cinderplain", DisplayName = "Cinderplain", Description = "A scorched expanse of ash and cooled lava, where fire-touched creatures and those who work the heat stake their claim.", IconKey = "public", LayoutX = 36, LayoutY = 0, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:cinderplain", TargetNodeId = "region:cinderplain:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
             ],
             Edges =
             [
                 new MapEdge { Id = new Guid("456c4916-2ef9-d3df-bfdd-cb12e7c90dcf"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:entry", ToNodeId = "region:saltcliff:exit:greymoor", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
+                // Same repair as Cinderplain's Arrival: the one authored edge led north to the Greymoor portal, and
+                // crossing a portal leaves the board, so the Heights marker — where this board's door chain starts —
+                // was never adjacent to the node a character stands on. South and East are free beside Arrival; the
+                // Heights sit below and to the right of it, and South leaves East free for a future hop.
+                new MapEdge { Id = new Guid("66e2b0f4-f9c7-4697-9430-046667d651cb"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:entry", ToNodeId = "region:saltcliff:zone:saltcliff-heights", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("47b2eafb-2616-4f78-d8b4-700ef6863116"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:exit:cinderplain", ToNodeId = "region:saltcliff:exit:greymoor", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("b108d3f4-7b85-c95b-b9b2-7b1d36379d1d"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:exit:greymoor", ToNodeId = "region:saltcliff:zone:saltcliff-heights", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToRegion, Label = "saltcliff-heights-greymoor", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("31a6a9bf-126b-b21a-c682-6b791af668ca"), MapId = "region:saltcliff", FromNodeId = "region:saltcliff:exit:greymoor", ToNodeId = "region:saltcliff:exit:cinderplain", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
@@ -278,7 +401,7 @@ public static class MapGraphSeeder
                 new MapNode { Id = "region:varenmark:zone:crestfall", MapId = "region:varenmark", NodeType = MapNodeType.Zone, RefId = "crestfall", DisplayName = "Crestfall", Description = "A prosperous crossroads market town where three old drove roads meet. Warm lanterns, merchant stalls, and the last comfortable beds for many miles.", IconKey = "map", LayoutX = 14, LayoutY = 11, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
                 new MapNode { Id = "region:varenmark:zone:grevenmire", MapId = "region:varenmark", NodeType = MapNodeType.Zone, RefId = "grevenmire", DisplayName = "Grevenmire", Description = "Deep boggy country beyond the Ashlen Wood. Half-sunken ruins, fog that does not lift, and a hostility that feels personal.", IconKey = "map", LayoutX = 23, LayoutY = 11, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
                 new MapNode { Id = "region:varenmark:zone:drowning-pits", MapId = "region:varenmark", NodeType = MapNodeType.Zone, RefId = "drowning-pits", DisplayName = "The Drowning Pits", Description = "Subterranean chambers beneath Grevenmire, half-flooded and ancient. Whatever built this was not building for humans.", IconKey = "map", LayoutX = 22, LayoutY = 16, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
-                new MapNode { Id = "region:varenmark:exit:greymoor", MapId = "region:varenmark", NodeType = MapNodeType.RegionExit, RefId = "greymoor", DisplayName = "Greymoor", Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.", IconKey = "public", LayoutX = 29, LayoutY = 11, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:greymoor", TargetNodeId = "region:greymoor:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 80 },
+                new MapNode { Id = "region:varenmark:exit:greymoor", MapId = "region:varenmark", NodeType = MapNodeType.RegionExit, RefId = "greymoor", DisplayName = "Greymoor", Description = "Fog-wreathed highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.", IconKey = "public", LayoutX = 29, LayoutY = 11, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:greymoor", TargetNodeId = "region:greymoor:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 80 },
             ],
             Edges =
             [
@@ -304,7 +427,7 @@ public static class MapGraphSeeder
             MapType = MapType.Zone,
             OwnerId = "aldenmere",
             Name = "Aldenmere",
-            Description = "A grey-stoned Dravan waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.",
+            Description = "A grey-stoned waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.",
             EntryNodeId = "zone:aldenmere:entry",
             IsActive = true,
             Version = 1,
@@ -315,6 +438,8 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:aldenmere:location:aldenmere-marketplace", MapId = "zone:aldenmere", NodeType = MapNodeType.Location, RefId = "aldenmere-marketplace", DisplayName = "Aldenmere Marketplace", Description = "Aldenmere Marketplace in Aldenmere.", IconKey = "place", LayoutX = 35, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
                 new MapNode { Id = "zone:aldenmere:location:grey-cup", MapId = "zone:aldenmere", NodeType = MapNodeType.Location, RefId = "grey-cup", DisplayName = "The Grey Cup", Description = "The Grey Cup in Aldenmere.", IconKey = "place", LayoutX = 15, LayoutY = 30, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:aldenmere:location:ironhollow-keep", MapId = "zone:aldenmere", NodeType = MapNodeType.Location, RefId = "ironhollow-keep", DisplayName = "Ironhollow Keep", Description = "Ironhollow Keep in Aldenmere.", IconKey = "place", LayoutX = 10, LayoutY = 7, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
+                new MapNode { Id = "zone:aldenmere:exit:zone:barrow-deeps", MapId = "zone:aldenmere", NodeType = MapNodeType.ZoneExit, RefId = "barrow-deeps", DisplayName = "Descent into the Barrow Deeps", Description = "A sprawling underground burial network carved through the moorland, where ancestor-beasts guard relics older than the moor above them.", IconKey = "exit_to_app", LayoutX = 10, LayoutY = 15, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:barrow-deeps", TargetNodeId = "zone:barrow-deeps:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
+                new MapNode { Id = "zone:aldenmere:exit:zone:pale-moor", MapId = "zone:aldenmere", NodeType = MapNodeType.ZoneExit, RefId = "pale-moor", DisplayName = "Road to the Pale Moor", Description = "Endless fog-blanketed moors where waymarks shift overnight and travellers learn quickly to trust local guides.", IconKey = "exit_to_app", LayoutX = 48, LayoutY = 10, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:pale-moor", TargetNodeId = "zone:pale-moor:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
             ],
             Edges =
             [
@@ -324,6 +449,15 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("7764f681-8fd6-dc0c-ccea-8c2914f5408e"), MapId = "zone:aldenmere", FromNodeId = "zone:aldenmere:location:aldenmere-marketplace", ToNodeId = "zone:aldenmere:entry", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("fbd22c08-96b3-cc80-23a7-8ca4b655f330"), MapId = "zone:aldenmere", FromNodeId = "zone:aldenmere:location:grey-cup", ToNodeId = "zone:aldenmere:entry", Direction = MapDirection.North, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("115f90f4-57e0-9316-a59e-0c86dbf1723d"), MapId = "zone:aldenmere", FromNodeId = "zone:aldenmere:location:ironhollow-keep", ToNodeId = "zone:aldenmere:entry", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // The keep is the last stop on the town walk and its cellars are the way down to the burial network, so
+                // the descent hangs off it rather than off Arrival, whose three authored edges already own South, East
+                // and West. The keep's East is the authored return to Arrival and the seed-time chain claims West for
+                // its hop to the Grey Cup, so the descent takes South. The marketplace takes the moor road East — the
+                // town's open side — and the chain needs only one free direction there, which North then supplies.
+                new MapEdge { Id = new Guid("27b8b645-fbf3-46dc-b7f0-7bbde33cd1b3"), MapId = "zone:aldenmere", FromNodeId = "zone:aldenmere:location:ironhollow-keep", ToNodeId = "zone:aldenmere:exit:zone:barrow-deeps", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "barrow-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("2d43bf13-803c-43e2-8c95-82e967ee47a8"), MapId = "zone:aldenmere", FromNodeId = "zone:aldenmere:exit:zone:barrow-deeps", ToNodeId = "zone:aldenmere:location:ironhollow-keep", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "barrow-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("ccfc4ff2-6fe6-42f1-bb30-9024de679f51"), MapId = "zone:aldenmere", FromNodeId = "zone:aldenmere:location:aldenmere-marketplace", ToNodeId = "zone:aldenmere:exit:zone:pale-moor", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToZone, Label = "moor-road", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("fa16fa6d-c1de-4da4-a137-1e270e1ba8d4"), MapId = "zone:aldenmere", FromNodeId = "zone:aldenmere:exit:zone:pale-moor", ToNodeId = "zone:aldenmere:location:aldenmere-marketplace", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToZone, Label = "moor-road", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -343,6 +477,8 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:ashfields:location:ash-shrine", MapId = "zone:ashfields", NodeType = MapNodeType.Location, RefId = "ash-shrine", DisplayName = "The Ash Shrine", Description = "The Ash Shrine in The Ashfields. Hidden until discovered. Unlock: quest.", IconKey = "place", LayoutX = 20, LayoutY = 40, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = true, UnlockType = "quest", UnlockKey = "ash-shrine", DiscoverThreshold = null, SortOrder = 20 },
                 new MapNode { Id = "zone:ashfields:location:obsidian-grove", MapId = "zone:ashfields", NodeType = MapNodeType.Location, RefId = "obsidian-grove", DisplayName = "The Obsidian Grove", Description = "The Obsidian Grove in The Ashfields.", IconKey = "place", LayoutX = 30, LayoutY = 20, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:ashfields:location:scorched-battlefield", MapId = "zone:ashfields", NodeType = MapNodeType.Location, RefId = "scorched-battlefield", DisplayName = "The Scorched Battlefield", Description = "The Scorched Battlefield in The Ashfields.", IconKey = "place", LayoutX = 45, LayoutY = 35, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
+                new MapNode { Id = "zone:ashfields:exit:zone:skarhold", MapId = "zone:ashfields", NodeType = MapNodeType.ZoneExit, RefId = "skarhold", DisplayName = "Road to Skarhold", Description = "A forge-city built inside a dormant caldera, where the best smiths in Veldrath ply their trade under sulphur skies.", IconKey = "exit_to_app", LayoutX = 20, LayoutY = 24, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:skarhold", TargetNodeId = "zone:skarhold:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
+                new MapNode { Id = "zone:ashfields:exit:zone:smoldering-reach", MapId = "zone:ashfields", NodeType = MapNodeType.ZoneExit, RefId = "smoldering-reach", DisplayName = "Track to the Smoldering Reach", Description = "A cracked lava field where vents of superheated gas erupt without warning and heat-adapted predators hunt at dusk.", IconKey = "exit_to_app", LayoutX = 45, LayoutY = 47, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:smoldering-reach", TargetNodeId = "zone:smoldering-reach:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
             ],
             Edges =
             [
@@ -352,6 +488,14 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("5f9d1106-e73b-a2f5-5867-6195f5f9ece2"), MapId = "zone:ashfields", FromNodeId = "zone:ashfields:location:ash-shrine", ToNodeId = "zone:ashfields:entry", Direction = MapDirection.North, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("1df0c731-389a-7d00-6bc7-cbf74ccbb6e0"), MapId = "zone:ashfields", FromNodeId = "zone:ashfields:location:obsidian-grove", ToNodeId = "zone:ashfields:entry", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("d0f55968-46ab-720b-95ad-6c959610a491"), MapId = "zone:ashfields", FromNodeId = "zone:ashfields:location:scorched-battlefield", ToNodeId = "zone:ashfields:entry", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // Two roads leave the ash plains. Arrival takes the one back to the caldera in its single free
+                // direction (the other three are the authored walks to the grove, the shrine and the battlefield), and
+                // the track on to the lava field hangs off the battlefield at the eastern edge, taking South so the
+                // chain hop from the grove to the battlefield still finds East.
+                new MapEdge { Id = new Guid("5a7d1e2e-6a01-4a21-a9ee-2081b888bd17"), MapId = "zone:ashfields", FromNodeId = "zone:ashfields:entry", ToNodeId = "zone:ashfields:exit:zone:skarhold", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToZone, Label = "ash-road", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("c8c9455d-8565-4075-a2e1-2c18c783b37a"), MapId = "zone:ashfields", FromNodeId = "zone:ashfields:exit:zone:skarhold", ToNodeId = "zone:ashfields:entry", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToZone, Label = "ash-road", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("c549a9ed-de23-4b88-bfc3-c201f213b106"), MapId = "zone:ashfields", FromNodeId = "zone:ashfields:location:scorched-battlefield", ToNodeId = "zone:ashfields:exit:zone:smoldering-reach", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "lava-track", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("3d97744b-383a-45a1-bb9b-dfc6629df4aa"), MapId = "zone:ashfields", FromNodeId = "zone:ashfields:exit:zone:smoldering-reach", ToNodeId = "zone:ashfields:location:scorched-battlefield", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "lava-track", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -396,7 +540,7 @@ public static class MapGraphSeeder
             MapType = MapType.Zone,
             OwnerId = "barrow-deeps",
             Name = "The Barrow Deeps",
-            Description = "A sprawling underground burial network carved through the moorland, where ancestor-beasts guard ancient Dravan relics.",
+            Description = "A sprawling underground burial network carved through the moorland, where ancestor-beasts guard relics older than the moor above them.",
             EntryNodeId = "zone:barrow-deeps:entry",
             IsActive = true,
             Version = 1,
@@ -509,6 +653,7 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:grevenmire:exit:region:varenmark", MapId = "zone:grevenmire", NodeType = MapNodeType.RegionExit, RefId = "varenmark", DisplayName = "Return to Varenmark", Description = "The oldest settled march in the lowlands. Farmsteads, drove roads and market crossings gave way to wilder land. Whatever was here before the settlers is still here.", IconKey = "public", LayoutX = 0, LayoutY = 27, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:varenmark", TargetNodeId = "region:varenmark:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
                 new MapNode { Id = "zone:grevenmire:exit:zone:crestfall", MapId = "zone:grevenmire", NodeType = MapNodeType.ZoneExit, RefId = "crestfall", DisplayName = "Path to Crestfall", Description = "A prosperous crossroads market town where three old drove roads meet. Warm lanterns, merchant stalls, and the last comfortable beds for many miles.", IconKey = "exit_to_app", LayoutX = 2, LayoutY = 27, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:crestfall", TargetNodeId = "zone:crestfall:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
                 new MapNode { Id = "zone:grevenmire:exit:zone:ashlen-wood", MapId = "zone:grevenmire", NodeType = MapNodeType.ZoneExit, RefId = "ashlen-wood", DisplayName = "Track to Ashlen Wood", Description = "Old-growth forest south of Crestfall. The light is wrong here. Animals behave strangely and old clearings refuse to grow back.", IconKey = "exit_to_app", LayoutX = 39, LayoutY = 55, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:ashlen-wood", TargetNodeId = "zone:ashlen-wood:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
+                new MapNode { Id = "zone:grevenmire:exit:zone:drowning-pits", MapId = "zone:grevenmire", NodeType = MapNodeType.ZoneExit, RefId = "drowning-pits", DisplayName = "Descent into the Drowning Pits", Description = "Subterranean chambers beneath Grevenmire, half-flooded and ancient. Whatever built this was not building for humans.", IconKey = "exit_to_app", LayoutX = 72, LayoutY = 24, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:drowning-pits", TargetNodeId = "zone:drowning-pits:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 80 },
             ],
             Edges =
             [
@@ -522,6 +667,13 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("8067939d-12bd-79a8-35d9-05891c73bf78"), MapId = "zone:grevenmire", FromNodeId = "zone:grevenmire:location:mire-crossing", ToNodeId = "zone:grevenmire:exit:zone:ashlen-wood", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("e45d516d-964c-df2c-9eee-d789462ae77e"), MapId = "zone:grevenmire", FromNodeId = "zone:grevenmire:location:mire-crossing", ToNodeId = "zone:grevenmire:location:sunken-estate", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = "estate-track", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("55a3dcfe-be15-2ccb-799d-c1e53512bf7f"), MapId = "zone:grevenmire", FromNodeId = "zone:grevenmire:location:sunken-estate", ToNodeId = "zone:grevenmire:location:mire-crossing", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = "estate-track", IsTraversable = true, IsHidden = false },
+                // The way into the Drowning Pits, authored on the estate rather than on the crossing: the crossing's four
+                // directions are all taken (South to the wood, East to the estate, and two generated by the entry chain
+                // and the hidden-hollow bypass), and a walk edge the seeder cannot place would drop the bypass that keeps
+                // the crossing reachable from Arrival. The estate's cellars are the flooded half of the same ruin, which
+                // is the route the region map's own `drowningpits-road` edge already describes.
+                new MapEdge { Id = new Guid("b3f1a6d2-5c47-4e0a-9d16-7c0f2b8e54a1"), MapId = "zone:grevenmire", FromNodeId = "zone:grevenmire:location:sunken-estate", ToNodeId = "zone:grevenmire:exit:zone:drowning-pits", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "cellar-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("c47e9021-8d3b-42f5-a7e0-15b6c9d34f28"), MapId = "zone:grevenmire", FromNodeId = "zone:grevenmire:exit:zone:drowning-pits", ToNodeId = "zone:grevenmire:location:sunken-estate", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "cellar-stair", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -529,19 +681,19 @@ public static class MapGraphSeeder
             Id = "zone:kaldrek-maw",
             MapType = MapType.Zone,
             OwnerId = "kaldrek-maw",
-            Name = "Kaldrek's Maw",
-            Description = "A vast volcanic vent complex known as the Maw, lair of Kaldrek's fire-bound ancient and final test of the worthy.",
+            Name = "The Maw",
+            Description = "A vast volcanic vent complex, lair of a fire-bound ancient and the final test of the worthy.",
             EntryNodeId = "zone:kaldrek-maw:entry",
             IsActive = true,
             Version = 1,
             UpdatedAt = now,
             Nodes =
             [
-                new MapNode { Id = "zone:kaldrek-maw:entry", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.EntryPoint, RefId = null, DisplayName = "Arrival", Description = "Arrival point for Kaldrek's Maw.", IconKey = "login", LayoutX = 20, LayoutY = 15, IsEntryPoint = true, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 0 },
-                new MapNode { Id = "zone:kaldrek-maw:location:fire-ancients-chamber", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.Location, RefId = "fire-ancients-chamber", DisplayName = "The Fire-Ancient's Chamber", Description = "The Fire-Ancient's Chamber in Kaldrek's Maw.", IconKey = "place", LayoutX = 30, LayoutY = 15, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
-                new MapNode { Id = "zone:kaldrek-maw:location:kaldreks-heart", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.Location, RefId = "kaldreks-heart", DisplayName = "Kaldrek's Heart", Description = "Kaldrek's Heart in Kaldrek's Maw. Hidden until discovered. Unlock: quest.", IconKey = "place", LayoutX = 20, LayoutY = 25, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = true, UnlockType = "quest", UnlockKey = "kaldreks-heart", DiscoverThreshold = null, SortOrder = 30 },
+                new MapNode { Id = "zone:kaldrek-maw:entry", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.EntryPoint, RefId = null, DisplayName = "Arrival", Description = "Arrival point for the Maw.", IconKey = "login", LayoutX = 20, LayoutY = 15, IsEntryPoint = true, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 0 },
+                new MapNode { Id = "zone:kaldrek-maw:location:fire-ancients-chamber", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.Location, RefId = "fire-ancients-chamber", DisplayName = "The Fire-Ancient's Chamber", Description = "The Fire-Ancient's Chamber in the Maw.", IconKey = "place", LayoutX = 30, LayoutY = 15, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
+                new MapNode { Id = "zone:kaldrek-maw:location:kaldreks-heart", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.Location, RefId = "kaldreks-heart", DisplayName = "The Maw's Heart", Description = "The Maw's Heart in the Maw. Hidden until discovered. Unlock: quest.", IconKey = "place", LayoutX = 20, LayoutY = 25, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = true, UnlockType = "quest", UnlockKey = "kaldreks-heart", DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:kaldrek-maw:exit:region:cinderplain", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.RegionExit, RefId = "cinderplain", DisplayName = "Return to Cinderplain", Description = "The way back out.", IconKey = "public", LayoutX = 20, LayoutY = 1, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:cinderplain", TargetNodeId = "region:cinderplain:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 90 },
-                new MapNode { Id = "zone:kaldrek-maw:location:maw-descent", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.Location, RefId = "maw-descent", DisplayName = "The Maw Descent", Description = "The Maw Descent in Kaldrek's Maw.", IconKey = "place", LayoutX = 10, LayoutY = 7, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
+                new MapNode { Id = "zone:kaldrek-maw:location:maw-descent", MapId = "zone:kaldrek-maw", NodeType = MapNodeType.Location, RefId = "maw-descent", DisplayName = "The Maw Descent", Description = "The Maw Descent in the Maw.", IconKey = "place", LayoutX = 10, LayoutY = 7, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
             ],
             Edges =
             [
@@ -572,6 +724,8 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:pale-moor:location:ashveil-highlands", MapId = "zone:pale-moor", NodeType = MapNodeType.Location, RefId = "ashveil-highlands", DisplayName = "Ashveil Highlands", Description = "Ashveil Highlands in The Pale Moor.", IconKey = "place", LayoutX = 30, LayoutY = 20, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
                 new MapNode { Id = "zone:pale-moor:location:moorstone-cairns", MapId = "zone:pale-moor", NodeType = MapNodeType.Location, RefId = "moorstone-cairns", DisplayName = "The Moorstone Cairns", Description = "The Moorstone Cairns in The Pale Moor.", IconKey = "place", LayoutX = 45, LayoutY = 35, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:pale-moor:location:shifting-waymark", MapId = "zone:pale-moor", NodeType = MapNodeType.Location, RefId = "shifting-waymark", DisplayName = "The Shifting Waymark", Description = "The Shifting Waymark in The Pale Moor. Hidden until discovered. Unlock: skill_check_passive.", IconKey = "place", LayoutX = 20, LayoutY = 40, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = true, UnlockType = "skill_check_passive", UnlockKey = null, DiscoverThreshold = 10, SortOrder = 40 },
+                new MapNode { Id = "zone:pale-moor:exit:zone:aldenmere", MapId = "zone:pale-moor", NodeType = MapNodeType.ZoneExit, RefId = "aldenmere", DisplayName = "Road to Aldenmere", Description = "A grey-stoned waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.", IconKey = "exit_to_app", LayoutX = 20, LayoutY = 24, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:aldenmere", TargetNodeId = "zone:aldenmere:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
+                new MapNode { Id = "zone:pale-moor:exit:zone:soddenfen", MapId = "zone:pale-moor", NodeType = MapNodeType.ZoneExit, RefId = "soddenfen", DisplayName = "Track to Soddenfen", Description = "A waterlogged fenland buzzing with plague insects and half-submerged ruins, avoided by all with good sense.", IconKey = "exit_to_app", LayoutX = 45, LayoutY = 47, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:soddenfen", TargetNodeId = "zone:soddenfen:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
             ],
             Edges =
             [
@@ -581,6 +735,15 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("8650b1d2-4d46-7500-77c2-2ed21343cf05"), MapId = "zone:pale-moor", FromNodeId = "zone:pale-moor:location:ashveil-highlands", ToNodeId = "zone:pale-moor:entry", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("6de73413-44df-9a2d-949a-94c0c85b03d6"), MapId = "zone:pale-moor", FromNodeId = "zone:pale-moor:location:moorstone-cairns", ToNodeId = "zone:pale-moor:entry", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("80db21a4-cd86-3bc6-6af5-84358c464c47"), MapId = "zone:pale-moor", FromNodeId = "zone:pale-moor:location:shifting-waymark", ToNodeId = "zone:pale-moor:entry", Direction = MapDirection.North, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // The road back to the waytown leaves from Arrival's one free direction — the other three are authored,
+                // and the seed-time chain needs none of them because every hop off Arrival already exists. The fen track
+                // to Soddenfen hangs off the cairns at the southern end of the moor and takes South; the cairns' own
+                // East and West are already spoken for (the chain's hop to Ashveil and the authored return to Arrival),
+                // and its hop on to the hidden waymark still finds North afterwards.
+                new MapEdge { Id = new Guid("0044c3f3-4efa-4af6-b173-4f0ed103c0bd"), MapId = "zone:pale-moor", FromNodeId = "zone:pale-moor:entry", ToNodeId = "zone:pale-moor:exit:zone:aldenmere", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToZone, Label = "waytown-road", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("6d93b407-2edd-4d16-9976-02e3938690bf"), MapId = "zone:pale-moor", FromNodeId = "zone:pale-moor:exit:zone:aldenmere", ToNodeId = "zone:pale-moor:entry", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToZone, Label = "waytown-road", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("e9151578-f5b8-44cc-99c1-15d6e7e011ee"), MapId = "zone:pale-moor", FromNodeId = "zone:pale-moor:location:moorstone-cairns", ToNodeId = "zone:pale-moor:exit:zone:soddenfen", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "fen-track", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("7f07a552-17d9-4971-aed2-50593c8036d9"), MapId = "zone:pale-moor", FromNodeId = "zone:pale-moor:exit:zone:soddenfen", ToNodeId = "zone:pale-moor:location:moorstone-cairns", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "fen-track", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -650,7 +813,7 @@ public static class MapGraphSeeder
             MapType = MapType.Zone,
             OwnerId = "saltcliff-heights",
             Name = "The Saltcliff Heights",
-            Description = "Wind-blasted clifftops above the Thysmara sea, dotted with lighthouse ruins and contested by rival gull-rider clans.",
+            Description = "Wind-blasted clifftops above a sea that never settles, dotted with lighthouse ruins and contested by rival gull-rider clans.",
             EntryNodeId = "zone:saltcliff-heights:entry",
             IsActive = true,
             Version = 1,
@@ -661,6 +824,7 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:saltcliff-heights:location:clifftop-ruins", MapId = "zone:saltcliff-heights", NodeType = MapNodeType.Location, RefId = "clifftop-ruins", DisplayName = "The Clifftop Ruins", Description = "The Clifftop Ruins in The Saltcliff Heights.", IconKey = "place", LayoutX = 24, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
                 new MapNode { Id = "zone:saltcliff-heights:location:gull-rider-camp", MapId = "zone:saltcliff-heights", NodeType = MapNodeType.Location, RefId = "gull-rider-camp", DisplayName = "Gull-Rider Camp", Description = "Gull-Rider Camp in The Saltcliff Heights.", IconKey = "place", LayoutX = 10, LayoutY = 30, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:saltcliff-heights:location:storm-watch-peak", MapId = "zone:saltcliff-heights", NodeType = MapNodeType.Location, RefId = "storm-watch-peak", DisplayName = "Storm-Watch Peak", Description = "Storm-Watch Peak in The Saltcliff Heights. Hidden until discovered. Unlock: achievement.", IconKey = "place", LayoutX = 35, LayoutY = 20, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = true, UnlockType = "achievement", UnlockKey = "storm-watch-peak", DiscoverThreshold = null, SortOrder = 40 },
+                new MapNode { Id = "zone:saltcliff-heights:exit:zone:tolvaren", MapId = "zone:saltcliff-heights", NodeType = MapNodeType.ZoneExit, RefId = "tolvaren", DisplayName = "Road to Tolvaren", Description = "A salt-caked port city clinging to the cliff face, its harbour full of storm-worn ships and bold-faced traders.", IconKey = "exit_to_app", LayoutX = 24, LayoutY = 32, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:tolvaren", TargetNodeId = "zone:tolvaren:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
             ],
             Edges =
             [
@@ -670,6 +834,10 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("b7f5bf40-ed73-9250-de01-92a75f76386f"), MapId = "zone:saltcliff-heights", FromNodeId = "zone:saltcliff-heights:location:clifftop-ruins", ToNodeId = "zone:saltcliff-heights:entry", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("7c07cbff-2058-51d7-6834-8ff6564582f0"), MapId = "zone:saltcliff-heights", FromNodeId = "zone:saltcliff-heights:location:gull-rider-camp", ToNodeId = "zone:saltcliff-heights:entry", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("68d3a13f-a269-1689-a0aa-f231699403fd"), MapId = "zone:saltcliff-heights", FromNodeId = "zone:saltcliff-heights:location:storm-watch-peak", ToNodeId = "zone:saltcliff-heights:entry", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // The cliff road down to the port leaves from Arrival, whose only free direction is South: the sea is
+                // below the clifftops and the other three directions are the authored walks into the heights.
+                new MapEdge { Id = new Guid("8d69e45a-18f8-42ca-8f73-8631f94842a8"), MapId = "zone:saltcliff-heights", FromNodeId = "zone:saltcliff-heights:entry", ToNodeId = "zone:saltcliff-heights:exit:zone:tolvaren", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "cliff-road", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("a7cb64b6-1572-47a7-a671-373fa2098fb6"), MapId = "zone:saltcliff-heights", FromNodeId = "zone:saltcliff-heights:exit:zone:tolvaren", ToNodeId = "zone:saltcliff-heights:entry", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "cliff-road", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -678,7 +846,7 @@ public static class MapGraphSeeder
             MapType = MapType.Zone,
             OwnerId = "skarhold",
             Name = "Skarhold",
-            Description = "A Kaldrek forge-city built inside a dormant caldera, where the best smiths in Veldrath ply their trade under sulphur skies.",
+            Description = "A forge-city built inside a dormant caldera, where the best smiths in Veldrath ply their trade under sulphur skies.",
             EntryNodeId = "zone:skarhold:entry",
             IsActive = true,
             Version = 1,
@@ -689,6 +857,7 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:skarhold:location:ashbrand-lodge", MapId = "zone:skarhold", NodeType = MapNodeType.Location, RefId = "ashbrand-lodge", DisplayName = "The Ashbrand Lodge", Description = "The Ashbrand Lodge in Skarhold.", IconKey = "place", LayoutX = 15, LayoutY = 30, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
                 new MapNode { Id = "zone:skarhold:location:caldera-market", MapId = "zone:skarhold", NodeType = MapNodeType.Location, RefId = "caldera-market", DisplayName = "Caldera Market", Description = "Caldera Market in Skarhold.", IconKey = "place", LayoutX = 35, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:skarhold:location:forge-quarter", MapId = "zone:skarhold", NodeType = MapNodeType.Location, RefId = "forge-quarter", DisplayName = "The Forge Quarter", Description = "The Forge Quarter in Skarhold.", IconKey = "place", LayoutX = 10, LayoutY = 7, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
+                new MapNode { Id = "zone:skarhold:exit:zone:ashfields", MapId = "zone:skarhold", NodeType = MapNodeType.ZoneExit, RefId = "ashfields", DisplayName = "Road to the Ashfields", Description = "Grey ash plains stretching to the horizon, dotted with fused obsidian trees and the scorched skulls of fallen armies.", IconKey = "exit_to_app", LayoutX = 24, LayoutY = 8, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:ashfields", TargetNodeId = "zone:ashfields:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
             ],
             Edges =
             [
@@ -698,6 +867,10 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("ae18c691-4e60-de50-34c0-20da1243b085"), MapId = "zone:skarhold", FromNodeId = "zone:skarhold:location:ashbrand-lodge", ToNodeId = "zone:skarhold:entry", Direction = MapDirection.North, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("14e82395-fcfa-1226-3813-91fbc1fceefd"), MapId = "zone:skarhold", FromNodeId = "zone:skarhold:location:caldera-market", ToNodeId = "zone:skarhold:entry", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("750a3a42-1fc7-85fa-9926-b7cd37ab19a6"), MapId = "zone:skarhold", FromNodeId = "zone:skarhold:location:forge-quarter", ToNodeId = "zone:skarhold:entry", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // The gate road out of the caldera leaves from Arrival, whose South, East and West are the authored
+                // walks into the forge-city; North is the only direction left, and it is the one that leads out.
+                new MapEdge { Id = new Guid("6a4f967b-60f6-4830-9b31-f7f0a06665a6"), MapId = "zone:skarhold", FromNodeId = "zone:skarhold:entry", ToNodeId = "zone:skarhold:exit:zone:ashfields", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "caldera-gate", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("8173294a-e2b7-4557-b193-2cc472845bf4"), MapId = "zone:skarhold", FromNodeId = "zone:skarhold:exit:zone:ashfields", ToNodeId = "zone:skarhold:entry", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "caldera-gate", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -717,6 +890,7 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:smoldering-reach:location:lava-bridge", MapId = "zone:smoldering-reach", NodeType = MapNodeType.Location, RefId = "lava-bridge", DisplayName = "The Lava Bridge", Description = "The Lava Bridge in The Smoldering Reach. Hidden until discovered. Unlock: skill_check_active.", IconKey = "place", LayoutX = 35, LayoutY = 20, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = true, UnlockType = "skill_check_active", UnlockKey = null, DiscoverThreshold = 18, SortOrder = 20 },
                 new MapNode { Id = "zone:smoldering-reach:location:pyreling-den", MapId = "zone:smoldering-reach", NodeType = MapNodeType.Location, RefId = "pyreling-den", DisplayName = "The Pyreling Den", Description = "The Pyreling Den in The Smoldering Reach.", IconKey = "place", LayoutX = 10, LayoutY = 30, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:smoldering-reach:location:vent-fields", MapId = "zone:smoldering-reach", NodeType = MapNodeType.Location, RefId = "vent-fields", DisplayName = "The Vent Fields", Description = "The Vent Fields in The Smoldering Reach.", IconKey = "place", LayoutX = 24, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
+                new MapNode { Id = "zone:smoldering-reach:exit:zone:kaldrek-maw", MapId = "zone:smoldering-reach", NodeType = MapNodeType.ZoneExit, RefId = "kaldrek-maw", DisplayName = "Descent into the Maw", Description = "A vast volcanic vent complex, lair of a fire-bound ancient and the final test of the worthy.", IconKey = "exit_to_app", LayoutX = 38, LayoutY = 10, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:kaldrek-maw", TargetNodeId = "zone:kaldrek-maw:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
             ],
             Edges =
             [
@@ -726,6 +900,11 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("8f3d5a6a-61e2-133f-ab3f-2d6ba2623e4f"), MapId = "zone:smoldering-reach", FromNodeId = "zone:smoldering-reach:location:lava-bridge", ToNodeId = "zone:smoldering-reach:entry", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("28e0fb35-61df-8af4-13cd-0f5870677888"), MapId = "zone:smoldering-reach", FromNodeId = "zone:smoldering-reach:location:pyreling-den", ToNodeId = "zone:smoldering-reach:entry", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("90880228-e585-e24a-5aea-9463356f246e"), MapId = "zone:smoldering-reach", FromNodeId = "zone:smoldering-reach:location:vent-fields", ToNodeId = "zone:smoldering-reach:entry", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // The Maw opens off the vent fields, the field of vents that is the complex's own mouth. The vent
+                // fields' South is the authored walk back to Arrival, so the descent takes East, and the chain hop
+                // from the vent fields back to the Pyreling Den still finds West.
+                new MapEdge { Id = new Guid("c8e866e2-3144-49d0-9eb7-0567d06be0d8"), MapId = "zone:smoldering-reach", FromNodeId = "zone:smoldering-reach:location:vent-fields", ToNodeId = "zone:smoldering-reach:exit:zone:kaldrek-maw", Direction = MapDirection.East, EdgeType = MapEdgeType.ExitToZone, Label = "vent-descent", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("b62af2e4-fddd-4aa0-ae35-e887233b810a"), MapId = "zone:smoldering-reach", FromNodeId = "zone:smoldering-reach:exit:zone:kaldrek-maw", ToNodeId = "zone:smoldering-reach:location:vent-fields", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToZone, Label = "vent-descent", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -759,7 +938,7 @@ public static class MapGraphSeeder
             MapType = MapType.Zone,
             OwnerId = "sunken-name",
             Name = "The Sunken Name",
-            Description = "The drowned heart of a once-great Thysmara empire, now a flooded ruin accessible only to the brave and the waterproofed.",
+            Description = "The drowned heart of a city no surviving record names, now a flooded ruin accessible only to the brave and the waterproofed.",
             EntryNodeId = "zone:sunken-name:entry",
             IsActive = true,
             Version = 1,
@@ -804,6 +983,7 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:the-droveway:exit:region:varenmark", MapId = "zone:the-droveway", NodeType = MapNodeType.RegionExit, RefId = "varenmark", DisplayName = "Return to Varenmark", Description = "The oldest settled march in the lowlands. Farmsteads, drove roads and market crossings gave way to wilder land. Whatever was here before the settlers is still here.", IconKey = "public", LayoutX = 47, LayoutY = 0, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:varenmark", TargetNodeId = "region:varenmark:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
                 new MapNode { Id = "zone:the-droveway:exit:zone:ashlen-wood", MapId = "zone:the-droveway", NodeType = MapNodeType.ZoneExit, RefId = "ashlen-wood", DisplayName = "Path to Ashlen Wood", Description = "Old-growth forest south of Crestfall. The light is wrong here. Animals behave strangely and old clearings refuse to grow back.", IconKey = "exit_to_app", LayoutX = 0, LayoutY = 20, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:ashlen-wood", TargetNodeId = "zone:ashlen-wood:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
                 new MapNode { Id = "zone:the-droveway:exit:zone:crestfall", MapId = "zone:the-droveway", NodeType = MapNodeType.ZoneExit, RefId = "crestfall", DisplayName = "Road to Crestfall", Description = "A prosperous crossroads market town where three old drove roads meet. Warm lanterns, merchant stalls, and the last comfortable beds for many miles.", IconKey = "exit_to_app", LayoutX = 47, LayoutY = 39, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:crestfall", TargetNodeId = "zone:crestfall:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
+                new MapNode { Id = "zone:the-droveway:exit:zone:the-halrow", MapId = "zone:the-droveway", NodeType = MapNodeType.ZoneExit, RefId = "the-halrow", DisplayName = "Descent into the Halrow", Description = "A buried estate at the end of the Droveway, walls still standing but roof long collapsed. Something has lived in the cellars for a very long time.", IconKey = "exit_to_app", LayoutX = 69, LayoutY = 0, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:the-halrow", TargetNodeId = "zone:the-halrow:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 80 },
             ],
             Edges =
             [
@@ -816,6 +996,12 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("cfa95525-bc2e-a319-4a20-1d63f914d11c"), MapId = "zone:the-droveway", FromNodeId = "zone:the-droveway:location:sunken-fields", ToNodeId = "zone:the-droveway:location:drove-road", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = "field-track", IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("f60aca6a-4f20-671f-e8ac-847ecf5901ea"), MapId = "zone:the-droveway", FromNodeId = "zone:the-droveway:location:sunken-fields", ToNodeId = "zone:the-droveway:exit:zone:ashlen-wood", Direction = MapDirection.West, EdgeType = MapEdgeType.ExitToZone, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("c43b18d8-714e-73cb-c9da-2e8316cc7e86"), MapId = "zone:the-droveway", FromNodeId = "zone:the-droveway:location:weathered-waypost", ToNodeId = "zone:the-droveway:location:drove-road", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // The way into the Halrow, authored on the waypost — the end of the Droveway, which is where the region
+                // node describes the buried estate. The waypost already owns West (to the Drove Road) and takes East
+                // from the seed-time entry chain (the hop to the Sunken Fields), so the exit takes North and leaves
+                // South for the leg back; a hop the seeder cannot place would silently drop the chain it needs.
+                new MapEdge { Id = new Guid("3f7c1a84-2d95-4b6e-8a10-5e2c9d47b613"), MapId = "zone:the-droveway", FromNodeId = "zone:the-droveway:location:weathered-waypost", ToNodeId = "zone:the-droveway:exit:zone:the-halrow", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "halrow-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("9a4e0b27-6c31-4f58-b0d2-7e18a5c93f64"), MapId = "zone:the-droveway", FromNodeId = "zone:the-droveway:exit:zone:the-halrow", ToNodeId = "zone:the-droveway:location:weathered-waypost", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "halrow-stair", IsTraversable = true, IsHidden = false },
             ],
         },
         new Map
@@ -883,7 +1069,7 @@ public static class MapGraphSeeder
             MapType = MapType.Zone,
             OwnerId = "tolvaren",
             Name = "Tolvaren",
-            Description = "A salt-caked Thysmara port city clinging to the cliff face, its harbour full of storm-worn ships and bold-faced traders.",
+            Description = "A salt-caked port city clinging to the cliff face, its harbour full of storm-worn ships and bold-faced traders.",
             EntryNodeId = "zone:tolvaren:entry",
             IsActive = true,
             Version = 1,
@@ -894,6 +1080,9 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:tolvaren:location:cliff-road-market", MapId = "zone:tolvaren", NodeType = MapNodeType.Location, RefId = "cliff-road-market", DisplayName = "Cliff Road Market", Description = "Cliff Road Market in Tolvaren.", IconKey = "place", LayoutX = 35, LayoutY = 10, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 20 },
                 new MapNode { Id = "zone:tolvaren:location:saltcrow-inn", MapId = "zone:tolvaren", NodeType = MapNodeType.Location, RefId = "saltcrow-inn", DisplayName = "The Saltcrow Inn", Description = "The Saltcrow Inn in Tolvaren.", IconKey = "place", LayoutX = 15, LayoutY = 30, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 30 },
                 new MapNode { Id = "zone:tolvaren:location:tolvaren-harbour", MapId = "zone:tolvaren", NodeType = MapNodeType.Location, RefId = "tolvaren-harbour", DisplayName = "Tolvaren Harbour", Description = "Tolvaren Harbour in Tolvaren.", IconKey = "place", LayoutX = 10, LayoutY = 7, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 40 },
+                new MapNode { Id = "zone:tolvaren:exit:zone:saltcliff-heights", MapId = "zone:tolvaren", NodeType = MapNodeType.ZoneExit, RefId = "saltcliff-heights", DisplayName = "Climb to the Saltcliff Heights", Description = "Wind-blasted clifftops above a sea that never settles, dotted with lighthouse ruins and contested by rival gull-rider clans.", IconKey = "exit_to_app", LayoutX = 24, LayoutY = 8, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:saltcliff-heights", TargetNodeId = "zone:saltcliff-heights:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 50 },
+                new MapNode { Id = "zone:tolvaren:exit:zone:sunken-name", MapId = "zone:tolvaren", NodeType = MapNodeType.ZoneExit, RefId = "sunken-name", DisplayName = "Descent into the Sunken Name", Description = "The drowned heart of a city no surviving record names, now a flooded ruin accessible only to the brave and the waterproofed.", IconKey = "exit_to_app", LayoutX = 10, LayoutY = 19, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:sunken-name", TargetNodeId = "zone:sunken-name:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 60 },
+                new MapNode { Id = "zone:tolvaren:exit:zone:tidewrack-flats", MapId = "zone:tolvaren", NodeType = MapNodeType.ZoneExit, RefId = "tidewrack-flats", DisplayName = "Track to the Tidewrack Flats", Description = "Tide-scoured mudflats littered with shipwreck timber and kelp-draped bones, hunted by scavengers and wading predators.", IconKey = "exit_to_app", LayoutX = 35, LayoutY = 22, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "zone:tidewrack-flats", TargetNodeId = "zone:tidewrack-flats:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 70 },
             ],
             Edges =
             [
@@ -903,6 +1092,17 @@ public static class MapGraphSeeder
                 new MapEdge { Id = new Guid("2bcc70be-6d83-e249-03f1-89e61ed331d8"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:location:cliff-road-market", ToNodeId = "zone:tolvaren:entry", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("1abad397-24f9-3a1f-5394-10e615b3a7e4"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:location:saltcrow-inn", ToNodeId = "zone:tolvaren:entry", Direction = MapDirection.North, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("5990e5c3-ed6d-961d-ff4a-8124bda7b340"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:location:tolvaren-harbour", ToNodeId = "zone:tolvaren:entry", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                // The port is the crossroads of the Saltcliff coast, so all three roads out of the region board's own
+                // adjacency hang here: the climb back to the clifftops from Arrival (its one free direction), the descent
+                // under the harbour to the drowned city, and the shore track from the cliff-road market. Arrival's South,
+                // East and West are the authored walks into the town and the chain hops off the locations still find
+                // their directions, so none of the three strands a location.
+                new MapEdge { Id = new Guid("cf9516dd-7c7a-4da5-b430-c3d1ee67de99"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:entry", ToNodeId = "zone:tolvaren:exit:zone:saltcliff-heights", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "cliff-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("3e1a9d26-74ce-4546-a8d6-fdd5ae8cae94"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:exit:zone:saltcliff-heights", ToNodeId = "zone:tolvaren:entry", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "cliff-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("27d355b2-5092-45a5-9452-4efa6ee45d31"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:location:tolvaren-harbour", ToNodeId = "zone:tolvaren:exit:zone:sunken-name", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "harbour-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("437d5d3a-2d52-42e1-a8eb-1d765456183b"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:exit:zone:sunken-name", ToNodeId = "zone:tolvaren:location:tolvaren-harbour", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "harbour-stair", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("c5f24ce4-3ad2-4e1d-89aa-b522d5505f58"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:location:cliff-road-market", ToNodeId = "zone:tolvaren:exit:zone:tidewrack-flats", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToZone, Label = "shore-track", IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("77a606ba-c181-405a-9db8-a139b4eab06e"), MapId = "zone:tolvaren", FromNodeId = "zone:tolvaren:exit:zone:tidewrack-flats", ToNodeId = "zone:tolvaren:location:cliff-road-market", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToZone, Label = "shore-track", IsTraversable = true, IsHidden = false },
             ],
         },
     ];

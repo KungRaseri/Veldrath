@@ -1,0 +1,59 @@
+# docs/design/content/pools/grevenmire.yaml
+# Veldrath spawn pools — zone: grevenmire (region: varenmark)
+# Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4).
+# DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
+# rejects an unknown spawn archetype (missing-spawn-archetype, Error), so a pool imports only
+# once every archetype it names is seeded. The design file stays the design set; each zone's
+# pack is written beside it at content/zonelocations/grevenmire.yaml and is what the importer
+# reads (pool-matrix.md §8).
+# The roster roll is 2-4 per location, from one global const pair (ActorPoolResolver.cs:32-33,
+# rolled at :94), and it is a fill target, not a cap: the location's placed hostile instances
+# go in first and the pool fills from their count up to the roll (:117). Five or more hostile
+# placements at one location would exceed it.
+# There is no per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:193-204), never percentages, and must be
+# >= 1. The importer must not normalise them; only the ratio is meaningful.
+# "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
+# point or a dungeon lobby that has no pool and no placements deliberately spawns nothing
+# (ActorPoolResolver.cs:86-92). An empty pool does not suppress the location's hostile
+# placements — those spawn on their own, exactly as placed, never topped up (:111-115) — and a
+# non-hostile placement is dropped with a warning (:100-106).
+schema_version: 1
+zone: grevenmire
+region: varenmark
+locations:
+  - slug: mire-crossing
+    # band: b1-3 (D0 budget) | location L3-6
+    level_range: [3, 6]
+    pool:
+      - archetype: peat-adder
+        weight: 4   # band: 1-3 | seeded 1-3
+      - archetype: mire-boar
+        weight: 4   # band: 4-6 | seeded 4-6
+      - archetype: bandit-ruffian
+        weight: 3   # band: 4-6 | seeded 3-6
+      - archetype: forest-wolf
+        weight: 2   # band: 4-6 | seeded 3-6
+  - slug: bone-hollow
+    # band: b4-6 (D0 budget) | location L4-6
+    level_range: [4, 6]
+    pool:
+      - archetype: bandit-ruffian
+        weight: 5   # band: 4-6 | seeded 3-6
+      - archetype: mire-boar
+        weight: 3   # band: 4-6 | seeded 4-6
+      # The wight is the hollow's identity, not its difficulty: stacked bone, a cold that spoils a fire,
+      # behind a DC 8 passive check. 2026-11-20 amendment 2 therefore dropped it to weight 1 rather than
+      # moving it to a 7-9 room — it stays, as the rarest thing in the pool, and the cap holds.
+      - archetype: moor-wight
+        weight: 1   # band: 7-9 | seeded 6-10
+  - slug: sunken-estate
+    # band: b1-3 (D0 budget) | location L3-6
+    level_range: [3, 6]
+    excluded: true
+    exclusion_class: safe_respawn
+    exclusion_reason: 'SafeRespawn. Respawn point inside Grevenmire; note the seed lists it as a candidate hostile location in plans/content-seeding-pass.md:71 — that line is stale.'
+    pool: []   # empty by design
+
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 | excluded 1

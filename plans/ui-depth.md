@@ -1,7 +1,7 @@
 # UI Depth (Milestone E)
 
 > **Position in the roadmap:** D → C → A → B → **E**.
-> D, C, A and B are closed (see [`README.md`](README.md:11)), so this is not a tail of unfinished work:
+> D, C, A and B are closed (see [`README.md`](README.md:25)), so this is not a tail of unfinished work:
 > the game systems those milestones built are reachable from the browser and mostly *thin* once they
 > arrive. E is the milestone that makes them legible.
 > **Tracker:** no epic yet — this file is the specification; cards get created per phase after review.
@@ -13,8 +13,8 @@
 | E1 powers and abilities | **shipped** — PR #65 |
 | E2 skill sheet, `SkillXpGained` subscriber | **shipped** — PR #66 |
 | E3 combat depth, shared fight snapshot | **shipped** — PR #67 |
-| E4 NPC dialogue | **blocked by the content schema** — see §3.4a |
-| E5 crafting on the real engine | sized in §3.5a; not started |
+| E4 NPC dialogue | **shipped** — schema, validator, both hub bridges and the panel; the conversations themselves are authored in Foundry ([`dialogue-depth.md`](dialogue-depth.md)) |
+| E5 crafting on the real engine | **shipped** — [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte) over the real recipe handler; `DefaultCraftingCost` is gone |
 | E6 dungeons | **moved to [`dungeons.md`](dungeons.md)** — the model decided there; E6 is its client slice (F4) |
 
 E1–E3 each turned out to need a server bridge as well as a panel: abilities shipped slugs instead of
@@ -33,7 +33,7 @@ technically parity and practically unfinished.
 
 Three different kinds of gap hide behind the same word, and they cost very different amounts:
 
-| Kind | Meaning | Example | Cost |
+| Kind | Meaning | Example when the milestone was planned | Cost |
 |---|---|---|---|
 | **Stub surface** | The data is already on the wire or one query away; the UI renders the identifier | Abilities render `ability_slash` | Cheap, client-only |
 | **Placeholder bridge** | The engine has a real system, the hub calls a stub instead | `CraftItem` charges a flat 50 gold and adds no item | Medium, server rewrite |
@@ -41,23 +41,26 @@ Three different kinds of gap hide behind the same word, and they cost very diffe
 
 The milestone is ordered by that table, not by which feature sounds most exciting.
 
-### What is actually thin, with evidence
+### What was actually thin, with evidence (as measured 2026-11-10)
 
-| Surface | What the player sees today | Where |
+The audit that ordered the milestone, kept as it was measured: every row is the surface on 2026-11-10,
+and a row whose phase has since shipped says so.
+
+| Surface | What the player saw then | Where |
 |---|---|---|
-| Abilities in combat | Six raw slugs, `ability.replaceAll('_', ' ')`, no cost or cooldown | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte:8) |
-| Abilities out of combat | A list of slugs with one `Use` button each | [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte) |
-| The ability payload | `LearnedAbilities: string[]` — slugs only, deliberately | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:406) |
-| Skills | Nothing. `SkillXpGained` is broadcast and no client subscribes | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1190) |
-| Combat | One enemy, four buttons, log capped at the last 12 lines; party participants invisible | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
+| Abilities in combat | Six raw slugs, `ability.replaceAll('_', ' ')`, no cost or cooldown (closed in E1, PR #65) | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
+| Abilities out of combat | A list of slugs with one `Use` button each (closed in E1, PR #65) | [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte) |
+| The ability payload | `LearnedAbilities: string[]` — slugs only, deliberately (closed in E1, PR #65: `LearnedPowers` now carries the resolved catalog beside the slug list) | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:448) |
+| Skills | Nothing at plan time: `SkillXpGained` was broadcast and no client subscribed (closed in E2, PR #66) | [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632) |
+| Combat | One enemy, four buttons, log capped at the last 12 lines; party participants invisible (closed in E3, PR #67) | [`CombatPanel.svelte`](../web/client/src/lib/game/CombatPanel.svelte) |
 | Quests | `objective.key · 2/5` — the raw key, no prose | [`QuestTracker.svelte`](../web/client/src/lib/game/QuestTracker.svelte) |
-| NPCs | `TalkToNpc` records a `talk:` quest objective and returns nothing | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1411) |
-| Crafting | Flat 50 gold, no recipe lookup, no ingredients, no item produced | [`CraftItemHubCommand.cs`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:43) |
-| Dungeons | Validates the zone is a dungeon and returns its id | [`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:55) |
+| NPCs | `TalkToNpc` records a `talk:` quest objective and returns nothing (closed in E4, PR #98) | [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1442) |
+| Crafting | At plan time: a flat 50 gold, no recipe lookup, no ingredients and no item produced (closed in E5, PR #69) | [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:75) |
+| Dungeons | Validates the zone is a dungeon and returns its id (closed in E6, shipped as F4 of [`dungeons.md`](dungeons.md)) | [`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:50) |
 
 Two structural facts make every phase more expensive than it looks: [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte)
-is 735 lines holding six unrelated overlays, and [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts)
-is 1,182 lines holding every domain. Each phase splits the part it touches; there is no standalone
+is 746 lines holding six unrelated overlays, and [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts)
+is 1,580 lines holding every domain. Each phase splits the part it touches; there is no standalone
 refactor phase, because a refactor with no behaviour change cannot be reviewed against a user story.
 
 ---
@@ -100,13 +103,13 @@ buttons say so before the click.
 `Tradition`, `EffectType`, `Cooldown`, `ManaCost`, `Range`, `Duration`, `Radius`, `MaxTargets`, `Tier`,
 `RequiredLevel`, `Rank`, `BaseEffectValue`, `BaseDamage`, `DamageType`, `ConditionApplied`,
 `Buff`/`Debuff` ([`Power.cs`](../RealmEngine.Shared/Models/Power.cs:10)). `GET /api/content/powers` and
-`/api/content/powers/{slug}` already serve it ([`ContentEndpoints.cs`](../Veldrath.Server/Features/Content/ContentEndpoints.cs:70)),
+`/api/content/powers/{slug}` already serve it ([`ContentEndpoints.cs`](../Veldrath.Server/Features/Content/ContentEndpoints.cs:78)),
 and [`PowerCatalog`](../RealmEngine.Core/Features/PowerCatalog/) queries it. The client receives only
 `LearnedAbilities: string[]`.
 
 **Decision — extend the character snapshot, do not add a browser REST channel.** The browser has no REST
 path to `Veldrath.Server`: `PUBLIC_API_URL` is read in server-only modules
-([`game-request.ts`](../web/client/src/lib/server/game-request.ts:28)) and the only browser transport is
+([`game-request.ts`](../web/client/src/lib/server/game-request.ts:43)) and the only browser transport is
 SignalR through `PUBLIC_HUB_URL`. Adding a browser REST channel would mean putting the game JWT in the
 browser plus CORS work, to fetch data that must stay in lockstep with the fight. Instead, `SelectCharacter`
 resolves the character's learned slugs into a compact `LearnedPowers` list — slug, display name,
@@ -145,12 +148,20 @@ matrix; payload-contract updated; coverage floors hold.
 
 **Goal.** Skill progression becomes visible: XP moves a bar while you play, and a rank-up is announced.
 
-**What exists today.** `AwardSkillXp` broadcasts `{ CharacterId, SkillId, TotalXp, CurrentRank, RankedUp }`
-([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1190)) and the client does not listen — it is a
-documented `NO_SUBSCRIBER` entry in [`hub-events.test.ts`](../web/client/src/lib/parity/hub-events.test.ts).
-The engine has [`SkillCatalog`](../RealmEngine.Core/Features/SkillCatalog/),
+**What existed before this phase.** A client-callable `AwardSkillXp` bridge broadcast
+`{ CharacterId, SkillId, TotalXp, CurrentRank, RankedUp, XpIntoRank, XpToNextRank }` to the zone group (or
+back to the caller when not in one), and the client did not listen — it was a documented `NO_SUBSCRIBER`
+entry in [`hub-events.test.ts`](../web/client/src/lib/parity/hub-events.test.ts). That bridge was retired in
+PR #269 (any selected character could award itself skill XP), and crafting is the only server-side award path
+today. The engine has [`SkillCatalog`](../RealmEngine.Core/Features/SkillCatalog/),
 [`Progression`](../RealmEngine.Core/Features/Progression/) and the `CharacterSkill` model; the character
-summary (`CharacterDto`) carries no skills at all.
+summary (`CharacterDto`) carried no skills at all.
+
+Skill XP now reaches the sheet the other way round: crafting dispatches the award
+([`AwardSkillXpHubCommand`](../Veldrath.Server/Features/Characters/AwardSkillXpHubCommand.cs:15), sent from
+[`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:237)) and
+[`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632) announces the result as `SkillXpGained` with
+the same shape, which [`skills.ts`](../web/client/src/lib/game/skills.ts) folds into the sheet.
 
 **Work.**
 
@@ -211,16 +222,16 @@ the panel reads (a payload test, not a UI test, for the wire shape).
 **Goal.** Talking to an NPC shows authored prose and real options, and choosing one has a consequence.
 
 **What exists today.** `TalkToNpc` advances a `talk:<npcSlug>` quest objective and returns nothing
-([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1411)). Two gaps closed the phase before it opened:
+([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1442)). Two gaps closed the phase before it opened:
 
-1. **Dialogue is a line pool, not a node graph.** [`Dialogue`](../RealmEngine.Data/Entities/Content/Dialogue.cs:9)
+1. **Dialogue is a line pool, not a node graph.** [`Dialogue`](../RealmEngine.Data/Entities/Content/Dialogue.cs:7)
    is a `ContentBase` whose payload is `Stats.Lines` — a `List<string>` — plus trait flags (`Greeting`,
    `Farewell`, `Merchant`, `QuestRelated`, `Hostile`, `Friendly`) and optional `Tone`/`Formality` indices.
    There are **no nodes, no options, no requirements and no consequences** in the model, so
    `ChooseDialogueOption` would have nothing to choose from.
-2. **NPCs are not placed anywhere.** [`ActorInstance`](../RealmEngine.Data/Entities/Content/ActorInstance.cs:10)
+2. **NPCs are not placed anywhere.** [`ActorInstance`](../RealmEngine.Data/Entities/Content/ActorInstance.cs:20)
    is a per-actor stat *override* of an `ActorArchetype`, with no zone or location field, and
-   `LocationEntered` carries only `spawnedEnemies` ([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:2216)).
+   `LocationEntered` carries only `spawnedEnemies` ([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:2644)).
    The client has no NPC to click: `TalkToNpc(npcSlug)` is callable, but nothing ever produces the slug.
 
 **Consequence.** E4 is a content-schema phase with a panel at the end, not a UI phase:
@@ -231,6 +242,44 @@ the panel reads (a payload test, not a UI test, for the wire shape).
 
 Deferred to the content milestone that follows E. Shipping a dialogue panel against a line pool would
 produce a surface with no decisions in it — the exact failure mode this milestone exists to prevent.
+
+> **Update 2026-11-19 — two of the three prerequisites shipped, so E4 moved.** NPC placement exists as
+> its own row (`LocationNpc` + `LocationNpcsSeeder`, public/non-pool placement), and talking works:
+> `TalkToNpc` verifies the person is standing with the character, answers with an authored greeting line
+> and advances `talk:<slug>`. The stale facts above (an `ActorInstance` with no zone field, a client with
+> no NPC to click) are history. What remains is the dialogue structure itself — prose, options, a
+> requirement per option and a consequence per option — and then the panel, which is cheap. That work is
+> specified in [`dialogue-depth.md`](dialogue-depth.md), including the one-shot rule that stops a
+> gold-bearing option being farmed.
+
+> **Update 2026-11-24 — E4 shipped, so the "what remains" list above is history.** The dialogue
+> structure and the panel both landed. `DialogueOption` lives inside the existing `Dialogue` content row
+> with `Key`, `Label`, `Response`, `NextSlug`, `OneShot`, `Requires` and `Grants`
+> ([`Dialogue.cs`](../RealmEngine.Data/Entities/Content/Dialogue.cs:36)), read through
+> `DialogueOptionGrammar` and authored through the **Options** group in
+> [`ContentSchema.cs`](../Veldrath.Contracts/Content/ContentSchema.cs:784) — no new content type, and the
+> options ride in the JSON column that already existed. The two bridges are
+> [`GetNpcDialogueHubCommand`](../Veldrath.Server/Features/Characters/Npcs/DialogueHubCommands.cs:49)
+> (handler :369), which returns every option already evaluated against the character with its
+> `BlockedReason` and consequence preview, and
+> [`ChooseNpcOptionHubCommand`](../Veldrath.Server/Features/Characters/Npcs/DialogueHubCommands.cs:70)
+> (handler :443), which re-validates the choice and records the one-shot in `CharacterDialogueChoices`
+> (migration `20261120154921_AddCharacterDialogueChoices`).
+> [`GameHub.GetNpcDialogue`](../Veldrath.Server/Hubs/GameHub.cs:1518) sends `NpcDialogue` (:1543) and
+> `NpcDialogueOptionDto` carries `BlockedReason` beside `Consequences`
+> ([`DialogueHubCommands.cs`](../Veldrath.Server/Features/Characters/Npcs/DialogueHubCommands.cs:21));
+> `ChooseNpcOption` (:1562) answers with the next node. The panel is
+> [`DialogueOverlay.svelte`](../web/client/src/lib/game/DialogueOverlay.svelte), mounted from
+> [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:295) and driven by
+> [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:440) (`GetNpcDialogue`, with
+> `ChooseNpcOption` at :451); the blocked reason and the consequence line come from
+> [`dialogue.ts`](../web/client/src/lib/game/dialogue.ts:20). Both landed in PR #94 and PR #98 (merges
+> `1700168d` and `6beeb0b6`), so the remains list is wrong on every item: the structure carries prose,
+> options, a requirement and a consequence per option, and the panel is more than cheap — it is shipped.
+> What the list never covered is still outstanding and is not a phase of E: **the conversations
+> themselves are content**, authored in Foundry, and the seeded townspeople still carry greeting lines
+> only ([`dialogue-depth.md`](dialogue-depth.md) §4), so a speaker with no authored entry says so
+> instead of showing an empty panel.
 
 **Work (when the two prerequisites land).**
 
@@ -262,7 +311,7 @@ advancement preserved. Web: the dialogue panel, the disabled-option reason, the 
 recipe is unavailable.
 
 **What exists today — and this is the milestone's sharpest finding.** The hub's crafting is a
-**placeholder**, not a thin view: [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:66)
+**placeholder**, not a thin view: [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:75)
 charges a flat `DefaultCraftingCost = 50` gold, never reads a recipe, never consumes an ingredient, never
 adds anything to the bag, and returns `ItemCrafted = request.RecipeSlug`. Meanwhile the engine has a real
 system that nothing calls: `CraftRecipeCommand/Handler`, `DiscoverRecipe`, `LearnRecipe`,
@@ -270,6 +319,20 @@ system that nothing calls: `CraftRecipeCommand/Handler`, `DiscoverRecipe`, `Lear
 plus [`RecipeCatalog`](../RealmEngine.Core/Features/RecipeCatalog/) and the `Recipe`/`CraftingStation`
 models, with [`Harvesting`](../RealmEngine.Core/Features/Harvesting/) and `HarvestableNode` beside them.
 Building a crafting UI on the current handler would ship a menu that takes money and produces nothing.
+
+> **Update 2026-11-24 — E5 shipped, so the finding above is history.** The handler is a real bridge now:
+> [`CraftItemHubCommandHandler`](../Veldrath.Server/Features/Characters/CraftItemHubCommand.cs:75) reads
+> the recipe, checks level, skill rank and every material, consumes them, adds the output, refunds the
+> materials when a later step fails, and dispatches `AwardSkillXpHubCommand` at :237.
+> [`GameHub.CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1632) sends `ItemCrafted` (:1666), and
+> `GetCraftableRecipes` (:1709) answers with the recipes resolved against the current bag and skill ranks.
+> The panel is [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte), mounted
+> from [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:269) and asked for its list
+> by [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:1491); its disabled reason is the
+> server's own sentence ([`crafting.ts`](../web/client/src/lib/game/crafting.ts:58)). Harvesting shipped
+> beside it — `HarvestNode`, the `Harvested` event and a Gather button per node in
+> [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:264). `DefaultCraftingCost` survives
+> in no source file, so the last sentence above no longer holds and the definition of done below is met.
 
 **Work.**
 
@@ -306,8 +369,22 @@ disabled reasons, and the post-craft refresh.
 **Goal.** Entering a dungeon is a place you go, with visible progress and a way out.
 
 **What exists today.** `EnterDungeon` validates that the slug names a `ZoneType.Dungeon` zone and returns
-its id, and does nothing else ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:55)).
+its id, and does nothing else ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:50)).
 The `DungeonInstance` model exists but nothing creates one.
+
+> **Update 2026-11-24 — E6 shipped as F4, so the paragraph above is history.** `EnterDungeon` now resolves
+> the zone's entrance location, hands the move to `EnterZoneLocationHubCommand` and returns
+> `LocationSlug`, `RecommendedLevel`, `YourLevel` and `LevelWarning`
+> ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:92)).
+> The client slice is [`DungeonPanel.svelte`](../web/client/src/lib/game/DungeonPanel.svelte) — the room
+> list from the map graph with the current room marked, the rooms already cleared, the progress count and
+> an always-available exit — mounted in
+> [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:107), with the soft level warning
+> rendering in the game shell ([`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:644)).
+> `EnterDungeon` itself still has no web caller, because a dungeon is entered by walking to it through the
+> map graph — the model [`dungeons.md`](dungeons.md) chose — which is why its hub-methods allow-list entry
+> survives. `DungeonEntered` is still unsubscribed for the same reason: the panel reads the zone and the
+> cleared locations, not the entry result.
 
 **Why it moved.** The decision this phase was blocked on turned out to be much larger than a UI question,
 and the investigation found that **five dungeons are already authored as zones with interior maps** — plus

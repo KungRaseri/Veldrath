@@ -1,6 +1,8 @@
 # Plan: Combat Loop + Multiplayer Architecture (2026-03-30)
 
-> **Status**: Reviewed and current as of Session-39 (2026-06-27).
+> **Status**: the tick-based action-queue design below was never built (see the note under it). The ACTUAL
+> IMPLEMENTATION section records what ships; it has been amended for the D2 world-state move (2026-10-25) and the
+> session-68 deletion of the Avalonia client.
 
 ## ⚠️ IMPORTANT — ACTUAL IMPLEMENTATION NOTE
 
@@ -27,6 +29,14 @@ When resuming, read the ACTUAL IMPLEMENTATION section first — it supersedes al
 
 Built as a simplified system where any player can engage any live enemy; each hub call = one combat turn.
 All server code lives in `Veldrath.Server/Features/Characters/Combat/`.
+
+> **The flow below is the one that ships, but two of the files it lists are gone.** Live enemy and combat-session
+> state has been database-backed since the D2 world-state move (2026-10-25, `plans/server-first-world-state.md` §2):
+> `EfCoreEnemyInstanceStore` over the `EnemyInstances` table replaced `ZoneLocationEnemyStore`, and
+> `EfCoreCombatSessionStore` over `CombatSessions` replaced `CombatSessionStore`. `SpawnedEnemy.cs`,
+> `ActiveCombatSession.cs` and `CombatCharacterHydrator.cs` are still in the tree, and the hub methods and
+> `…HubCommand` handlers below still exist. "Client Build Status" is history as well: the Avalonia client was
+> deleted in session-68 (2026-10-25) and the web build is `cd web && npm run build`.
 
 ### Server Build Status: ✅ CLEAN (0 warnings, 0 errors)
 ### Client Build Status: ✅ CLEAN (0 warnings, 0 errors)
@@ -60,8 +70,9 @@ Static store: `ConcurrentDictionary<Guid, ActiveCombatSession>` keyed by `Charac
 - **`ServerCharacter` alias**: `CombatHelpers.cs` needs `using ServerCharacter = Veldrath.Server.Data.Entities.Character;` to avoid ambiguity with engine's `Character` model
 
 #### `ActorPoolResolver.cs`
-Injectable (Scoped). Depends on `EnemyGenerator`.
-- `SpawnRosterAsync(IReadOnlyList<ActorPoolEntry>?)` → 2–4 enemies via weighted random selection from the pool
+Injectable (Scoped). Depends on `EnemyGenerator` (required); `ILogger<ActorPoolResolver>`, `IRandomSource` (defaults to `SystemRandomSource.Shared`) and `IActorInstanceRepository` are optional.
+- `SpawnRosterAsync(IReadOnlyList<ActorPoolEntry>? pool, IReadOnlyList<PlacedActorInstance>? placements = null)` → every **hostile** placement once, then weighted pool draws filling out to a rolled **2–4** (a weight `<= 0` counts as 1). The roll is a fill target, not a cap: five hostile placements give five actors, placements alone are never topped up, and neither pool nor placements means an empty roster (a safe town) rather than a default archetype
+- Hostile filter: a placement or a pool entry whose archetype is explicitly non-hostile is logged and skipped, never turned into a target and never replaced (a missing `hostile` trait still counts as hostile)
 - Registered in `Program.cs`: `builder.Services.AddScoped<ActorPoolResolver>();`
 
 #### `CombatHelpers.cs`
@@ -72,8 +83,45 @@ Static helpers shared by all hub command handlers.
 - `CalculateEnemyDamage(enemy, attrs, isDefending)` — CON-based defense; damage halved when defending
 - `RollEnemyAbility(enemy, player)` — 30% chance; **`Power.BaseDamage` is `string?`** → uses `int.TryParse(ability.BaseDamage, out var d)`
 - `DistributeRewardsAsync` — locks `enemy.SyncRoot`, distributes proportional XP/gold based on `DamageContributions`; updates `character.Experience` (long entity field, NOT attrs blob) and `attrs["Gold"]`
-- `ScheduleRespawn` — fire-and-forget `Task.Delay(60s)` → creates scope, calls `ActorPoolResolver.SpawnRosterAsync`, adds to store, broadcasts `EnemySpawned` to zone group
+- ~~`ScheduleRespawn`~~ — **deleted with the world-state move (D2, 2026-10-25); this class respawns nothing.** See "Enemy respawn — what ships" below.
 - `HandleDeathIfNeededAsync` — HC: `entity.DeletedAt = DateTimeOffset.UtcNow`; Normal: `entity.Experience -= xpPenalty` (long), 10% gold penalty, `CurrentHealth = 1`
+
+### Enemy respawn — what ships (no per-enemy timer)
+
+The `ScheduleRespawn` fire-and-forget timer is gone; the pending respawn is a column, so a restart mid-countdown
+continues it instead of losing it.
+
+- **Death is one conditional UPDATE and owns the credit.** `IEnemyInstanceStore.TryMarkDeadAsync(enemyId)` runs
+  `UPDATE EnemyInstances SET IsAlive = false, RespawnAt = now + <respawn delay>, Version = Version + 1
+  WHERE Id = … AND IsAlive` inside a transaction, then reads the row's `EnemyParticipants` before committing and
+  returns them. Exactly one caller flips the row; it gets the participant ids the kill credits, and every other
+  caller gets `null`. That is the flag `CombatHelpers.SettleKillAsync` gates on: the winner distributes rewards,
+  rolls loot, records the room clear and reports the credited set the hub advances kill objectives on, while a
+  caller holding a stale copy of the enemy (each read materialises its own) reports the death to its own client and
+  credits nothing. Reading the set at the transition is what credits a participant whose turn committed while the
+  winner was loading — the winner's own copy predates it. The delay is `EnemyWorldOptions.RespawnDelay`,
+  bound from the `Enemies` section (`RespawnDelaySeconds`, default 60), not a hardcoded 60 s.
+- **A background sweeper brings them back.** `EnemyRespawnService : BackgroundService`
+  (`Veldrath.Server/Features/Characters/Combat/EnemyRespawnService.cs`, registered
+  `builder.Services.AddHostedService<EnemyRespawnService>()` at `Veldrath.Server/Program.cs:197`) ticks on a
+  `PeriodicTimer` every `Enemies:SweepIntervalSeconds` (default 5). Each tick calls
+  `SweepExpiredRespawnsAsync(RespawnBatchSize, ct)` — on PostgreSQL the batch is claimed with
+  `FOR UPDATE SKIP LOCKED`, so several instances never revive the same row — which sets `IsAlive = true`,
+  `CurrentHealth = MaxHealth`, `RespawnAt = null` and deletes the row's `EnemyParticipants`. After the commit the
+  service broadcasts `EnemySpawned` with `{ Id, Name, Level, CurrentHealth, MaxHealth }` to `enemy.ZoneGroup`, so a
+  missed broadcast is a cosmetic delay, not lost state. The same tick prunes expired combat sessions and sweeps
+  zone-instance runs.
+- **Reads self-heal too.** `GetAliveOrSpawnAsync` calls `SettleLocationAsync` before loading, which marks
+  zero-health-but-alive rows dead with a fresh `RespawnAt` and revives rows whose `RespawnAt` has passed — the lazy
+  path that keeps a location correct without waiting for a tick.
+- **A cleared room waits longer.** When `CountAliveAsync` reaches zero, `AttackEnemyHubCommand` calls
+  `ExtendClearedRespawnsAsync`, which pushes each row's `RespawnAt` out to at least
+  `now + ClearedRoomRespawnDelay` (`ClearedRoomRespawnMultiplier`, default 3 × the normal window).
+- **No `SpawnRosterAsync` in the respawn path.** The revived row already carries its archetype, level and stats;
+  `ActorPoolResolver` is used when a location has no rows yet, in `GetAliveOrSpawnAsync`'s caller-supplied
+  `spawnRoster`. Recorded in
+  [`work-items/2026-10-25-d2-the-live-world-moved-into-postgres-33.md`](work-items/2026-10-25-d2-the-live-world-moved-into-postgres-33.md)
+  and `plans/server-first-world-state.md` §2.
 
 ### New Server Hub Command Files
 
@@ -83,7 +131,7 @@ Static helpers shared by all hub command handlers.
 - Returns: enemy stats + `Template.Abilities` list for client display
 
 #### `AttackEnemyHubCommand.cs`
-Guard: has session + enemy exists (nullable) + alive → load entity+attrs → hydrate → calc damage → `lock(enemy.SyncRoot)` apply → if dead: `DistributeRewardsAsync` + `ScheduleRespawn` + early return with victory result → counter-attack via `RollEnemyAbility` → persist → `HandleDeathIfNeededAsync`
+Guard: has session + enemy exists (nullable) + alive → load entity+attrs → hydrate → calc damage → `lock(enemy.SyncRoot)` apply → if dead: `TryMarkDeadAsync` (the conditional UPDATE that stamps `RespawnAt` and reports the credited participants; only the caller that won it calls `CombatHelpers.SettleKillAsync`'s reward, loot, clear and credit work) → early return with victory result → counter-attack via `RollEnemyAbility` → persist → `HandleDeathIfNeededAsync`
 
 #### `DefendActionHubCommand.cs`
 Same flow as Attack but `session.WithDefending(true)`, no player attack, enemy damage halved.
@@ -109,30 +157,30 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 - `NavigateToLocation`: extracts `zoneGroupForNav` via `TryGetCurrentZoneGroup()`; passes as 4th arg to command; adds `SpawnedEnemies` to `LocationEntered` payload
 - Added `using Veldrath.Server.Features.Characters.Combat;`
 - Added 6 new hub methods: `EngageEnemy(EngageEnemyHubRequest)`, `AttackEnemy()`, `DefendAction()`, `FleeFromCombat()`, `UseAbilityInCombat(UseAbilityInCombatHubRequest)`, `Respawn()`
-- Hub broadcast events: `CombatStarted` (caller), `EnemyEngaged` (OthersInGroup), `CombatTurn` (caller), `EnemyDefeated` (OthersInGroup), `CombatEnded` (caller), `CharacterRespawned` (caller)
+- Hub broadcast events: `CombatStarted` (caller), `EnemyEngaged` (OthersInGroup), `CombatTurn` (caller), `EnemyDefeated` (OthersInGroup), `CombatEnded` (the caller; and, when a kill releases the combat sessions of everyone engaged with the same enemy row, each of those characters on their own connection, with reason `shared kill`), `CharacterRespawned` (caller)
 - Hub request DTOs (at bottom of GameHub.cs in `Veldrath.Server.Hubs` namespace): `EngageEnemyHubRequest(string LocationSlug, Guid EnemyId)`, `UseAbilityInCombatHubRequest(string AbilityId)`
 
 #### `Program.cs`
 - Added `builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();`
 
-### New/Modified Client Files
+### Client files — the SvelteKit shell, not a view model
 
-#### `GameViewModel.cs`
-- 8 combat state backing fields + public properties: `IsInCombat`, `IsPlayerDead`, `IsHardcoreDeath`, `CombatEnemyId`, `CombatEnemyName`, `CombatEnemyLevel`, `CombatEnemyCurrentHealth`, `CombatEnemyMaxHealth`
-- `ObservableCollection<string> EnemyAbilityNames`
-- `ObservableCollection<SpawnedEnemyItemViewModel> SpawnedEnemies`
-- 6 `ReactiveCommand` declarations + constructor initializations: `EngageEnemyCommand<Guid>`, `AttackEnemyCommand`, `DefendActionCommand`, `FleeFromCombatCommand`, `UseAbilityInCombatCommand<string>` (abilityId), `RespawnCommand`
-- Hub event handlers: `OnCombatStarted`, `OnCombatTurn`, `OnCombatEnded`, `OnEnemyDefeated(Guid)`, `OnEnemyEngaged(Guid, Guid, string)`, `OnEnemySpawned(Guid, string, int, int, int)`, `OnCharacterRespawned(int, int)`
-- Updated `OnLocationEntered(string, string, string, IReadOnlyList<SpawnedEnemyItemViewModel>? = null)` — populates `SpawnedEnemies`
-- Private `DoXxx` methods for each command (try/catch → `AppendLog` on error)
-- `SpawnedEnemyItemViewModel : ReactiveObject` class at end of file (Id, Name, Level, MaxHealth, CurrentHealth with `RaisePropertyChanged(IsAlive)`)
+> `GameViewModel.cs`, `CharacterSelectViewModel.cs` and `GameView.axaml`, which this section used to document,
+> were deleted with the Avalonia client in session-68 (2026-10-25) — see
+> [`work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md`](work-items/2026-10-25-desktop-client-deleted-veldrath-is-web-first-only.md).
 
-#### `CharacterSelectViewModel.cs`
-- 7 new subscription fields: `_combatStartedSub`, `_combatTurnSub`, `_combatEndedSub`, `_enemyDefeatedSub`, `_enemyEngagedSub`, `_enemySpawnedSub`, `_characterRespawnedSub`
-- Disposal for all 7 in the dispose block
-- 7 new event subscriptions (mapping payloads to `GameViewModel` handler methods)
-- Updated `LocationEnteredPayload` → now has `IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies`; maps to `SpawnedEnemyItemViewModel` in the `LocationEntered` callback
-- New payload records: `SpawnedEnemyEntry`, `CombatStartedPayload`, `CombatTurnPayload`, `CombatEndedPayload`, `EnemyDefeatedPayload(Guid CharacterId)`, `EnemyEngagedPayload(Guid CharacterId, Guid EnemyId, string EnemyName)`, `EnemySpawnedPayload`, `CharacterRespawnedPayload`
+#### `web/client/src/lib/game/session.svelte.ts`
+- Combat state: `combat` (`active`, `enemy`, `log`, `participants`, `outcome`), the current location's `enemies` roster, and `dead` for the death banner
+- `combat.enemy` carries `id`, `name`, `level`, `currentHealth`, `maxHealth`, `abilities`, `archetypeSlug`, `typeKey`, `tier`
+- Commands: `engageEnemy(enemyId)` → `EngageEnemy` (sent with the current `locationSlug`), `attack()` → `AttackEnemy`, `defend()` → `DefendAction`, `flee()` → `FleeFromCombat`, `useCombatAbility(abilityId)` → `UseAbilityInCombat`, `respawn()` → `Respawn`
+- Subscribers: `CombatStarted` (opens the panel and drops that enemy from `enemies`), `CombatParticipants` (the shared enemy-health and participant snapshot a party member's turn updates), `CombatTurn` (`applyCombatTurnToStats` + `describeCombatTurn`; on `playerDefeated` sets `dead` and applies the penalty, on `enemyDefeated` closes the fight and re-reads the bag when loot dropped), `CombatEnded` (keeps the summary the player's own turns earned; a `shared kill` closes cleanly), `EnemyDefeated` (log line), `CharacterRespawned` (clears `dead`, restores health/mana, moves the location and re-reads the map graph)
+- `LocationEntered` fills `enemies` from `spawnedEnemies` (`SpawnedEnemy { id, name, level, currentHealth, maxHealth }`), filtered so a fight resumed after a reconnect is not listed twice
+
+#### `web/client/src/lib/game/CombatPanel.svelte`
+- The combat UI: enemy portrait addressed by `archetypeSlug`, name/level/health, participants with their share, the enemy's ability list, the running log, the outcome summary, and the attack / defend / flee / ability buttons behind a `waiting` guard so a turn cannot be submitted twice
+
+#### `web/client/src/lib/game/GameScreen.svelte`
+- The location's enemy roster with an Engage button per enemy (`session.engageEnemy(enemy.id)`), the death banner with Respawn, and the disconnected panel — a kick is a dead session, not a dismissible banner
 
 ### Critical Implementation Notes
 
@@ -148,9 +196,9 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 | Phase | Task | Status |
 |---|---|---|
 | 8 | Tests — server combat handler unit tests | ✅ |
-| 8 | Tests — client GameViewModel combat command tests | ✅ |
-| 9 | `GameView.axaml` — combat panel UI (enemy roster, action buttons, death/respawn overlay) | ✅ |
-| Final | `dotnet test Veldrath.slnx --filter "Category!=UI"` | ✅ 525+491=1016 |
+| 8 | Tests — web combat state (`session.test.ts`, `combat-panel.test.ts`) | ✅ |
+| 9 | `CombatPanel.svelte`, plus the roster / death banner / disconnected panel in `GameScreen.svelte` | ✅ |
+| Final | `dotnet test Realm.Full.slnx` and `cd web && npm run test` | ✅ (the `Veldrath.slnx --filter "Category!=UI"` run retired with the client) |
 
 #### Phase 8 — Test Priorities
 - `EngageEnemyHubCommandHandlerTests`: guard (already in combat), enemy not found, enemy dead, success
@@ -159,14 +207,13 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 - `FleeFromCombatHubCommandHandlerTests`: 50% flee logic (seed RNG for determinism)
 - `UseAbilityInCombatHubCommandHandlerTests`: cooldown guard, mana guard, heal vs damage path
 - `RespawnHubCommandHandlerTests`: HC guard, alive guard, HP/mana restore, session cleared
-- `GameViewModelCombatTests`: `OnCombatStarted` sets state, `OnCombatTurn` updates HP + sets `IsPlayerDead`, `OnEnemySpawned` adds to collection
+- `web/client/src/lib/game/session.test.ts` combat cases: the fight opens on `CombatStarted`, a turn updates the enemy's health and keeps the whole log, `enemyDefeated` closes the fight, `playerDefeated` sets `dead`, and a reconnect does not duplicate the enemy being fought. The panel's own rendering is `combat-panel.test.ts`.
 
-#### Phase 9 — GameView.axaml Combat Panel
-Add below zone-location content:
-- Enemy roster `ItemsControl` bound to `SpawnedEnemies` — each item shows Name, Level, HP bar, Engage button (binds `EngageEnemyCommand` with enemy Id)
-- Combat HUD (visible when `IsInCombat`): enemy name+level+HP bar; Attack / Defend / Flee buttons; ability list (ItemsControl over `EnemyAbilityNames` with `UseAbilityInCombatCommand`)
-- Death overlay (visible when `IsPlayerDead && !IsHardcoreDeath`): "You have been defeated" + Respawn button
-- HC death overlay (visible when `IsHardcoreDeath`): "Your character has been permanently lost" + Return to menu button
+#### Phase 9 — Combat panel (web)
+Implemented as [`CombatPanel.svelte`](../../web/client/src/lib/game/CombatPanel.svelte), with the roster and the death banner in [`GameScreen.svelte`](../../web/client/src/lib/game/GameScreen.svelte):
+- The location's spawned enemies are listed with name, level and health, each with an Engage button
+- The panel (open while `combat.active`): enemy portrait and name/level/health, participants with their share, the enemy's ability list, the running log, the outcome summary — including the hardcore note on a permadeath — and the Attack / Defend / Flee buttons
+- A defeated player gets the death banner with a Respawn button; the server moves them to the zone's safe location and the shell re-reads the map graph
 
 ---
 
@@ -186,7 +233,7 @@ Add below zone-location content:
 - ZoneLocation: `ActorPool` JSON column (list of {ArchetypeSlug, Weight}); procedural fallback if empty.
 - ICombatSettings extracted from ISaveGameService; DifficultySettings implements it.
 - Rescue fund: per-zone (RescueFundTotal on Zone) + global (GlobalStat table).
-- Scope: Engine (Core/Shared/Data) + Veldrath (Server/Client/Contracts) ONLY.
+- Scope: Engine (Core/Shared/Data) + Veldrath (Server/Contracts) ONLY — `Veldrath.Client` was deleted in session-68 (2026-10-25); the client is the SvelteKit app in `web/`.
 
 ---
 

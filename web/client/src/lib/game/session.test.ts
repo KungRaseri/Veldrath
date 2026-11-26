@@ -872,7 +872,11 @@ describe('GameSession character and world events', () => {
 			{ method: 'GetParty', args: [] },
 			{ method: 'GetInventory', args: [] },
 			{ method: 'EnterZone', args: ['zone-1'] },
+			// The graph is read before the roster: the room the roster names is resolved to the node it stands on,
+			// which is where the resumed location's name and type come from.
 			{ method: 'GetMapGraph', args: [null] },
+			// The roster only ever arrives with a travel result, so a resume asks for the room it woke in.
+			{ method: 'GetLocationRoster', args: [] },
 			// A resumed character stands somewhere already, and the lists are only pushed on a move.
 			{ method: 'GetGroundItems', args: [] },
 			{ method: 'GetLocationNodes', args: [] },
@@ -914,6 +918,31 @@ describe('GameSession character and world events', () => {
 		expect(session.zone?.name).toBe('Aldenmere');
 		expect(session.occupants).toEqual(occupants);
 		expect(session.chat.at(-1)?.message).toBe('Entered Aldenmere.');
+	});
+
+	it('announces a zone entry once, then repaints a scope change inside the zone silently', async () => {
+		const session = await connected();
+		const arrivals = (): string[] =>
+			session.chat
+				.filter((entry: ChatMessage) => entry.message.startsWith('Entered '))
+				.map((entry: ChatMessage) => entry.message);
+
+		hub.emit('ZoneEntered', zone({ id: 'the-droveway', name: 'The Droveway' }));
+		expect(arrivals()).toEqual(['Entered The Droveway.']);
+
+		// A scope change inside one zone sends another snapshot — it carries the roster of the run the
+		// player just stepped into, but they never left the zone, so the walk's own "Travelled to …"
+		// line stays the only arrival.
+		const occupants = [{ characterId: 'c9', characterName: 'Rook', enteredAt: 'now' }];
+		hub.emit('ZoneEntered', zone({ id: 'the-droveway', name: 'The Droveway', occupants }));
+
+		expect(session.occupants).toEqual(occupants);
+		expect(session.zone?.name).toBe('The Droveway');
+		expect(arrivals()).toEqual(['Entered The Droveway.']);
+
+		// Crossing into another zone is still an arrival, even after a same-zone snapshot.
+		hub.emit('ZoneEntered', zone({ id: 'rootbound-cellars', name: 'Rootbound Cellars' }));
+		expect(arrivals()).toEqual(['Entered The Droveway.', 'Entered Rootbound Cellars.']);
 	});
 
 	it('adds arriving players once and removes leaving players', async () => {
@@ -1323,13 +1352,73 @@ describe('GameSession combat', () => {
 				level: 2,
 				currentHealth: 30,
 				maxHealth: 30,
-				abilities: ['bite']
+				abilities: ['bite'],
+				archetypeSlug: null,
+				typeKey: null,
+				tier: 'regular'
 			},
 			log: ['Combat started: Grey Wolf (level 2).'],
 			participants: [],
 			outcome: null
 		});
 		expect(session.enemies.map((entry) => entry.id)).toEqual(['boar']);
+	});
+
+	it('keeps the archetype slug, type key and the tier frame the server sent', async () => {
+		const session = await connected();
+
+		hub.emit(
+			'CombatStarted',
+			combatStarted({
+				enemyName: 'Barrow Wolf',
+				enemyArchetypeSlug: 'barrow-wolf',
+				enemyArchetypeTypeKey: 'beasts',
+				enemyTier: 'boss'
+			})
+		);
+
+		expect(session.combat.enemy?.archetypeSlug).toBe('barrow-wolf');
+		expect(session.combat.enemy?.typeKey).toBe('beasts');
+		expect(session.combat.enemy?.tier).toBe('boss');
+	});
+
+	it('upgrades a townspeople enemy to the plate tier from its content type', async () => {
+		const session = await connected();
+
+		hub.emit(
+			'CombatStarted',
+			combatStarted({
+				enemyName: 'Village Blacksmith',
+				enemyArchetypeSlug: 'village-blacksmith',
+				enemyArchetypeTypeKey: 'townspeople',
+				enemyTier: 'regular'
+			})
+		);
+
+		expect(session.combat.enemy?.typeKey).toBe('townspeople');
+		expect(session.combat.enemy?.tier).toBe('townsfolk');
+	});
+
+	it('adopts the slug, type key and tier again from the shared snapshot', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		hub.emit('CombatParticipants', {
+			enemyId: 'wolf',
+			enemyName: 'Grey Wolf',
+			enemyArchetypeSlug: 'barrow-wolf',
+			enemyArchetypeTypeKey: 'undead',
+			enemyTier: 'elite',
+			enemyLevel: 2,
+			enemyCurrentHealth: 12,
+			enemyMaxHealth: 30,
+			enemyAbilityNames: ['bite'],
+			participants: []
+		});
+
+		expect(session.combat.enemy?.archetypeSlug).toBe('barrow-wolf');
+		expect(session.combat.enemy?.typeKey).toBe('undead');
+		expect(session.combat.enemy?.tier).toBe('elite');
 	});
 
 	it('adopts the shared snapshot: enemy health, attendees and their shares', async () => {
@@ -1443,6 +1532,25 @@ describe('GameSession combat', () => {
 		expect(session.dead).toBe(true);
 	});
 
+	it('closes the fight when the server says the death ended it', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		hub.emit('CombatTurn', {
+			action: 'attack',
+			playerRemainingHealth: 0,
+			playerDefeated: true,
+			goldLost: 3
+		});
+		hub.emit('CombatEnded', { characterId: 'char-1', reason: 'defeated' });
+
+		// The death is what ends the fight, so the panel must go away — otherwise the map never renders again.
+		expect(session.combat.active).toBe(false);
+		expect(session.combat.outcome?.kind).toBe('defeat');
+		// The turn's own loss figures survive the confirmation: `CombatEnded` must not rewrite them as a flee.
+		expect(session.combat.outcome?.goldLost).toBe(3);
+	});
+
 	it('mirrors the death penalty the server reports', async () => {
 		const session = await playing();
 		session.stats = { ...session.stats, gold: 50, experience: 200 };
@@ -1464,6 +1572,14 @@ describe('GameSession combat', () => {
 	it('moves the character to the respawn location the server reports', async () => {
 		const session = await playing();
 		session.dead = true;
+		session.stats = {
+			...session.stats,
+			currentHealth: 0,
+			maxHealth: 120,
+			currentMana: 0,
+			maxMana: 40
+		};
+		hub.emit('CombatStarted', combatStarted());
 
 		hub.emit('CharacterRespawned', {
 			characterId: 'char-1',
@@ -1476,6 +1592,11 @@ describe('GameSession combat', () => {
 
 		expect(session.dead).toBe(false);
 		expect(session.location?.locationSlug).toBe('inn');
+		// The respawn restored the bar server-side, so the sheet has to show that rather than the death's 0 HP.
+		expect(session.stats.currentHealth).toBe(25);
+		expect(session.stats.currentMana).toBe(40);
+		// The server has already removed the combat session; a panel for the lost fight would cover the map.
+		expect(session.combat.active).toBe(false);
 		expect(session.chat.at(-1)?.message).toContain('respawned at The Grey Cup');
 		expect(session.chat.at(-1)?.message).toContain('weakened');
 	});
@@ -1492,6 +1613,25 @@ describe('GameSession combat', () => {
 		expect(session.combat.outcome?.kind).toBe('fled');
 		expect(session.combat.log.at(-1)).toBe('Combat ended: Fled.');
 		expect(session.chat.at(-1)?.message).toBe('Combat ended: Fled.');
+	});
+
+	it('closes a fight another character finished without calling it a death', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		// The player spent the fight defending, so their own turn carries no summary and the character is alive.
+		hub.emit('CombatTurn', { action: 'defend', enemyDamage: 9, playerRemainingHealth: 21 });
+		hub.emit('CombatEnded', { characterId: 'char-1', reason: 'shared kill' });
+
+		// The server released this character's session because someone else landed the killing blow on the shared
+		// enemy. The panel has to close — and the character was neither victorious nor defeated, so the summary
+		// must stay empty rather than claim a death with no losses behind it.
+		expect(session.combat.active).toBe(false);
+		expect(session.dead).toBe(false);
+		expect(session.combat.outcome).toBeNull();
+		expect(session.combat.enemy?.name).toBe('Grey Wolf');
+		expect(session.combat.log.at(-1)).toBe('Combat ended: shared kill.');
+		expect(session.chat.at(-1)?.message).toBe('Combat ended: shared kill.');
 	});
 
 	it('marks death from damage and clears it on respawn', async () => {
@@ -1517,13 +1657,46 @@ describe('GameSession progression and economy', () => {
 	it('updates level and experience, announcing level ups', async () => {
 		const session = await connected();
 
-		hub.emit('ExperienceGained', { newLevel: 3, newXP: 280, leveledUp: false, leveledUpTo: 0 });
+		hub.emit('ExperienceGained', {
+			newLevel: 3,
+			newExperience: 280,
+			leveledUp: false,
+			leveledUpTo: 0
+		});
 		expect(session.stats).toMatchObject({ level: 3, experience: 280 });
 		expect(session.chat).toEqual([]);
 
-		hub.emit('ExperienceGained', { newLevel: 4, newXP: 10, leveledUp: true, leveledUpTo: 4 });
+		hub.emit('ExperienceGained', {
+			newLevel: 4,
+			newExperience: 10,
+			leveledUp: true,
+			leveledUpTo: 4
+		});
 		expect(session.stats.level).toBe(4);
 		expect(session.chat.at(-1)?.message).toBe('Level up! You are now level 4.');
+	});
+
+	it('takes the re-derived pools from a level-up so the bar moves with the level', async () => {
+		const session = await connected();
+
+		hub.emit('ExperienceGained', {
+			newLevel: 4,
+			newExperience: 10,
+			leveledUp: true,
+			leveledUpTo: 4,
+			maxHealth: 150,
+			currentHealth: 120,
+			maxMana: 60,
+			currentMana: 40
+		});
+
+		expect(session.stats).toMatchObject({
+			level: 4,
+			maxHealth: 150,
+			currentHealth: 120,
+			maxMana: 60,
+			currentMana: 40
+		});
 	});
 
 	it('tracks gold from every gold-changing event', async () => {
@@ -1539,6 +1712,50 @@ describe('GameSession progression and economy', () => {
 		hub.emit('ItemSold', { itemRef: 'dagger', goldReceived: 12, newGoldTotal: 52 });
 		expect(session.stats.gold).toBe(52);
 		expect(session.chat.at(-1)?.message).toBe('Sold dagger for 12 gold.');
+	});
+
+	it('advances the gold stat when a chest or a dialogue choice pays out server-side', async () => {
+		const session = await connected();
+
+		// Chest gold and dialogue gold are paid by the server, which announces GoldChanged with its own
+		// total; the reward event itself carries the loot, not the purse. That is what used to leave
+		// stats.gold stale until a reload.
+		hub.emit('ChestOpened', {
+			success: true,
+			chestId: 'chest-1',
+			displayName: 'Mossy Strongbox',
+			items: [],
+			gold: 12,
+			message: 'Opened the Mossy Strongbox: and 12 gold.',
+			remainingChests: []
+		});
+		expect(session.stats.gold).toBe(0);
+
+		hub.emit('GoldChanged', {
+			characterId: 'char-1',
+			goldAdded: 12,
+			newGoldTotal: 59,
+			source: 'Chest'
+		});
+		expect(session.stats.gold).toBe(59);
+
+		hub.emit('NpcOptionChosen', {
+			success: true,
+			speakerSlug: 'village-blacksmith',
+			displayName: 'Mira',
+			response: 'Take it, and mind the edge.',
+			applied: ['25 gold'],
+			next: null,
+			ended: true
+		});
+		hub.emit('GoldChanged', {
+			characterId: 'char-1',
+			goldAdded: 25,
+			newGoldTotal: 84,
+			source: 'Dialogue:village-blacksmith'
+		});
+
+		expect(session.stats.gold).toBe(84);
 	});
 
 	it('updates unspent attribute points and mirrors the allocated attributes', async () => {
@@ -1774,6 +1991,26 @@ describe('GameSession progression and economy', () => {
 		expect(session.questTurnInToast).toBeNull();
 	});
 
+	it('moves the gold stat on the turn-in announcement, not on the reward toast', async () => {
+		const session = await connected();
+
+		// The reward event names what was earned for the toast; the purse moves on GoldChanged, which the
+		// server sends from its own post-payment total. Without the second event stats.gold stayed at
+		// whatever CharacterSelected seeded until the next character load.
+		hub.emit('QuestTurnedIn', { slug: 'rats', goldReward: 25, xpReward: 150, quests: [] });
+		expect(session.stats.gold).toBe(0);
+		expect(session.questTurnInToast).toEqual({ slug: 'rats', gold: 25, xp: 150 });
+
+		hub.emit('GoldChanged', {
+			characterId: 'char-1',
+			goldAdded: 25,
+			newGoldTotal: 84,
+			source: 'Quest:rats'
+		});
+
+		expect(session.stats.gold).toBe(84);
+	});
+
 	it('records a turned-in quest and announces the rewards', async () => {
 		const session = await connected();
 
@@ -1929,5 +2166,105 @@ describe('GameSession moderation and staff broadcasts', () => {
 		expect(session.zone).toBeNull();
 		expect(session.occupants).toEqual([]);
 		expect(session.chat.at(-1)?.message).toBe('You left the zone.');
+	});
+});
+
+describe('conversations', () => {
+	const dialogue = {
+		speakerSlug: 'wayfarer-elder',
+		displayName: 'Wayfarer Elder',
+		occupation: 'townspeople',
+		entrySlug: 'elder-greeting',
+		prompt: 'The wood remembers.',
+		hasConversation: true,
+		options: [
+			{
+				key: 'ask-about-woods',
+				label: 'What happened in the wood?',
+				enabled: true,
+				blockedReason: null,
+				consequences: ['25 gold']
+			}
+		]
+	};
+
+	it('greets and then reads the conversation behind it', async () => {
+		const session = await connected();
+
+		await session.startConversation('wayfarer-elder');
+
+		expect(hub.invocations.slice(-2)).toEqual([
+			{ method: 'TalkToNpc', args: ['wayfarer-elder'] },
+			{ method: 'GetNpcDialogue', args: [{ npcSlug: 'wayfarer-elder', entrySlug: null }] }
+		]);
+	});
+
+	it('opens the panel when the conversation arrives and closes it on request', async () => {
+		const session = await connected();
+
+		hub.emit('NpcDialogue', dialogue);
+		expect(session.dialogue?.speakerSlug).toBe('wayfarer-elder');
+
+		session.closeDialogue();
+		expect(session.dialogue).toBeNull();
+	});
+
+	it('takes a choice in the open conversation', async () => {
+		const session = await connected();
+		hub.emit('NpcDialogue', dialogue);
+
+		await session.chooseNpcOption('ask-about-woods');
+
+		expect(hub.invocations.at(-1)).toEqual({
+			method: 'ChooseNpcOption',
+			args: [
+				{ npcSlug: 'wayfarer-elder', optionKey: 'ask-about-woods', entrySlug: 'elder-greeting' }
+			]
+		});
+		expect(session.dialogueBusy).toBeNull();
+	});
+
+	it('does nothing when no conversation is open', async () => {
+		const session = await connected();
+
+		await session.chooseNpcOption('ask-about-woods');
+
+		expect(hub.invocations.some((call) => call.method === 'ChooseNpcOption')).toBe(false);
+	});
+
+	it('logs the reply and what it changed, then closes when the option ends the conversation', async () => {
+		const session = await connected();
+		hub.emit('NpcDialogue', dialogue);
+
+		hub.emit('NpcOptionChosen', {
+			success: true,
+			speakerSlug: 'wayfarer-elder',
+			displayName: 'Wayfarer Elder',
+			response: 'Mind the mist.',
+			applied: ['25 gold'],
+			next: null,
+			ended: true
+		});
+
+		expect(session.dialogue).toBeNull();
+		expect(session.chat.at(-2)?.message).toBe('Wayfarer Elder: “Mind the mist.”');
+		expect(session.chat.at(-1)?.message).toBe('25 gold');
+	});
+
+	it('continues into the next entry instead of closing', async () => {
+		const session = await connected();
+		hub.emit('NpcDialogue', dialogue);
+
+		hub.emit('NpcOptionChosen', {
+			success: true,
+			speakerSlug: 'wayfarer-elder',
+			displayName: 'Wayfarer Elder',
+			response: 'Ask away.',
+			applied: [],
+			next: { ...dialogue, entrySlug: 'elder-follow-up', prompt: 'Ask away.' },
+			ended: false
+		});
+
+		expect(session.dialogue?.entrySlug).toBe('elder-follow-up');
 	});
 });

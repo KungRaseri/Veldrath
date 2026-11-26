@@ -1,0 +1,149 @@
+# Content pack — enemy drop tables for budget band b1-3 (levels 1-3).
+#
+# family: loottable. One table per hostile archetype; the archetype names it in LootTableId,
+# so the slug is `<archetype>-drops` except where a seeded table already owns the archetype's
+# drop identity (goblin-common-drops, wolf-common-drops) — those keep their slug and are
+# re-authored here so the pack, not the insert-only seeder, is the authoring surface.
+#
+# Band b1-3 (game-context/budget.yaml): gold [1, 15], drop_chance [0.30, 0.60].
+# Weight semantics: loot.weight_semantics — each row rolls independently against the table
+# total. Every table here sums to 100, so DropWeight reads as that row's landing probability.
+# Every non-guaranteed row lands with 0.30 <= p <= 0.60: inside the band, ceiling not exceeded.
+# No guaranteed row anywhere in this file: loot.guaranteed_rows says a guaranteed row still
+# counts in the denominator, and nothing in the design says a b1-3 kill always yields something.
+# Item ceiling: 45 gold = 3 x the band's gold max, so no single drop out-values three kills.
+# The dearest thing b1-3 may drop is therefore a rune or a hunter's bow, and neither appears here.
+
+family: loottable
+entities:
+  - slug: giant-rat-drops
+    # band: b1-3 — giant-rat, roster band 1-3; spawns at drove-road (L1-4), sunken-fields (L2-4)
+    # Why: it eats what the droves spill and gnaws what the carts lose. Mushrooms off the refuse,
+    # scrap iron off a chewed buckle, and the vial it swallowed whole.
+    typeKey: enemies
+    displayName: Giant Rat Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: glowcap-mushroom
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: goblin-common-drops
+    # band: b1-3 — goblin-scout, roster band 1-3; spawns at drove-road (L1-4), wood-road (L1-5),
+    # old-clearing (L2-5). Seeded slug, kept: a slug is permanent identity.
+    # Seeded weights were 60/40. 0.60 sits exactly on the b1-3 ceiling and leaves no room for the
+    # band's own taper, so they are 55/45 here — same two items, nothing added, nothing removed.
+    typeKey: enemies
+    displayName: Goblin Common Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 55
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 45
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+
+  - slug: drove-cur-drops
+    # band: b1-3 — drove-cur, roster band 1-3; spawns at drove-road (L1-4), sunken-fields (L2-4)
+    # Why: a feral dog of the dry-stone walls that takes the weakest animal out of a drove. What it
+    # was carrying is what it took — fodder root, a buckle off a harness, a healer's kit from a pack.
+    typeKey: enemies
+    displayName: Drove Cur Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: peat-adder-drops
+    # band: b1-3 — peat-adder, roster band 1-3; spawns at drove-road (L1-4), sunken-fields (L2-4),
+    # mire-crossing (L3-6)
+    # Why: the venom striker. An antidote off a snake is the drop a player learns to expect, and it
+    # is the one that teaches them the fight before it kills them.
+    typeKey: enemies
+    displayName: Peat Adder Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: glowcap-mushroom
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: antidote
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false

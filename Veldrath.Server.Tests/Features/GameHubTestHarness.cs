@@ -8,6 +8,7 @@ using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
 using Veldrath.Server.Settings;
@@ -260,6 +261,15 @@ internal static class HubHarness
     /// <param name="moderation">Moderation options.</param>
     /// <param name="connectionId">Caller connection id.</param>
     /// <param name="permissions">Permission claims granted to the caller.</param>
+    /// <param name="locations">Zone-location catalog, so a test can make a location instanced or a lobby safe.</param>
+    /// <param name="lobbies">
+    /// Zone lobby resolver the hub asks where a swept run's character wakes; one over <paramref name="locations"/>
+    /// and the test's own unlock rows when omitted.
+    /// </param>
+    /// <param name="zoneInstances">
+    /// Run service the hub talks to; the real one over <paramref name="db"/> when omitted, so a test can either
+    /// observe the run's rows or a mock's invocations.
+    /// </param>
     /// <returns>The hub and the fakes around it.</returns>
     public static (
         GameHub Hub,
@@ -280,6 +290,9 @@ internal static class HubHarness
         IRandomSource? random = null,
         ModerationOptions? moderation = null,
         string connectionId = "conn-1",
+        IZoneLocationRepository? locations = null,
+        IZoneLobbyResolver? lobbies = null,
+        Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         params string[] permissions)
     {
         var sender = mediator ?? new Mock<ISender>();
@@ -301,13 +314,17 @@ internal static class HubHarness
             afkTracker,
             sessions ?? new FakeCombatSessionStore(),
             enemies ?? new FakeEnemyInstanceStore(),
-            new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
+            zoneInstances ?? new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
                 db,
                 new CharacterRepository(db),
                 new CharacterUnlockedLocationRepository(db),
-                new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
+                locations ?? new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
                 NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
-            random);
+            random,
+            locations,
+            lobbies ?? new ZoneLobbyResolver(
+                locations ?? new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
+                new CharacterUnlockedLocationRepository(db)));
 
         var clients = new RecordingHubClients();
         var groups = new FakeGroupManager();
@@ -326,16 +343,24 @@ internal static class HubHarness
     /// <param name="characterName">Selected character name.</param>
     /// <param name="zoneId">Current zone id.</param>
     /// <param name="zoneGroup">Current zone SignalR group name.</param>
+    /// <param name="currentMapId">
+    /// Map the connection stands on, which <see cref="GameHub.EnterZone"/> records beside the group. Left unset when
+    /// <see langword="null"/>, so a test has to opt in to the invariant that the group names the map.
+    /// </param>
     public static void EnterZoneState(
         this FakeHubCallerContext ctx,
         Guid characterId,
         string characterName = "Tester",
         string zoneId = "crestfall",
-        string zoneGroup = "zone:crestfall")
+        string zoneGroup = "zone:crestfall",
+        string? currentMapId = null)
     {
         ctx.Items["CharacterId"] = characterId;
         ctx.Items["CharacterName"] = characterName;
         ctx.Items["CurrentZoneId"] = zoneId;
         ctx.Items["CurrentZoneGroupName"] = zoneGroup;
+
+        if (currentMapId is not null)
+            ctx.Items["CurrentMapId"] = currentMapId;
     }
 }

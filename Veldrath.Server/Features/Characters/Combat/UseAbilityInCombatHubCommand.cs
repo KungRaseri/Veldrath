@@ -48,11 +48,15 @@ public record UseAbilityInCombatHubResult
     /// <summary>Gets the remaining HP of the enemy after the ability (if it dealt damage).</summary>
     public int EnemyRemainingHealth { get; init; }
 
-    /// <summary>Gets whether the enemy was defeated by this ability.</summary>
+    /// <summary>Gets whether this turn left the enemy dead. On a shared fight another caller's blow may be the one
+    /// that killed it; either way this caller's fight is over.</summary>
     public bool EnemyDefeated { get; init; }
 
-    /// <summary>Gets the enemy's display name, used to advance kill objectives.</summary>
+    /// <summary>Gets the enemy's display name, used to advance legacy kill objectives.</summary>
     public string? EnemyName { get; init; }
+
+    /// <summary>Gets the archetype slug of the defeated enemy, used to advance kill objectives by slug.</summary>
+    public string? EnemyArchetypeSlug { get; init; }
 
     /// <summary>Gets the damage dealt by the enemy counter-attack (zero if enemy was defeated).</summary>
     public int EnemyDamage { get; init; }
@@ -80,6 +84,66 @@ public record UseAbilityInCombatHubResult
 
     /// <summary>Gets the gold awarded to this player when the enemy was defeated.</summary>
     public int GoldEarned { get; init; }
+
+    /// <summary>
+    /// Gets the level and pool state this player's share of the kill left them at, or <see langword="null"/> when
+    /// the turn paid no experience (or the caller was not credited with the kill).
+    /// </summary>
+    public CombatProgression? Progression { get; init; }
+
+    /// <summary>
+    /// Gets every character credited with the kill — the caster and every other participant of the shared fight,
+    /// including a party member who joined it but never landed a hit. Empty unless this caller won the death
+    /// transition.
+    /// </summary>
+    /// <remarks>
+    /// This is the credited-participant set, not the released-session set (<see cref="ReleasedCombatCharacterIds"/>),
+    /// which also holds a defender who has a fight pointed at the enemy but never engaged it. The hub advances the
+    /// kill objective once per id here, so a shared kill credits the same characters an ability or a melee blow
+    /// landed. A participant who never acted earns no XP or gold — only the progress.
+    /// <para>
+    /// One kill credits its participants once. The set is read by the store's death transition, so only the caller
+    /// that won it reports ids; a caller whose stale copy also saw the enemy die reports none, because the winner
+    /// already credited everyone.
+    /// </para>
+    /// </remarks>
+    public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
+
+    /// <summary>
+    /// Gets every character whose combat session this kill released — the caster and anyone else engaged with the
+    /// same enemy, including a defender who never landed a hit. Empty unless this caller won the death transition.
+    /// </summary>
+    /// <remarks>
+    /// The enemy row is shared, so killing it ends every fight pointed at it, not only this one. The hub sends
+    /// each of these characters a <c>CombatEnded</c>; without that they keep a panel for a fight the server has
+    /// already dropped and their next action is answered "Not in combat".
+    /// </remarks>
+    public IReadOnlyList<Guid> ReleasedCombatCharacterIds { get; init; } = [];
+
+    /// <summary>Gets the run whose room this kill cleared, or <see langword="null"/> when it cleared nothing.</summary>
+    public Guid? ClearedInstanceId { get; init; }
+
+    /// <summary>Gets the room slug that was cleared, or <see langword="null"/>.</summary>
+    public string? ClearedLocationSlug { get; init; }
+
+    /// <summary>Gets whether this kill is what cleared the room in this run.</summary>
+    public bool FirstClearOfRun { get; init; }
+
+    /// <summary>Gets whether this is the first time this character has ever cleared the room.</summary>
+    public bool FirstClearForCharacter { get; init; }
+
+    /// <summary>Gets the hidden locations this clear unlocked for the character.</summary>
+    public IReadOnlyList<string> UnlockedLocationSlugs { get; init; } = [];
+
+    /// <summary>
+    /// Gets what the defeated enemy dropped into the caster's bag. Empty when the archetype names no loot table or
+    /// nothing rolled, which is the normal case for most kills.
+    /// </summary>
+    /// <remarks>
+    /// An ability that lands the killing blow rolls the archetype's table exactly as a melee blow does — both go
+    /// through <see cref="CombatHelpers.RollLootAsync"/> — so a fireball kill is worth what a sword kill is worth.
+    /// </remarks>
+    public IReadOnlyList<CombatLootDrop> ItemsDropped { get; init; } = [];
 }
 
 /// <summary>
@@ -94,35 +158,49 @@ public class UseAbilityInCombatHubCommandHandler
     private const int FallbackHealingAmount = 20;
 
     private readonly ICharacterRepository _characterRepo;
+    private readonly ICharacterClassRepository _classRepo;
     private readonly IPowerRepository _powerRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
+    private readonly Veldrath.Server.Features.Zones.IZoneInstanceService _instances;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<UseAbilityInCombatHubCommandHandler> _logger;
+    private readonly ILootTableRepository _lootTables;
     private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="classRepo">
+    /// Catalogue repository used to resolve the caster's class curve when a reward crosses a level.
+    /// </param>
     /// <param name="powerRepo">Repository for resolving ability costs and effects from the content database.</param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
+    /// <param name="instances">Instance-run service, used to record a cleared room.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
+    /// <param name="lootTables">Loot-table catalog, rolled when the ability lands the killing blow.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public UseAbilityInCombatHubCommandHandler(
         ICharacterRepository characterRepo,
+        ICharacterClassRepository classRepo,
         IPowerRepository powerRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
+        Veldrath.Server.Features.Zones.IZoneInstanceService instances,
         IOptions<DeathPenaltyOptions> penalty,
+        ILootTableRepository lootTables,
         ILogger<UseAbilityInCombatHubCommandHandler> logger,
         IRandomSource? randomSource = null)
     {
         _characterRepo = characterRepo;
+        _classRepo = classRepo;
         _powerRepo = powerRepo;
         _enemies = enemies;
         _sessions = sessions;
+        _instances = instances;
         _penalty = penalty;
+        _lootTables = lootTables;
         _logger = logger;
         _random = randomSource ?? SystemRandomSource.Shared;
     }
@@ -244,14 +322,14 @@ public class UseAbilityInCombatHubCommandHandler
             entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
             await _characterRepo.UpdateAsync(entity, cancellationToken);
 
-            (Guid CharacterId, int Xp, int Gold) myReward = default;
-
-            // Only the caller that wins the death transition distributes rewards.
-            if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
-            {
-                var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
-                myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
-            }
+            // One kill, settled once, through the same helper a melee blow uses: the caller that wins the death
+            // transition credits the participants, pays the rewards, rolls the loot and records the room clear.
+            // A caller holding a stale copy — this enemy row is shared and each read materialises its own view —
+            // still ends its own fight, but takes none of it. Crediting the participants from both callers was what
+            // advanced every one of their kill objectives twice for a single kill.
+            var settlement = await CombatHelpers.SettleKillAsync(
+                enemy, entity, request.CharacterId, _enemies, _characterRepo, _classRepo, _sessions,
+                _lootTables, _instances, _random, cancellationToken, _logger);
 
             return new UseAbilityInCombatHubResult
             {
@@ -263,9 +341,19 @@ public class UseAbilityInCombatHubCommandHandler
                 EnemyRemainingHealth = 0,
                 EnemyDefeated = true,
                 EnemyName = enemy.Name,
+                EnemyArchetypeSlug = enemy.ArchetypeSlug,
                 PlayerRemainingHealth = player.Health,
-                XpEarned = myReward.Xp,
-                GoldEarned = myReward.Gold,
+                XpEarned = settlement.Reward?.Xp ?? 0,
+                GoldEarned = settlement.Reward?.Gold ?? 0,
+                Progression = settlement.Reward?.Progression,
+                ParticipantIds = settlement.ParticipantIds,
+                ReleasedCombatCharacterIds = settlement.ReleasedCombatCharacterIds,
+                ClearedInstanceId = settlement.Clear?.InstanceId,
+                ClearedLocationSlug = settlement.Clear?.LocationSlug,
+                FirstClearOfRun = settlement.Clear?.FirstClearOfRun ?? false,
+                FirstClearForCharacter = settlement.Clear?.FirstClearForCharacter ?? false,
+                UnlockedLocationSlugs = settlement.Clear?.UnlockedLocationSlugs ?? [],
+                ItemsDropped = settlement.ItemsDropped,
             };
         }
 

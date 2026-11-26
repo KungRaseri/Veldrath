@@ -343,13 +343,13 @@ describe('attribute allocation', () => {
 		render(GameOverlays, { session: game });
 
 		const dialog = screen.getByRole('dialog', { name: 'Attributes' });
-		await fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Wisdom' }));
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Intelligence' }));
 		expect(within(dialog).getByText('+1')).toBeTruthy();
-		await fireEvent.click(within(dialog).getByRole('button', { name: 'Decrease Wisdom' }));
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Decrease Intelligence' }));
 
 		expect(within(dialog).queryByText('+1')).toBeNull();
 		expect(
-			(within(dialog).getByRole('button', { name: 'Decrease Wisdom' }) as HTMLButtonElement)
+			(within(dialog).getByRole('button', { name: 'Decrease Intelligence' }) as HTMLButtonElement)
 				.disabled
 		).toBe(true);
 	});
@@ -441,6 +441,29 @@ describe('item details', () => {
 		expect(use).toHaveBeenCalledWith('item-1');
 		expect(unequip).toHaveBeenCalledWith('');
 		expect(within(dialog).queryByRole('button', { name: /Sell/ })).toBeNull();
+	});
+
+	it('disables Use while the character is dead, even out of combat', () => {
+		const game = session();
+		game.zone = null;
+		game.dead = true;
+		game.combat = { active: false, enemy: null, log: [] };
+		game.inspectedItem = item({
+			slot: null,
+			isEquipped: false,
+			effect: 'heal',
+			effectPower: 40,
+			durability: null,
+			damageMin: null,
+			damageMax: null
+		});
+		render(GameOverlays, { session: game });
+
+		// Death now ends the fight, so `dead && !combat.active` is the normal post-death state; the
+		// dialog's Use must not stay live there or a dead character heals and Respawn refuses them.
+		const dialog = screen.getByRole('dialog', { name: 'Ember blade' });
+		const useButton = within(dialog).getByRole('button', { name: /Use/ }) as HTMLButtonElement;
+		expect(useButton.disabled).toBe(true);
 	});
 
 	it('shows neither Use nor Equip for a plain material', () => {

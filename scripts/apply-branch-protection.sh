@@ -64,6 +64,13 @@ STATUS_CONTEXTS="${STATUS_CONTEXTS:-}"
 [ -n "${STATUS_CONTEXTS}" ] || STATUS_CONTEXTS='["*"]'
 PUSH_BYPASS_USERS="${PUSH_BYPASS_USERS-kungraseri}"
 
+# The approval policy is one required approving review from an account that is
+# not the author's, on both rules. The number lives in one constant because
+# rule_body() and expected_substrings() must never disagree: a payload asking
+# for 1 verified against an expectation of 0 is exactly the drift this script
+# exists to catch.
+REQUIRED_APPROVALS=1
+
 # PUSH_BYPASS_JSON is the JSON array the rule stores, e.g. ["kungraseri"].
 PUSH_BYPASS_JSON='[]'
 if [ -n "${PUSH_BYPASS_USERS}" ]; then
@@ -118,7 +125,7 @@ rule_body() {
 ${push_fields}
   "enable_status_check": true,
   "status_check_contexts": ${STATUS_CONTEXTS},
-  "required_approvals": 0,
+  "required_approvals": ${REQUIRED_APPROVALS},
   "apply_to_admins": false,
   "block_on_outdated_branch": false,
   "block_on_rejected_reviews": false,
@@ -145,7 +152,7 @@ expected_substrings() {
 "rule_name":"${branch}"
 "enable_status_check":true
 "status_check_contexts":$(printf '%s' "${STATUS_CONTEXTS}" | tr -d ' \n\r\t')
-"required_approvals":0
+"required_approvals":${REQUIRED_APPROVALS}
 "apply_to_admins":false
 "push_whitelist_teams":[]
 "push_whitelist_deploy_keys":false
@@ -172,11 +179,22 @@ push_summary() {
 }
 
 verify_rule() {
-    local branch="$1" body missing=0 needed
+    local branch="$1" body missing=0 needed approval_field
+    approval_field="\"required_approvals\":${REQUIRED_APPROVALS}"
     body="$(forgejo_get "/repos/${FORGEJO_REPOSITORY}/branch_protections/${branch}" | tr -d ' \n\r\t')"
 
     while IFS= read -r needed; do
         [ -n "${needed}" ] || continue
+        if [ "${needed}" = "${approval_field}" ]; then
+            # The count is the policy only when the JSON value ends there: the
+            # read-back is compacted above, so a real value is followed by `,`
+            # or `}`. A plain substring match would also accept 10.
+            if ! printf '%s' "${body}" | grep -Eq "${approval_field}[,}]"; then
+                echo "  MISSING ${needed}" >&2
+                missing=1
+            fi
+            continue
+        fi
         if ! printf '%s' "${body}" | grep -Fq "${needed}"; then
             echo "  MISSING ${needed}" >&2
             missing=1

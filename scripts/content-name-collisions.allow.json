@@ -1,0 +1,19 @@
+{
+	"$comment": [
+		"Pairs that are deliberately similar, read by scripts/check-content-names.mjs.",
+		"Each entry is a decision someone wrote down: the reason is mandatory and the check refuses a",
+		"placeholder. An entry only silences the pair it names — everything else still fails, and the",
+		"check prints every allowlisted pair with its reason on each run. An entry that no longer",
+		"matches a live collision is reported as STALE; delete it then, because a leftover permit would",
+		"silently cover a name that comes back later.",
+		"A rename note does not need an entry: a bold name inside one is read as a citation of a past",
+		"state and is never compared, which is why F2's three permits were deleted rather than scoped."
+	],
+	"allow": [
+		{
+			"names": ["Draekeld", "Drakeld"],
+			"reason": "D5 recorded Drakeld as the root dictionary's example compound for drak (stone), not an attested name or place, and declined to block; revisit if it is ever attested as a name.",
+			"ticket": "t_d805cdf4"
+		}
+	]
+}

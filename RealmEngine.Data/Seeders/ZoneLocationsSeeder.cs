@@ -25,7 +25,7 @@ public static class ZoneLocationsSeeder
         if (missing.Count == 0) return;
 
         // The pools are declared apart from the locations so the whole encounter map reads as one table. A location
-        // that is not listed here spawns nothing on purpose: towns, inns, markets and the SafeRespawn lobbies.
+        // absent here gets no pool on purpose: towns, inns, markets, SafeRespawn lobbies. A placed `ActorInstance` still spawns.
         foreach (var location in missing)
             if (SpawnPools.TryGetValue(location.Slug, out var pool))
                 location.ActorPool = [.. pool];
@@ -44,8 +44,11 @@ public static class ZoneLocationsSeeder
     /// that names a level 3 goblin on a level 26 map is worse than no pool at all.
     /// </para>
     /// <para>
-    /// A pool is the only placement mechanism in the game — every entry becomes an attackable enemy — so NPCs are
-    /// never listed. <c>playground-clearing</c> is the dev-only fixture the end-to-end specs fight in.
+    /// Pools are one of the ways an actor is placed at a location, not the only one: a named <c>ActorInstance</c>
+    /// placed here is spawned once before any pool draw, so an actor can stand here without being in the pool;
+    /// someone who is meant to be met rather than fought is placed by <c>LocationNpcs</c>, never by a pool entry or
+    /// an instance. A pool entry still means an attackable enemy, so NPCs are never listed.
+    /// <c>playground-clearing</c> is the dev-only fixture the end-to-end specs fight in.
     /// </para>
     /// </remarks>
     private static readonly Dictionary<string, ActorPoolEntry[]> SpawnPools = new(StringComparer.Ordinal)
@@ -80,8 +83,12 @@ public static class ZoneLocationsSeeder
         ["tidelocked-vault"] = [Harrower(70), Revenant(30)],
 
         // Cinderplain — levels 20–30
-        ["obsidian-grove"] = [Cinderling(70), Pyreling(30)],
-        ["ash-shrine"] = [Pyreling(60), Cinderling(40)],
+        // The safe node moved from `scorched-battlefield` to `obsidian-grove` (L3, t_6c70dc04): a respawn
+        // point on a battlefield reads wrong, and the grove is the node nearest the zone entrance. The
+        // battlefield therefore carries the fight and the grove goes quiet, which keeps ashfields at one
+        // respawn anchor: the shrine is flagged SafeRespawn too but is hidden, and the respawn resolver
+        // reads the hidden-filtered zone query.
+        ["scorched-battlefield"] = [Cinderling(70), Pyreling(30)],
         ["vent-fields"] = [Pyreling(70), Cinderling(30)],
         ["pyreling-den"] = [Pyreling(100)],
         ["fire-ancients-chamber"] = [Cinderling(70), Ancient(30)],
@@ -525,7 +532,10 @@ public static class ZoneLocationsSeeder
                 ZoneId = "ashfields",          TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 6, DangerLevel = 8, Population = 50, MinLevel = 20, MaxLevel = 25 },
-                Traits = new() { IsIndoor = false },
+                // ashfields' respawn point, moved here from scorched-battlefield by L3 (t_6c70dc04). At
+                // (30,20) this is the node nearest the zone's arrival point (32,24), so it is the one a
+                // dead character walks out of (MapGraphSeeder.cs:342).
+                Traits = new() { SafeRespawn = true, IsIndoor = false },
             },
             new ZoneLocation
             {
@@ -533,7 +543,8 @@ public static class ZoneLocationsSeeder
                 ZoneId = "ashfields",          TypeKey = "locations",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 8, DangerLevel = 9, Population = 70, MinLevel = 21, MaxLevel = 25 },
-                Traits = new() { SafeRespawn = true, IsIndoor = false },
+                // Hostile since L3: the respawn flag moved to obsidian-grove and the fight stayed here.
+                Traits = new() { IsIndoor = false },
             },
             new ZoneLocation
             {
@@ -541,7 +552,10 @@ public static class ZoneLocationsSeeder
                 ZoneId = "ashfields",          TypeKey = "locations",
                 RarityWeight = 25, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 7, MinLevel = 20, MaxLevel = 25 },
-                Traits = new() { IsHidden = true, UnlockType = "quest", UnlockKey = "ash-shrine" },
+                // Keeper-only shrine: a rest point, not a spawn (L3, t_6c70dc04), hence SafeRespawn and an
+                // empty pool. IsHidden keeps it out of the visible zone query, so it can never be picked as
+                // the zone's respawn anchor over the grove.
+                Traits = new() { SafeRespawn = true, IsHidden = true, UnlockType = "quest", UnlockKey = "ash-shrine" },
             },
 
             // smoldering-reach (Wilderness, L23) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -589,7 +603,7 @@ public static class ZoneLocationsSeeder
             },
             new ZoneLocation
             {
-                Slug = "kaldreks-heart",       DisplayName = "Kaldrek's Heart",
+                Slug = "kaldreks-heart",       DisplayName = "The Maw's Heart",
                 ZoneId = "kaldrek-maw",        TypeKey = "dungeons",
                 RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 10, Population = 10, MinLevel = 28, MaxLevel = 30 },

@@ -46,6 +46,9 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     /// <summary>Gets how many times a location's cleared-room respawn window was applied.</summary>
     public Dictionary<string, int> ClearedWindowApplications { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>Gets the (group, location) pairs a roster was requested under, in call order.</summary>
+    public List<(string ZoneGroup, string LocationSlug)> RosterRequests { get; } = [];
+
     /// <inheritdoc />
     public Task<int> ExtendClearedRespawnsAsync(
         string zoneGroup,
@@ -73,6 +76,8 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
         Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default)
     {
+        RosterRequests.Add((zoneGroup, locationSlug));
+
         var existing = _rows.Values
             .Where(row => row.ZoneGroup == zoneGroup && row.LocationSlug == locationSlug)
             .Select(row => row.Enemy)
@@ -92,9 +97,16 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
         return existing.Where(enemy => enemy.IsAlive).ToList();
     }
 
+    /// <summary>
+    /// Gets snapshots <see cref="TryGetAsync"/> hands out before it falls back to the stored row. The EF store
+    /// materialises a fresh <see cref="SpawnedEnemy"/> per read, so two callers racing on one kill each hold their own
+    /// copy loaded while the enemy was alive; a queue lets a single-threaded test reproduce that.
+    /// </summary>
+    public Queue<SpawnedEnemy> PendingReads { get; } = new();
+
     /// <inheritdoc />
     public Task<SpawnedEnemy?> TryGetAsync(Guid enemyId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Find(enemyId));
+        Task.FromResult(PendingReads.Count > 0 ? PendingReads.Dequeue() : Find(enemyId));
 
     /// <inheritdoc />
     public Task SaveAsync(
@@ -109,8 +121,22 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     }
 
     /// <inheritdoc />
-    public Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(_rows.ContainsKey(enemyId) && _dead.Add(enemyId));
+    /// <remarks>
+    /// Like the EF store, the credited participants are read from the stored row at the transition, not from the
+    /// caller's own copy — a caller that brings a stale snapshot still gets the durable set.
+    /// </remarks>
+    public Task<IReadOnlyList<Guid>?> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default)
+    {
+        if (!_rows.TryGetValue(enemyId, out var row) || !_dead.Add(enemyId))
+        {
+            return Task.FromResult<IReadOnlyList<Guid>?>(null);
+        }
+
+        lock (row.Enemy.SyncRoot)
+        {
+            return Task.FromResult<IReadOnlyList<Guid>?>(row.Enemy.Participants.ToList());
+        }
+    }
 
     /// <inheritdoc />
     public Task<IReadOnlyList<EnemyRespawnedEvent>> SweepExpiredRespawnsAsync(
@@ -135,5 +161,30 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     {
         Remove(enemyId);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<int> RemoveForeignZoneGroupRowsAsync(
+        IReadOnlyDictionary<string, IReadOnlySet<string>> zonesByLocationSlug,
+        CancellationToken cancellationToken = default)
+    {
+        var stale = _rows
+            .Where(row =>
+            {
+                if (!zonesByLocationSlug.TryGetValue(row.Value.LocationSlug, out var zones))
+                    return false;
+
+                return !Veldrath.Server.Features.Zones.ZoneGroupName.TryParse(row.Value.ZoneGroup, out var group)
+                       || !zones.Any(group.BelongsToZone);
+            })
+            .Select(row => row.Key)
+            .ToList();
+
+        foreach (var id in stale)
+        {
+            Remove(id);
+        }
+
+        return Task.FromResult(stale.Count);
     }
 }

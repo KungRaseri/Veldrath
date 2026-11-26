@@ -66,8 +66,24 @@ public class GameHub : Hub
     private readonly IEnemyInstanceStore _enemies;
     private readonly Veldrath.Server.Features.Zones.IZoneInstanceService? _zoneInstances;
     private readonly IRandomSource _random;
+    private readonly IZoneLocationRepository? _locations;
+    private readonly IZoneLobbyResolver? _lobbies;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+    /// <summary>
+    /// Said when a run the character was inside is gone, on the respawn path and on the reconnect path alike: one
+    /// sentence, so the two cannot drift into describing the same event two ways.
+    /// </summary>
+    private const string ExpiredInstanceMessage =
+        "The instance you were in has closed. You wake in the shared zone.";
+
+    /// <summary>
+    /// Said when the run is gone but the zone's lobby is hidden from this character, so the saved node stands: the
+    /// wake could not happen, and a player who is not where they logged out deserves the reason rather than silence.
+    /// </summary>
+    private const string LockedLobbyMessage =
+        "The instance you were in has closed. You wake where you logged out; this zone's safe haven is not yet open to you.";
 
     /// <summary>Initializes a new instance of <see cref="GameHub"/>.</summary>
     public GameHub(
@@ -87,7 +103,9 @@ public class GameHub : Hub
         ICombatSessionStore sessions,
         IEnemyInstanceStore enemies,
         Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
-        IRandomSource? randomSource = null)
+        IRandomSource? randomSource = null,
+        IZoneLocationRepository? locations = null,
+        IZoneLobbyResolver? lobbies = null)
     {
         _logger = logger;
         _characterRepo = characterRepo;
@@ -106,6 +124,8 @@ public class GameHub : Hub
         _enemies = enemies;
         _zoneInstances = zoneInstances;
         _random = randomSource ?? SystemRandomSource.Shared;
+        _locations = locations;
+        _lobbies = lobbies;
     }
 
     public override async Task OnConnectedAsync()
@@ -265,7 +285,9 @@ public class GameHub : Hub
         var regionId = zone?.RegionId ?? starterRegion!.Id;
         Context.Items["CurrentRegionId"] = regionId;
 
-        // Ensure the character has a map/node position. Characters start on the region map.
+        // Ensure the character has a map/node position. Characters start on the region map — but the zone location
+        // survives the projection: this write re-points the node at the region entry, so the slug is all that still
+        // says where inside the zone the character stood, and EnterZone needs it to put them back there.
         var regionGraph = await _mapRepo.GetMapForRegionAsync(regionId);
         if (!string.IsNullOrWhiteSpace(regionGraph?.Id) &&
             !string.IsNullOrWhiteSpace(regionGraph.EntryNodeId))
@@ -275,7 +297,9 @@ public class GameHub : Hub
                 regionGraph.Id,
                 regionGraph.EntryNodeId,
                 zoneId: null,
-                locationSlug: null);
+                locationSlug: string.IsNullOrWhiteSpace(character.CurrentZoneId)
+                    ? null
+                    : character.CurrentZoneLocationSlug);
         }
 
         // A3: a character who has not finished the tutorial is placed on the authored tutorial start location with
@@ -485,6 +509,9 @@ public class GameHub : Hub
             CharacterId = characterId,
             EnemyId = enemy.Id,
             EnemyName = enemy.Name,
+            EnemyArchetypeSlug = enemy.ArchetypeSlug,
+            EnemyTier = CombatHelpers.ResolveTier(enemy.Template),
+            EnemyArchetypeTypeKey = CombatHelpers.ResolveTypeKey(enemy.Template),
             EnemyLevel = enemy.Level,
             EnemyCurrentHealth = enemy.CurrentHealth,
             EnemyMaxHealth = enemy.MaxHealth,
@@ -494,6 +521,82 @@ public class GameHub : Hub
         await BroadcastCombatSnapshotAsync(characterId);
 
         await Clients.Caller.SendAsync("SystemMessage", $"Your fight with {enemy.Name} resumed.");
+    }
+
+    /// <summary>
+    /// The <c>CombatEnded</c> reason for a fight another character finished.
+    /// </summary>
+    /// <remarks>
+    /// A fight is shared — one enemy row, one combat session per engaged character — so the killing blow releases
+    /// every session pointed at it. This is not a defeat: the character is still standing and lost nothing, and the
+    /// client keeps its own turn's summary instead of inventing a loss from an ending it did not cause.
+    /// </remarks>
+    private const string SharedKillReason = "shared kill";
+
+    /// <summary>
+    /// Tells the caller that the fight is over because they died.
+    /// </summary>
+    /// <remarks>
+    /// Fleeing already ends a fight with <c>CombatEnded</c>; a death ends it just as surely, but the shell
+    /// only closes the combat panel when it hears this event. Without it the defeated player keeps a panel
+    /// for a fight the server has already dropped, and the map never renders again.
+    /// </remarks>
+    /// <param name="characterId">The character whose fight ended.</param>
+    /// <param name="reason">Client-facing reason, the same vocabulary the flee path uses.</param>
+    private async Task SendCombatEndedAsync(Guid characterId, string reason)
+    {
+        await Clients.Caller.SendAsync("CombatEnded", new { CharacterId = characterId, Reason = reason });
+    }
+
+    /// <summary>
+    /// Ends the fight for every other character the kill released, not only the one that landed it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The enemy row is one instance and every engaged character holds a session pointed at it, so
+    /// <c>CombatHelpers.DistributeRewardsAsync</c> removing the sessions of an enemy removes all of them. That is
+    /// correct — the enemy is dead — but only the killer's turn reports it. Everyone else used to keep a combat
+    /// panel for a fight the server no longer had: the next Defend, Attack or ability was answered
+    /// "Not in combat" and the panel stayed up with a live enemy portrait for the rest of the session.
+    /// </para>
+    /// <para>
+    /// Each released character is addressed through the connection its player session names, the same way kill
+    /// objectives reach a party member. A character with no session row is offline in the reconnect window; its
+    /// session is gone with the enemy, so there is nothing to tell and nothing to resume.
+    /// </para>
+    /// </remarks>
+    /// <param name="releasedCharacterIds">The characters whose combat sessions the kill released.</param>
+    /// <param name="killerId">The caller's character, which gets its own victory turn instead.</param>
+    private async Task EndReleasedFightsAsync(IReadOnlyList<Guid> releasedCharacterIds, Guid killerId)
+    {
+        foreach (var releasedId in releasedCharacterIds.Distinct())
+        {
+            if (releasedId == killerId) continue;
+
+            try
+            {
+                var playerSession = await _playerSessionRepo.GetByCharacterIdAsync(releasedId);
+                if (playerSession is null || string.IsNullOrEmpty(playerSession.ConnectionId))
+                {
+                    _logger.LogDebug(
+                        "A shared kill released character {CharacterIdPrefix}'s session while they were offline",
+                        releasedId.ToString()[..8]);
+                    continue;
+                }
+
+                await Clients.Client(playerSession.ConnectionId)
+                    .SendAsync("CombatEnded", new { CharacterId = releasedId, Reason = SharedKillReason });
+            }
+            catch (Exception ex)
+            {
+                // The kill and its rewards are already committed; closing someone else's panel is a courtesy that
+                // must not turn a successful kill into a failed turn.
+                _logger.LogWarning(
+                    ex,
+                    "Could not tell character {CharacterIdPrefix} that another character killed their enemy",
+                    releasedId.ToString()[..8]);
+            }
+        }
     }
 
     /// <summary>
@@ -801,7 +904,11 @@ public class GameHub : Hub
     // Zone management
     /// <summary>
     /// Join a zone. Broadcasts <c>PlayerEntered</c> to all existing members of the zone,
-    /// and sends <c>ZoneState</c> (current occupants) back to the caller.
+    /// and sends <c>ZoneEntered</c> (current occupants) back to the caller.
+    /// Re-entering the zone the character was already inside resumes them at their saved node, and — when that
+    /// node is an instanced location whose run is still open — back inside that run. When the run has been swept,
+    /// they wake in the zone's safe location instead and are told why; a lobby that is closed to this character
+    /// leaves them on the saved node, and the same one-line message says so.
     /// </summary>
     public async Task EnterZone(string zoneId)
     {
@@ -833,6 +940,20 @@ public class GameHub : Hub
 
         var resumeLocationSlug = resumingHere ? character!.CurrentZoneLocationSlug : null;
 
+        // A login re-projects the character onto the region map (`SelectCharacter`), which re-points CurrentNodeId at
+        // the region entry and leaves the zone location slug as the only record of where inside the zone they stood —
+        // a respawn at the safe location is exactly that case. Resolve the slug back to its node, or every reload
+        // would wake the player at the zone's arrival node instead of the location the server left them on.
+        var savedLocationNode = resumingHere && zoneGraph is not null &&
+                                !string.IsNullOrWhiteSpace(resumeLocationSlug)
+            ? zoneGraph.Nodes.FirstOrDefault(node =>
+                node.NodeType == MapNodeType.Location &&
+                string.Equals(node.RefId, resumeLocationSlug, StringComparison.OrdinalIgnoreCase))
+            : null;
+
+        if (savedLocationNode is not null)
+            resumeNodeId = savedLocationNode.Id;
+
         // Leave current zone first (if in one)
         await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
 
@@ -842,6 +963,39 @@ public class GameHub : Hub
         var stale = await _playerSessionRepo.GetByCharacterIdAsync(characterId);
         if (stale is not null && stale.ConnectionId != Context.ConnectionId)
             await _playerSessionRepo.RemoveAsync(stale);
+
+        // Resume the run, not a stored pointer: the session row — and the pointer with it — left when the
+        // connection dropped, so nothing on disk remembers the run. The run itself survives while anyone is
+        // still inside it, and after the last member leaves for the disconnect grace their departure started,
+        // keyed by the party (or the solo character) — so asking for the character's open run at the location
+        // they stood on is what puts a reconnecting player back inside their attempt.
+        ZoneInstance? resumedRun = null;
+        if (resumingHere && _zoneInstances is not null && !string.IsNullOrWhiteSpace(resumeLocationSlug))
+        {
+            var candidate = await _zoneInstances.FindResumableAsync(zoneId, resumeLocationSlug, characterId);
+
+            // A run swept between the lookup and the join must not be re-entered: joining only accepts an open
+            // run and reports anything else, so the character stays in the shared zone rather than in a group
+            // nothing else will ever join.
+            if (candidate is not null && await _zoneInstances.JoinAsync(candidate.Id, characterId))
+                resumedRun = candidate;
+        }
+
+        // A run that emptied while the character was away cannot have them back, and the room they stood on is
+        // only a room in the shared zone now — nobody else's roster, no enemies of its own. The plan's reconnect
+        // rule is that they wake in the dungeon's lobby and are told why, so move the resume point there instead
+        // of dropping them into a room whose instance is gone. No lobby (or a room that was never instanced)
+        // keeps the saved node: a login must not fail over a place to stand. A lobby this character cannot use is
+        // the one degraded case that still speaks — the resolver's message says why they stayed put.
+        var wake = resumingHere && resumedRun is null
+            ? await ResolveSweptInstanceLobbyAsync(zoneId, characterId, resumeLocationSlug, zoneGraph)
+            : null;
+
+        if (wake is { NodeId: { } wakeNodeId, Slug: { } wakeSlug })
+        {
+            resumeNodeId = wakeNodeId;
+            resumeLocationSlug = wakeSlug;
+        }
 
         // Create new session
         var session = new PlayerSession
@@ -853,6 +1007,7 @@ public class GameHub : Hub
             ZoneId = zoneId,
             CurrentMapId = zoneGraph?.Id,
             CurrentNodeId = resumeNodeId,
+            ZoneInstanceId = resumedRun?.Id,
         };
         await _playerSessionRepo.AddAsync(session);
 
@@ -875,10 +1030,13 @@ public class GameHub : Hub
         Context.Items["CurrentMapId"] = zoneGraph?.Id;
         Context.Items["CurrentNodeId"] = resumeNodeId;
 
-        // Compute and store the zone group name based on zone type and difficulty
-        var difficultyMode = Context.Items.TryGetValue("DifficultyMode", out var dm) && dm is string d ? d : "normal";
-        var zoneGroup = ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
+        // Compute and store the zone group name based on zone type and difficulty. A resumed run already owns
+        // its scope — the group its other members are in — so re-composing the shared name here would put the
+        // character next to their party in the map and nowhere near them in chat, enemies or loot.
+        var difficultyMode = CurrentDifficultyMode();
+        var zoneGroup = resumedRun?.ZoneGroup ?? ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
         Context.Items["CurrentZoneGroupName"] = zoneGroup;
+        Context.Items["CurrentZoneInstanceId"] = resumedRun?.Id;
 
         // Join SignalR group
         await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup);
@@ -891,24 +1049,18 @@ public class GameHub : Hub
             ZoneId = zoneId,
         });
 
-        // Send current zone occupants back to caller
-        var occupants = (await _playerSessionRepo.GetByZoneIdAsync(zoneId))
-            .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
-
-        await Clients.Caller.SendAsync("ZoneEntered", new
-        {
-            zone.Id,
-            zone.Name,
-            zone.Description,
-            ZoneType = zone.Type.ToString(),
-            CurrentMapId = zoneGraph?.Id,
-            CurrentNodeId = resumeNodeId,
-            Occupants = occupants,
-            HasInn = zone.HasInn,
-            HasMerchant = zone.HasMerchant,
-        });
+        // The arrival's snapshot is the hub's one ZoneEntered payload, so its occupant list is read the same way a
+        // walk's and a respawn wake's are: the caller's own scope. The run pointer above is already written, so the
+        // read selects the scope this connection just joined.
+        await SendZoneSnapshotAsync(zone, zoneGraph?.Id, resumeNodeId);
 
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);
+
+        // The wake-up is only half the reconnect: the plan promises the player is told why they are not where
+        // they logged out, in the same words the respawn path uses for the same event. A lobby they cannot use is
+        // still an event worth one sentence — they keep the saved node either way.
+        if (wake?.Message is { } wakeMessage)
+            await Clients.Caller.SendAsync("SystemMessage", wakeMessage);
     }
 
     /// <summary>Voluntarily leave the current zone.</summary>
@@ -965,8 +1117,16 @@ public class GameHub : Hub
             return;
         }
 
-        var zoneGroup = Context.Items.TryGetValue("CurrentZoneGroupName", out var group) && group is string value
-            ? value
+        var currentMapId = Context.Items.TryGetValue("CurrentMapId", out var map) && map is string walkMap
+            ? walkMap
+            : null;
+
+        // The stored group names the map the connection is standing on, because EnterZone sets the two together.
+        // A request for a different map is a move between maps, and the destination's zone owns the scope: forwarding
+        // this group would hand the handler the zone being left, whose roster then got spawned at the destination.
+        var zoneGroup = string.Equals(currentMapId, request.MapId, StringComparison.OrdinalIgnoreCase)
+                        && TryGetCurrentZoneGroup(out var groupName)
+            ? groupName
             : string.Empty;
 
         try
@@ -984,14 +1144,18 @@ public class GameHub : Hub
             }
 
             // An instanced destination moves the connection into the run's own group, which is what keeps
-            // two parties' enemies, loot and chat apart while they clear the same dungeon.
-            await ApplyArrivalGroupAsync(result.ZoneGroup, result.ZoneInstanceId);
+            // two parties' enemies, loot and chat apart while they clear the same dungeon. Walking in or out of
+            // a run inside one zone is exactly that move, so it is also a change of neighbours.
+            var scopeChanged = await ApplyArrivalGroupAsync(
+                result.ZoneGroup, result.ZoneInstanceId, result.ZoneId);
 
             await Clients.Caller.SendAsync("NodeTraveled", result);
 
             // A walk can cross a zone boundary, and NodeTraveled carries only the zone id: without the zone
-            // snapshot that follows, the client keeps showing the zone it just left.
-            await SyncArrivedZoneAsync(result);
+            // snapshot that follows, the client keeps showing the zone it just left. The same snapshot is owed
+            // when the zone stays the same and the scope changes: the occupant list belongs to the scope, and
+            // only the snapshot rewrites it.
+            await SyncArrivedZoneAsync(result, scopeChanged);
 
             // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
             foreach (var warning in result.ContentWarnings)
@@ -1020,8 +1184,16 @@ public class GameHub : Hub
             return;
         }
 
-        var zoneGroup = Context.Items.TryGetValue("CurrentZoneGroupName", out var group) && group is string value
-            ? value
+        var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone) && zone is string here
+            ? here
+            : null;
+
+        // Same rule as a walk: the group describes the zone the connection is in, so it may only be forwarded for a
+        // location in that zone. A client asking for a location elsewhere hands the destination's scope to the
+        // handler instead of this one.
+        var zoneGroup = string.Equals(currentZoneId, request.ZoneId, StringComparison.OrdinalIgnoreCase)
+                        && TryGetCurrentZoneGroup(out var groupName)
+            ? groupName
             : string.Empty;
 
         try
@@ -1038,9 +1210,15 @@ public class GameHub : Hub
                 return;
             }
 
-            await ApplyArrivalGroupAsync(result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId);
+            // Entering an instanced room is the same group move a walk makes, so it is announced and snapshotted
+            // the same way: the arrival's own scope answers who is here, and "here" may be a run inside the zone
+            // the caller already stood in.
+            var scopeChanged = await ApplyArrivalGroupAsync(
+                result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId, result.Arrival.ZoneId);
 
             await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
+
+            await SyncArrivedZoneAsync(result.Arrival, scopeChanged);
 
             // What grows here, what is waiting to be opened, and who is here to talk to. A safe location answers
             // with empty lists, which the client renders as nothing.
@@ -1061,66 +1239,60 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Award experience points to the caller's active character.
-    /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
-    /// the command to the MediatR pipeline. Broadcasts the outcome to the character's current
-    /// zone group; falls back to the caller only when the character is not in a zone.
+    /// Sends the caller the enemy roster standing at the node their character already occupies, so a resumed
+    /// session renders the room it is in instead of an empty one. Sends <c>LocationRoster</c> to the caller.
     /// </summary>
-    /// <param name="amount">Positive number of experience points to award.</param>
-    /// <param name="source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
-    public async Task GainExperience(GainExperienceHubRequest request)
+    /// <remarks>
+    /// The roster is otherwise only ever delivered inside a travel result, which is why a login inside a location
+    /// had nothing to render until the next move. This is a read, not a move: it spawns the cohort on first contact
+    /// exactly as walking in does, and it takes the position from the character row rather than from the caller —
+    /// after a swept run the resume point is the zone's lobby, and only the server knows that.
+    /// </remarks>
+    public async Task GetLocationRoster()
     {
         if (!TryGetCharacterId(out var characterId))
         {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GainExperience");
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationRoster");
             return;
         }
 
+        if (!TryGetCurrentZoneGroup(out var zoneGroup))
+        {
+            await Clients.Caller.SendAsync("Error", "EnterZone must be called before GetLocationRoster");
+            return;
+        }
+
+        // The scope the connection is actually rendering under. A resumed run owns its own group and its run id,
+        // and reading the roster under the shared zone name would spawn a second cohort nobody in the run can see.
+        var instanceId = Context.Items.TryGetValue("CurrentZoneInstanceId", out var rawInstance) && rawInstance is Guid run
+            ? run
+            : (Guid?)null;
+
         try
         {
-            var result = await _mediator.Send(new GainExperienceHubCommand
-            {
-                CharacterId = characterId,
-                Amount = request.Amount,
-                Source = request.Source,
-            });
+            var result = await _mediator.Send(new GetLocationRosterHubCommand(characterId, zoneGroup, instanceId));
 
             if (!result.Success)
             {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to gain experience");
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to read the location roster");
                 return;
             }
 
-            var payload = new
+            await Clients.Caller.SendAsync("LocationRoster", new
             {
-                CharacterId = characterId,
-                result.NewLevel,
-                result.NewExperience,
-                result.LeveledUp,
-                result.LeveledUpTo,
-                Source = request.Source,
-            };
+                result.LocationSlug,
+                result.SpawnedEnemies,
+            });
 
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("ExperienceGained", payload);
-            else
-                await Clients.Caller.SendAsync("ExperienceGained", payload);
-
-            if (result.LeveledUp)
+            foreach (var warning in result.ContentWarnings)
             {
-                // Both level values are advanced so a reach_level objective completes whichever one content names.
-                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, result.NewLevel.ToString());
-                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, result.LeveledUpTo.ToString());
+                await Clients.Caller.SendAsync("SystemMessage", warning);
             }
-
-            _logger.LogInformation(
-                "Character {CharacterId} gained {Amount} XP from {Source}; now level {Level}",
-                characterId, request.Amount, request.Source ?? "Unknown", result.NewLevel);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in GainExperience for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to process experience gain");
+            _logger.LogError(ex, "Error in GetLocationRoster for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to read the location roster");
         }
     }
 
@@ -1299,63 +1471,6 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Awards skill XP to the caller's active character for the specified skill.
-    /// Broadcasts <c>SkillXpGained</c> to the zone group (or back to the caller when not in a zone).
-    /// </summary>
-    /// <param name="request">Skill identifier and XP amount to award.</param>
-    public async Task AwardSkillXp(AwardSkillXpHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AwardSkillXp");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new AwardSkillXpHubCommand
-            {
-                CharacterId = characterId,
-                SkillId = request.SkillId,
-                Amount = request.Amount,
-            });
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to award skill XP");
-                return;
-            }
-
-            var payload = new
-            {
-                CharacterId = characterId,
-                result.SkillId,
-                result.TotalXp,
-                result.CurrentRank,
-                result.RankedUp,
-                // The progression rule belongs to the server, so the progress figures travel with
-                // the award instead of the client dividing by a constant it guessed.
-                XpIntoRank = result.TotalXp % AwardSkillXpHubCommandHandler.XpPerRank,
-                XpToNextRank = AwardSkillXpHubCommandHandler.XpPerRank,
-            };
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("SkillXpGained", payload);
-            else
-                await Clients.Caller.SendAsync("SkillXpGained", payload);
-
-            _logger.LogInformation(
-                "Character {CharacterId} earned {Amount} XP in skill {SkillId}; total {Total}, rank {Rank}",
-                characterId, request.Amount, request.SkillId, result.TotalXp, result.CurrentRank);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in AwardSkillXp for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to award skill XP");
-        }
-    }
-
-    /// <summary>
     /// Equips or unequips an item in a named slot for the caller's active character.
     /// Broadcasts <c>ItemEquipped</c> to the zone group (or back to the caller when not in a zone).
     /// Pass <see langword="null"/> as <paramref name="itemRef"/> to clear the slot.
@@ -1439,115 +1554,6 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Add or remove gold from the caller's active character.
-    /// Broadcasts <c>GoldChanged</c> to the zone group (or back to the caller when not in a zone).
-    /// Pass a negative <paramref name="amount"/> to spend gold (e.g. making a purchase).
-    /// </summary>
-    /// <param name="amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
-    /// <param name="source">Optional label for the source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
-    public async Task AddGold(AddGoldHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AddGold");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new AddGoldHubCommand
-            {
-                CharacterId = characterId,
-                Amount = request.Amount,
-                Source = request.Source,
-            });
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to modify gold");
-                return;
-            }
-
-            var payload = new
-            {
-                CharacterId = characterId,
-                result.GoldAdded,
-                result.NewGoldTotal,
-                Source = request.Source,
-            };
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("GoldChanged", payload);
-            else
-                await Clients.Caller.SendAsync("GoldChanged", payload);
-
-            _logger.LogInformation(
-                "Character {CharacterId} gold changed by {Amount} ({Source}); total now {Total}",
-                characterId, request.Amount, request.Source ?? "Unknown", result.NewGoldTotal);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in AddGold for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to modify gold");
-        }
-    }
-
-    /// <summary>
-    /// Apply damage to the caller's active character, reducing current health (clamped to zero).
-    /// Broadcasts <c>DamageTaken</c> to the zone group (or back to the caller when not in a zone).
-    /// </summary>
-    /// <param name="damageAmount">Positive number of hit points to remove.</param>
-    /// <param name="source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
-    public async Task TakeDamage(TakeDamageHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TakeDamage");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new TakeDamageHubCommand
-            {
-                CharacterId = characterId,
-                DamageAmount = request.DamageAmount,
-                Source = request.Source,
-            });
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to apply damage");
-                return;
-            }
-
-            var payload = new
-            {
-                CharacterId = characterId,
-                DamageAmount = request.DamageAmount,
-                result.CurrentHealth,
-                result.MaxHealth,
-                result.IsDead,
-                Source = request.Source,
-            };
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("DamageTaken", payload);
-            else
-                await Clients.Caller.SendAsync("DamageTaken", payload);
-
-            _logger.LogInformation(
-                "Character {CharacterId} took {Damage} damage from {Source}; HP {Hp}/{Max} IsDead={Dead}",
-                characterId, request.DamageAmount, request.Source ?? "Unknown", result.CurrentHealth, result.MaxHealth, result.IsDead);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in TakeDamage for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to apply damage");
-        }
-    }
-
-    /// <summary>
     /// Speaks to a person standing with the active character: answers with one of their own lines and advances
     /// <c>talk:<slug></c> objectives.
     /// </summary>
@@ -1623,6 +1629,125 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Reads the conversation a placed person offers, with every option already evaluated against the caller's
+    /// character. Sends <c>NpcDialogue</c> to the caller.
+    /// </summary>
+    /// <remarks>
+    /// Availability is decided here rather than in the browser: the payload carries each option with <c>Enabled</c>
+    /// and a <c>BlockedReason</c>, so a disabled button and a server refusal are the same computation and the panel
+    /// never guesses what the character is allowed to do.
+    /// </remarks>
+    /// <param name="request">Speaker slug and, optionally, the entry to show.</param>
+    public async Task GetNpcDialogue(NpcDialogueHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetNpcDialogue");
+            return;
+        }
+
+        if (request is null || string.IsNullOrWhiteSpace(request.NpcSlug))
+        {
+            await Clients.Caller.SendAsync("Error", "An NPC slug is required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(
+                new GetNpcDialogueHubCommand(characterId, request.NpcSlug.Trim(), Blank(request.EntrySlug)));
+
+            if (!result.Success || result.Dialogue is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "They have nothing to say.");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NpcDialogue", result.Dialogue);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reading dialogue from '{NpcSlug}' for character {CharacterId}",
+                request.NpcSlug, characterId);
+            await Clients.Caller.SendAsync("Error", "They have nothing to say.");
+        }
+    }
+
+    /// <summary>
+    /// Takes one choice in a conversation, applies what it grants and sends <c>NpcOptionChosen</c> to the caller.
+    /// </summary>
+    /// <remarks>
+    /// The bag, the journal and the gold total are refreshed from the server after a choice that changed anything,
+    /// because a snapshot pushed only when the panel asks would leave the HUD showing the state from before the
+    /// conversation.
+    /// </remarks>
+    /// <param name="request">Speaker slug, option key and, optionally, the entry the option belongs to.</param>
+    public async Task ChooseNpcOption(NpcOptionHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before ChooseNpcOption");
+            return;
+        }
+
+        if (request is null || string.IsNullOrWhiteSpace(request.NpcSlug) || string.IsNullOrWhiteSpace(request.OptionKey))
+        {
+            await Clients.Caller.SendAsync("Error", "An NPC slug and an option key are required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(
+                new ChooseNpcOptionHubCommand(
+                    characterId,
+                    request.NpcSlug.Trim(),
+                    request.OptionKey.Trim(),
+                    Blank(request.EntrySlug)));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "They do not answer.");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NpcOptionChosen", result);
+
+            // Dialogue gold is awarded server-side through AddGoldHubCommand rather than written by the hub, so the
+            // new total is announced from the handler's figures rather than left for the client to infer from the
+            // Applied line.
+            if (result.GoldAwarded > 0 && result.NewGoldTotal is int dialogueGoldTotal)
+            {
+                await Clients.Caller.SendAsync("GoldChanged",
+                    new
+                    {
+                        CharacterId = characterId,
+                        GoldAdded = result.GoldAwarded,
+                        NewGoldTotal = dialogueGoldTotal,
+                        Source = $"Dialogue:{result.SpeakerSlug}",
+                    });
+            }
+
+            if (result.Applied.Count > 0)
+            {
+                await TrySendInventorySnapshotAsync(characterId);
+                await GetQuestLog();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error choosing '{OptionKey}' from '{NpcSlug}' for character {CharacterId}",
+                request.OptionKey, request.NpcSlug, characterId);
+            await Clients.Caller.SendAsync("Error", "They do not answer.");
+        }
+    }
+
+    /// <summary>Treats a blank string from a client the same as an absent one.</summary>
+    /// <param name="value">Value sent by the client.</param>
+    /// <returns>The trimmed value, or null when it carries nothing.</returns>
+    private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    /// <summary>
     /// Crafts an item from a catalog recipe: the materials are consumed, the output is added to the
     /// bag and the recipe's skill experience is awarded. Broadcasts <c>ItemCrafted</c> to the zone
     /// group (or back to the caller when not in a zone).
@@ -1665,6 +1790,27 @@ public class GameHub : Hub
                 await Clients.Group(zoneGroup).SendAsync("ItemCrafted", payload);
             else
                 await Clients.Caller.SendAsync("ItemCrafted", payload);
+
+            // Crafting is the server-side skill-experience path, so the award is announced here rather than
+            // left for the client to infer from the delta: the progress figures are the server's own.
+            if (result.SkillXp > 0 && !string.IsNullOrEmpty(result.SkillId))
+            {
+                var skillPayload = new
+                {
+                    CharacterId = characterId,
+                    SkillId = result.SkillId,
+                    TotalXp = result.SkillTotalXp,
+                    CurrentRank = result.SkillRank,
+                    RankedUp = result.SkillRankedUp,
+                    XpIntoRank = result.SkillTotalXp % AwardSkillXpHubCommandHandler.XpPerRank,
+                    XpToNextRank = AwardSkillXpHubCommandHandler.XpPerRank,
+                };
+
+                if (TryGetCurrentZoneGroup(out var skillZoneGroup))
+                    await Clients.Group(skillZoneGroup).SendAsync("SkillXpGained", skillPayload);
+                else
+                    await Clients.Caller.SendAsync("SkillXpGained", skillPayload);
+            }
 
             // The bag and the recipe list both changed, so the caller re-reads what it can now make.
             await SendCraftableRecipesAsync(characterId);
@@ -1846,10 +1992,37 @@ public class GameHub : Hub
             {
                 await TrySendInventorySnapshotAsync(characterId);
 
+                // The zone gets the loot and the emptied list, not the opener's purse: NewGoldTotal stays on
+                // the in-process result and is announced to the opener alone, below.
+                var chestOpened = new
+                {
+                    result.Success,
+                    result.ChestId,
+                    result.DisplayName,
+                    result.Items,
+                    result.Gold,
+                    result.Message,
+                    result.RemainingChests,
+                };
+
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
-                    await Clients.Group(zoneGroup).SendAsync("ChestOpened", result);
+                    await Clients.Group(zoneGroup).SendAsync("ChestOpened", chestOpened);
                 else
-                    await Clients.Caller.SendAsync("ChestOpened", result);
+                    await Clients.Caller.SendAsync("ChestOpened", chestOpened);
+
+                // The award is announced from the server's own total so the client's gold stat cannot drift;
+                // gold is private, so this goes to the opener rather than the zone the loot went to.
+                if (result.Gold > 0 && result.NewGoldTotal is int newGoldTotal)
+                {
+                    await Clients.Caller.SendAsync("GoldChanged",
+                        new
+                        {
+                            CharacterId = characterId,
+                            GoldAdded = result.Gold,
+                            NewGoldTotal = newGoldTotal,
+                            Source = "Chest",
+                        });
+                }
             }
 
             // A failed open can still have moved the list (someone else won), so it is re-sent either way.
@@ -1975,7 +2148,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task GetShopCatalog()
     {
-        if (!TryGetCharacterId(out _))
+        if (!TryGetCharacterId(out var characterId))
         {
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetShopCatalog");
             return;
@@ -1985,7 +2158,7 @@ public class GameHub : Hub
 
         try
         {
-            var result = await _mediator.Send(new GetShopCatalogHubCommand(zoneId));
+            var result = await _mediator.Send(new GetShopCatalogHubCommand(characterId, zoneId));
 
             if (!result.Success)
             {
@@ -2397,21 +2570,66 @@ public class GameHub : Hub
 
         if (result.GoldReward > 0)
         {
-            await _mediator.Send(new AddGoldHubCommand
+            var goldResult = await _mediator.Send(new AddGoldHubCommand
             {
                 CharacterId = characterId,
                 Amount = result.GoldReward,
             });
+
+            // Quest gold is awarded through AddGoldHubCommand rather than written by the hub, so the purse is
+            // announced from the handler's own figures rather than from the reward the toast names: GoldChanged
+            // carries the total the server actually stored, and gold is private, so it goes to the caller alone.
+            if (goldResult.Success && goldResult.GoldAdded > 0)
+            {
+                await Clients.Caller.SendAsync("GoldChanged",
+                    new
+                    {
+                        CharacterId = characterId,
+                        GoldAdded = goldResult.GoldAdded,
+                        NewGoldTotal = goldResult.NewGoldTotal,
+                        Source = $"Quest:{result.Slug}",
+                    });
+            }
         }
 
         if (result.XpReward > 0)
         {
-            await _mediator.Send(new GainExperienceHubCommand
+            var xpResult = await _mediator.Send(new GainExperienceHubCommand
             {
                 CharacterId = characterId,
                 Amount = result.XpReward,
                 Source = "Quest",
             });
+
+            if (xpResult.Success)
+            {
+                // The award is server-side only now, so the turn-in is what tells the client what it paid. The
+                // payload carries the re-derived pools too: a level-up raises MaxHealth/MaxMana, and without them
+                // the sheet would keep drawing the old bar until the next character load. The banked attribute
+                // points ride along for the same reason — the allocation panel budgets from them, so a level that
+                // banks points has to enable it without a re-select.
+                await Clients.Caller.SendAsync("ExperienceGained", new
+                {
+                    CharacterId = characterId,
+                    xpResult.NewLevel,
+                    xpResult.NewExperience,
+                    xpResult.LeveledUp,
+                    xpResult.LeveledUpTo,
+                    xpResult.MaxHealth,
+                    xpResult.CurrentHealth,
+                    xpResult.MaxMana,
+                    xpResult.CurrentMana,
+                    xpResult.UnspentAttributePoints,
+                    Source = "Quest",
+                });
+
+                if (xpResult.LeveledUp)
+                {
+                    // Both level values are advanced so a reach_level objective completes whichever one content names.
+                    await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, xpResult.NewLevel.ToString());
+                    await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, xpResult.LeveledUpTo.ToString());
+                }
+            }
         }
 
         await Clients.Caller.SendAsync("QuestTurnedIn", new
@@ -2471,17 +2689,29 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Advances the kill objective for every character credited with a kill — not only the one that landed the
-    /// killing blow — because a shared enemy is one fight. Both the archetype slug and the display name are
-    /// advanced: content objectives are authored with slugs, while older journals may hold names.
+    /// Advances the kill objective for each character the caller credits with a kill. Both a melee blow and an
+    /// ability blow credit every participant of a shared fight, not only the one that landed the killing blow, and
+    /// both the archetype slug and the display name are advanced: content objectives are authored with slugs, while
+    /// older journals may hold names.
     /// </summary>
-    /// <param name="result">The victory result carrying the participants and the enemy identity.</param>
+    /// <remarks>
+    /// The set is the one the winning death transition reported, so a shared kill advances each participant once.
+    /// A caller whose stale copy also saw the enemy die arrives here with no ids, because the winner already
+    /// credited everyone.
+    /// </remarks>
+    /// <param name="enemyArchetypeSlug">The defeated enemy's archetype slug, or <see langword="null"/> when unknown.</param>
+    /// <param name="enemyName">The defeated enemy's display name, or <see langword="null"/> when unknown.</param>
+    /// <param name="participantIds">Characters the caller credits with the kill; empty when it lost the death transition.</param>
     /// <param name="killerId">Character whose connection definitely exists (the caller).</param>
-    private async Task AdvanceKillObjectivesAsync(AttackEnemyHubResult result, Guid killerId)
+    private async Task AdvanceKillObjectivesAsync(
+        string? enemyArchetypeSlug,
+        string? enemyName,
+        IEnumerable<Guid> participantIds,
+        Guid killerId)
     {
-        string?[] keys = [result.EnemyArchetypeSlug, result.EnemyName];
+        string?[] keys = [enemyArchetypeSlug, enemyName];
 
-        foreach (var participantId in result.ParticipantIds.Distinct())
+        foreach (var participantId in participantIds.Distinct())
         {
             string? connectionId = Context.ConnectionId;
             if (participantId != killerId)
@@ -2490,10 +2720,14 @@ public class GameHub : Hub
                 connectionId = session?.ConnectionId;
             }
 
-            foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key)).Distinct())
+            // The journal matches keys OrdinalIgnoreCase, so the slug and the display name collapse when they
+            // differ only by case (cinderling/Cinderling): dedupe the same way or one kill advances the
+            // objective twice.
+            foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key))
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 // A legacy journal naming the display name keeps progressing; say so once per kill at Debug level.
-                if (!string.Equals(key, result.EnemyArchetypeSlug, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(key, enemyArchetypeSlug, StringComparison.OrdinalIgnoreCase))
                     _logger.LogDebug(
                         "Advancing a legacy display-name kill objective '{Key}' for character {CharacterId}; content should use the archetype slug",
                         key, participantId);
@@ -2754,6 +2988,9 @@ public class GameHub : Hub
                 CharacterId = characterId,
                 result.EnemyId,
                 result.EnemyName,
+                result.EnemyArchetypeSlug,
+                result.EnemyTier,
+                result.EnemyArchetypeTypeKey,
                 result.EnemyLevel,
                 result.EnemyCurrentHealth,
                 result.EnemyMaxHealth,
@@ -2781,7 +3018,8 @@ public class GameHub : Hub
 
     /// <summary>
     /// Performs a basic melee attack against the active character's engaged enemy.
-    /// Broadcasts <c>CombatTurn</c> to the caller and, on enemy death, <c>EnemyDefeated</c> to the zone group.
+    /// Broadcasts <c>CombatTurn</c> to the caller — followed by <c>CombatEnded</c> when the player is
+    /// defeated — and, on enemy death, <c>EnemyDefeated</c> to the zone group.
     /// </summary>
     public async Task AttackEnemy()
     {
@@ -2816,15 +3054,37 @@ public class GameHub : Hub
                 result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
+                // A levelling reward banks the remainder and rewrites the pools server-side, so the turn carries
+                // the result: a client that only added XpEarned would keep the old level beside a bar that had
+                // already crossed its threshold. Null on a turn that paid no experience.
+                NewLevel = result.Progression?.NewLevel,
+                NewExperience = result.Progression?.NewExperience,
+                LeveledUp = result.Progression?.LeveledUp,
+                MaxHealth = result.Progression?.MaxHealth,
+                CurrentHealth = result.Progression?.CurrentHealth,
+                MaxMana = result.Progression?.MaxMana,
+                CurrentMana = result.Progression?.CurrentMana,
+                UnspentAttributePoints = result.Progression?.UnspentAttributePoints,
                 // Loot is a consequence of the kill, so it travels with the same turn the client narrates.
                 result.ItemsDropped,
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
 
+            if (result.PlayerDefeated)
+                await SendCombatEndedAsync(characterId, "defeated");
+
             if (result.EnemyDefeated)
             {
-                await AdvanceKillObjectivesAsync(result, characterId);
+                // The same enemy row can hold several fights; this kill released all of them, and only this
+                // connection is about to hear about it from its own turn.
+                await EndReleasedFightsAsync(result.ReleasedCombatCharacterIds, characterId);
+
+                await AdvanceKillObjectivesAsync(
+                    result.EnemyArchetypeSlug,
+                    result.EnemyName,
+                    result.ParticipantIds,
+                    characterId);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
                 {
@@ -2835,25 +3095,13 @@ public class GameHub : Hub
                 }
 
                 // A cleared room is a run-wide fact: everyone inside needs the progress, not just the killer.
-                if (result.ClearedLocationSlug is not null && TryGetCurrentZoneGroup(out var clearGroup))
-                {
-                    await Clients.Group(clearGroup).SendAsync("LocationCleared", new
-                    {
-                        CharacterId = characterId,
-                        InstanceId = result.ClearedInstanceId,
-                        LocationSlug = result.ClearedLocationSlug,
-                        FirstClearOfRun = result.FirstClearOfRun,
-                        FirstClearForCharacter = result.FirstClearForCharacter,
-                        UnlockedLocationSlugs = result.UnlockedLocationSlugs,
-                    });
-
-                    foreach (var unlocked in result.UnlockedLocationSlugs)
-                    {
-                        await Clients.Caller.SendAsync(
-                            "SystemMessage",
-                            $"Clearing the way has revealed something: {unlocked}.");
-                    }
-                }
+                await BroadcastLocationClearedAsync(
+                    characterId,
+                    result.ClearedInstanceId,
+                    result.ClearedLocationSlug,
+                    result.FirstClearOfRun,
+                    result.FirstClearForCharacter,
+                    result.UnlockedLocationSlugs);
             }
         }
         catch (Exception ex)
@@ -2865,7 +3113,7 @@ public class GameHub : Hub
 
     /// <summary>
     /// Puts the active character in a defending stance for the current combat turn, reducing incoming damage.
-    /// Broadcasts <c>CombatTurn</c> to the caller.
+    /// Broadcasts <c>CombatTurn</c> to the caller, then <c>CombatEnded</c> when the stance does not save them.
     /// </summary>
     public async Task DefendAction()
     {
@@ -2898,6 +3146,9 @@ public class GameHub : Hub
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
+
+            if (result.PlayerDefeated)
+                await SendCombatEndedAsync(characterId, "defeated");
         }
         catch (Exception ex)
         {
@@ -2909,7 +3160,8 @@ public class GameHub : Hub
     /// <summary>
     /// Attempts to flee from active combat (50% success chance).
     /// On success, broadcasts <c>CombatEnded</c> to the caller.
-    /// On failure, broadcasts <c>CombatTurn</c> with the enemy counter-attack result.
+    /// On failure, broadcasts <c>CombatTurn</c> with the enemy counter-attack result, followed by
+    /// <c>CombatEnded</c> when that counter-attack kills the player.
     /// </summary>
     public async Task FleeFromCombat()
     {
@@ -2948,6 +3200,10 @@ public class GameHub : Hub
                 });
 
                 await BroadcastCombatSnapshotAsync(characterId);
+
+                // A failed escape can be the blow that kills: the fight ends here too, not only on a clean flee.
+                if (result.PlayerDefeated)
+                    await SendCombatEndedAsync(characterId, "defeated");
             }
         }
         catch (Exception ex)
@@ -2959,7 +3215,8 @@ public class GameHub : Hub
 
     /// <summary>
     /// Activates a named ability in combat, dealing damage or restoring health before the enemy counter-attacks.
-    /// Broadcasts <c>CombatTurn</c> to the caller and <c>EnemyDefeated</c> to the zone group on kill.
+    /// Broadcasts <c>CombatTurn</c> to the caller, <c>CombatEnded</c> when the counter-attack kills, and
+    /// <c>EnemyDefeated</c> to the zone group on kill.
     /// </summary>
     /// <param name="request">Request containing the ability ID to use.</param>
     public async Task UseAbilityInCombat(UseAbilityInCombatHubRequest request)
@@ -2999,13 +3256,38 @@ public class GameHub : Hub
                 result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
+                // Same reason as AttackEnemy: a levelling kill reports where the award left the character.
+                NewLevel = result.Progression?.NewLevel,
+                NewExperience = result.Progression?.NewExperience,
+                LeveledUp = result.Progression?.LeveledUp,
+                MaxHealth = result.Progression?.MaxHealth,
+                CurrentHealth = result.Progression?.CurrentHealth,
+                MaxMana = result.Progression?.MaxMana,
+                CurrentMana = result.Progression?.CurrentMana,
+                UnspentAttributePoints = result.Progression?.UnspentAttributePoints,
+                // Loot is a consequence of the kill, so an ability kill reports it on the same turn a melee kill
+                // does — without it the client never re-reads the bag the drop landed in.
+                result.ItemsDropped,
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
 
+            if (result.PlayerDefeated)
+                await SendCombatEndedAsync(characterId, "defeated");
+
             if (result.EnemyDefeated)
             {
-                await AdvanceQuestObjectivesAsync(characterId, "kill", result.EnemyName);
+                // Same as a melee kill: the ability's killing blow ended every fight pointed at this enemy.
+                await EndReleasedFightsAsync(result.ReleasedCombatCharacterIds, characterId);
+
+                // An ability kill is a kill: it advances the same slug-plus-legacy keys a melee kill does, for the
+                // same credited participants, so content authored against kill:<archetype-slug> progresses whichever
+                // blow landed and whoever of the shared fight landed it.
+                await AdvanceKillObjectivesAsync(
+                    result.EnemyArchetypeSlug,
+                    result.EnemyName,
+                    result.ParticipantIds,
+                    characterId);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
                 {
@@ -3014,6 +3296,15 @@ public class GameHub : Hub
                         CharacterId = characterId,
                     });
                 }
+
+                // And it clears the room the same way: a room emptied by a fireball unlocks what a sword would.
+                await BroadcastLocationClearedAsync(
+                    characterId,
+                    result.ClearedInstanceId,
+                    result.ClearedLocationSlug,
+                    result.FirstClearOfRun,
+                    result.FirstClearForCharacter,
+                    result.UnlockedLocationSlugs);
             }
         }
         catch (Exception ex)
@@ -3071,6 +3362,49 @@ public class GameHub : Hub
     }
 
     // Helpers
+
+    /// <summary>
+    /// Broadcasts <c>LocationCleared</c> to the zone group when a killing blow cleared the room it died in, and
+    /// tells the killer about every hidden location the clear revealed.
+    /// </summary>
+    /// <remarks>
+    /// Both death paths report a clear through this one method — a melee blow and an ability blow are the same event
+    /// to a run — so a change to the payload cannot reach one and miss the other.
+    /// </remarks>
+    /// <param name="characterId">The character whose killing blow cleared the room.</param>
+    /// <param name="instanceId">The run the room belonged to, or <see langword="null"/> for a shared-zone room.</param>
+    /// <param name="locationSlug">The room that was cleared, or <see langword="null"/> when nothing was.</param>
+    /// <param name="firstClearOfRun">Whether this kill is what cleared the room in the run.</param>
+    /// <param name="firstClearForCharacter">Whether the character had ever cleared the room before.</param>
+    /// <param name="unlockedLocationSlugs">The hidden locations this clear made visible to the character.</param>
+    private async Task BroadcastLocationClearedAsync(
+        Guid characterId,
+        Guid? instanceId,
+        string? locationSlug,
+        bool firstClearOfRun,
+        bool firstClearForCharacter,
+        IReadOnlyList<string> unlockedLocationSlugs)
+    {
+        if (locationSlug is null || !TryGetCurrentZoneGroup(out var clearGroup)) return;
+
+        await Clients.Group(clearGroup).SendAsync("LocationCleared", new
+        {
+            CharacterId = characterId,
+            InstanceId = instanceId,
+            LocationSlug = locationSlug,
+            FirstClearOfRun = firstClearOfRun,
+            FirstClearForCharacter = firstClearForCharacter,
+            UnlockedLocationSlugs = unlockedLocationSlugs,
+        });
+
+        foreach (var unlocked in unlockedLocationSlugs)
+        {
+            await Clients.Caller.SendAsync(
+                "SystemMessage",
+                $"Clearing the way has revealed something: {unlocked}.");
+        }
+    }
+
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
     {
         var session = await _playerSessionRepo.GetByConnectionIdAsync(connectionId);
@@ -3272,8 +3606,97 @@ public class GameHub : Hub
         await Clients.Caller.SendAsync("ReceiveChatMessage", echoDto);
     }
 
-    private static string ComputeZoneGroup(ZoneType zoneType, string zoneId, string difficultyMode) =>
-        zoneType == ZoneType.Wilderness ? $"zone:{zoneId}_{difficultyMode}" : $"zone:{zoneId}";
+    /// <summary>
+    /// Builds the SignalR group a connection joins for a zone's shared scope, which wilderness shards by difficulty
+    /// and every other zone type does not.
+    /// </summary>
+    /// <param name="zoneType">
+    /// Type of the zone being entered, or <see langword="null"/> when the catalog has no row for it. A zone whose type
+    /// is unknown declares no difficulty split either, so its scope is the bare zone.
+    /// </param>
+    /// <param name="zoneId">Zone slug.</param>
+    /// <param name="difficultyMode">The character's difficulty mode.</param>
+    /// <returns>The shared scope name as SignalR sees it.</returns>
+    private static string ComputeZoneGroup(ZoneType? zoneType, string zoneId, string difficultyMode) =>
+        ZoneGroupName.ForZone(zoneId, SharedScopeDifficulty(zoneType, difficultyMode)).Value;
+
+    /// <summary>
+    /// The difficulty dimension a zone's shared scope carries, or <see langword="null"/> when the scope covers the
+    /// whole zone. Wilderness shards its shared scope by difficulty; every other zone type has one shared room for
+    /// all of them. The same pair feeds the group name and the occupant read — <see cref="ZoneGroupName.ForZone"/>
+    /// composes the name from it and <see cref="IPlayerSessionRepository.GetOnSharedZoneAsync"/> reads the roster
+    /// from it — so a caller always sees the players standing beside it in its own group.
+    /// </summary>
+    /// <param name="zoneType">
+    /// Type of the zone whose shared scope is being addressed, or <see langword="null"/> when the catalog has no row.
+    /// </param>
+    /// <param name="difficultyMode">The character's difficulty mode.</param>
+    /// <returns>The difficulty suffix for the scope, or <see langword="null"/> for a zone-wide scope.</returns>
+    private static string? SharedScopeDifficulty(ZoneType? zoneType, string difficultyMode) =>
+        zoneType == ZoneType.Wilderness ? difficultyMode : null;
+
+    /// <summary>
+    /// The selected character's difficulty mode, defaulting to <c>normal</c> the way the scope name does when the
+    /// caller never recorded one.
+    /// </summary>
+    /// <returns>The difficulty mode the character's shared scope is composed from.</returns>
+    private string CurrentDifficultyMode() =>
+        Context.Items.TryGetValue("DifficultyMode", out var stored)
+        && stored is string mode
+        && !string.IsNullOrWhiteSpace(mode)
+            ? mode
+            : "normal";
+
+    /// <summary>
+    /// Reads the sessions standing beside the caller in their own scope of <paramref name="zoneId"/>: the run's
+    /// members while the caller is inside an instance run, otherwise the zone's shared occupants on the caller's
+    /// side of the difficulty split.
+    /// </summary>
+    /// <remarks>
+    /// This is the one read behind every roster the hub shows a connection — the snapshot <see cref="EnterZone"/>
+    /// sends on arrival, the one <see cref="SyncArrivedZoneAsync"/> sends after a walk, and <c>/who</c>. The zone's
+    /// whole population (<see cref="IPlayerSessionRepository.GetByZoneIdAsync"/>) is what the public zone counts
+    /// publish, and naming it to a character advertises reach they do not have: a party inside an instance run and
+    /// a character in the other wilderness difficulty shard are both in SignalR groups this connection can neither
+    /// see nor chat with. The pair that selects the shared scope is the pair that composed the group the connection
+    /// joined, so the roster always names the players actually in the caller's room.
+    /// </remarks>
+    /// <param name="zoneId">Zone the caller stands in.</param>
+    /// <param name="zoneType">
+    /// Type of that zone, or <see langword="null"/> when the catalog does not know it. A zone without a declared
+    /// type declares no difficulty split either, so its shared scope is read whole and only the run dimension
+    /// narrows the list.
+    /// </param>
+    /// <returns>The sessions in the caller's own scope.</returns>
+    private async Task<List<PlayerSession>> ReadOwnScopeAsync(string zoneId, ZoneType? zoneType) =>
+        await ReadOwnScopeAsync(zoneId, () => Task.FromResult(zoneType));
+
+    /// <summary>
+    /// Reads the sessions standing beside the caller in their own scope of <paramref name="zoneId"/>, resolving the
+    /// zone type only when the shared scope is read.
+    /// </summary>
+    /// <remarks>
+    /// The run dimension alone selects a run's roster, so a caller that has to fetch the zone type from the catalog
+    /// passes it as a resolver rather than pay for a read the answer cannot use.
+    /// </remarks>
+    /// <param name="zoneId">Zone the caller stands in.</param>
+    /// <param name="resolveZoneType">Resolves the zone's type, or <see langword="null"/> when the catalog has no row.</param>
+    /// <returns>The sessions in the caller's own scope.</returns>
+    private async Task<List<PlayerSession>> ReadOwnScopeAsync(string zoneId, Func<Task<ZoneType?>> resolveZoneType)
+    {
+        var instanceId = Context.Items.TryGetValue("CurrentZoneInstanceId", out var instance) && instance is Guid run
+            ? run
+            : (Guid?)null;
+
+        if (instanceId is { } currentRun)
+            return await _playerSessionRepo.GetByZoneInstanceAsync(currentRun);
+
+        var zoneType = await resolveZoneType();
+
+        return await _playerSessionRepo.GetOnSharedZoneAsync(
+            zoneId,
+            SharedScopeDifficulty(zoneType, CurrentDifficultyMode()));
+    }
 
     private bool TryGetCurrentZoneGroup([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? groupName)
     {
@@ -3290,6 +3713,22 @@ public class GameHub : Hub
     /// Clears the character's run when it no longer exists or is being purged, so a resurrection lands in the
     /// shared zone instead of a group nothing else will ever join.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Waking out of a gone run is a scope change inside one zone — the same event as walking out of it — so it owes
+    /// the same two things <see cref="ApplyArrivalGroupAsync"/> and <see cref="SyncArrivedZoneAsync"/> give a walk:
+    /// the <c>PlayerLeft</c>/<c>PlayerEntered</c> pair, and a <c>ZoneEntered</c> snapshot. The client rewrites its
+    /// occupant list only from a snapshot, so without one it kept the run's roster: players it can no longer see,
+    /// chat with or fight beside.
+    /// </para>
+    /// <para>
+    /// The group joined is the character's own shard, not the bare zone. In a wilderness zone the shared scope is
+    /// <c>zone:{zoneId}_{difficulty}</c>, so composing it without the difficulty puts the character in a group nobody
+    /// else is in — their <c>PlayerEntered</c> never reaches their shard, and the shard's chat and roster never reach
+    /// them. The pair used here is the pair <see cref="ComputeZoneGroup"/> composes names from and
+    /// <see cref="ReadOwnScopeAsync(string, ZoneType?)"/> reads rosters with, so the group and the snapshot agree.
+    /// </para>
+    /// </remarks>
     /// <param name="characterId">Character being resurrected.</param>
     private async Task LeaveExpiredInstanceAsync(Guid characterId)
     {
@@ -3304,36 +3743,68 @@ public class GameHub : Hub
         if (run is { State: Veldrath.Server.Data.Entities.ZoneInstanceState.Open })
             return;
 
-        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone) && zone is string id ? id : null;
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone)
+                     && zone is string id
+                     && !string.IsNullOrWhiteSpace(id)
+            ? id
+            : null;
+        var zoneEntity = zoneId is null ? null : await _zoneRepo.GetByIdAsync(zoneId);
+
         await ApplyArrivalGroupAsync(
-            string.IsNullOrWhiteSpace(zoneId)
-                ? null
-                : Veldrath.Server.Features.Zones.ZoneGroupName.ForZone(zoneId).Value,
-            null);
+            zoneId is null ? null : ComputeZoneGroup(zoneEntity?.Type, zoneId, CurrentDifficultyMode()),
+            null,
+            zoneId);
+
+        // This method only gets past the run check with a run the connection is pointing at, so the wake always
+        // changes the scope, and the snapshot is owed whenever there is a zone to describe. The character row is
+        // where the respawn handler recorded the node they woke on, so the snapshot describes where they now stand.
+        if (zoneEntity is not null)
+        {
+            var character = await _characterRepo.GetByIdAsync(characterId);
+            await SendZoneSnapshotAsync(zoneEntity, character?.CurrentMapId, character?.CurrentNodeId);
+        }
 
         await Clients.Caller.SendAsync(
             "SystemMessage",
-            "The instance you were in has closed. You wake in the shared zone.");
+            ExpiredInstanceMessage);
     }
 
     /// <summary>
     /// Brings the caller's zone state in line with an arrival that crossed a zone boundary, or walked out
-    /// onto the region map. The name, the inn and merchant flags and the occupant list all belong to the
-    /// zone; a walk is as much an arrival as <see cref="EnterZone"/>, so it sends the same snapshot.
+    /// onto the region map, or changed scope inside the zone it was already standing in. The name, the inn
+    /// and merchant flags and the occupant list all belong to the zone; a walk is as much an arrival as
+    /// <see cref="EnterZone"/>, so it sends the same snapshot.
     /// </summary>
+    /// <remarks>
+    /// A scope change inside one zone is invisible to the zone id and visible only in the roster: a room of
+    /// the shared zone and a room of an instance run are two different SignalR groups holding two different
+    /// sets of players. The client rewrites its occupant list only from a zone snapshot, so staying silent
+    /// there left both sides holding characters they can no longer reach. <see cref="ApplyArrivalGroupAsync"/>
+    /// has already moved the group and recorded the run by the time this runs, so the read below describes the
+    /// scope the character now stands in.
+    /// </remarks>
     /// <param name="result">Successful arrival, whose zone is authoritative after the move.</param>
-    private async Task SyncArrivedZoneAsync(TravelToNodeHubResult result)
+    /// <param name="scopeChanged">
+    /// Whether the arrival changed the group or run the connection is reachable in, which is the one kind of
+    /// arrival inside a zone that still changes what the snapshot describes.
+    /// </param>
+    private async Task SyncArrivedZoneAsync(TravelToNodeHubResult result, bool scopeChanged)
     {
         var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var current) && current is string id
             ? id
             : null;
 
-        if (string.Equals(currentZoneId, result.ZoneId, StringComparison.OrdinalIgnoreCase))
+        var crossedZone = !string.Equals(currentZoneId, result.ZoneId, StringComparison.OrdinalIgnoreCase);
+
+        if (!crossedZone && !scopeChanged)
             return;
 
-        Context.Items["CurrentZoneId"] = result.ZoneId;
-        Context.Items["CurrentMapId"] = result.MapId;
-        Context.Items["CurrentNodeId"] = result.NodeId;
+        if (crossedZone)
+        {
+            Context.Items["CurrentZoneId"] = result.ZoneId;
+            Context.Items["CurrentMapId"] = result.MapId;
+            Context.Items["CurrentNodeId"] = result.NodeId;
+        }
 
         // Stepping onto the region map leaves every zone behind; the client clears its banner from the
         // arrival instead, because a zone snapshot would have nothing to say.
@@ -3344,7 +3815,28 @@ public class GameHub : Hub
         if (zone is null)
             return;
 
-        var occupants = (await _playerSessionRepo.GetByZoneIdAsync(result.ZoneId!))
+        await SendZoneSnapshotAsync(zone, result.MapId, result.NodeId);
+    }
+
+    /// <summary>
+    /// Sends the caller the snapshot of the zone they now stand in: the zone's identity and flags, the map node they
+    /// occupy, and the occupants of their own scope.
+    /// </summary>
+    /// <remarks>
+    /// This is the one <c>ZoneEntered</c> payload, so every path that moves a connection — the <see cref="EnterZone"/>
+    /// arrival, a walk that crossed a border or changed scope (<see cref="SyncArrivedZoneAsync"/>), and the respawn
+    /// that woke out of a run which no longer exists (<see cref="LeaveExpiredInstanceAsync"/>) — describes the zone
+    /// the same way. The occupant list is <see cref="ReadOwnScopeAsync(string, ZoneType?)"/>, which names the players
+    /// in the scope the connection actually joined: the run's members inside a run, and the caller's own difficulty
+    /// shard otherwise. The zone's whole population would name a party mid-delve and the characters in the other
+    /// wilderness shard, whom the connection can neither see nor chat with.
+    /// </remarks>
+    /// <param name="zone">Zone the caller stands in.</param>
+    /// <param name="mapId">Map the caller stands on, or <see langword="null"/> when nothing records which.</param>
+    /// <param name="nodeId">Node the caller occupies, or <see langword="null"/> when nothing records which.</param>
+    private async Task SendZoneSnapshotAsync(Zone zone, string? mapId, string? nodeId)
+    {
+        var occupants = (await ReadOwnScopeAsync(zone.Id, zone.Type))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
         await Clients.Caller.SendAsync("ZoneEntered", new
@@ -3353,8 +3845,8 @@ public class GameHub : Hub
             zone.Name,
             zone.Description,
             ZoneType = zone.Type.ToString(),
-            CurrentMapId = result.MapId,
-            CurrentNodeId = result.NodeId,
+            CurrentMapId = mapId,
+            CurrentNodeId = nodeId,
             Occupants = occupants,
             HasInn = zone.HasInn,
             HasMerchant = zone.HasMerchant,
@@ -3362,14 +3854,56 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Moves the connection into the group the arrival belongs to when that differs from where it was, and
-    /// records the run on the session so a reconnect resumes inside it. A public arrival keeps the shared
-    /// zone scope and simply clears any run pointer.
+    /// Moves the connection into the group the arrival belongs to when that differs from where it was,
+    /// announces the move to both the audience being left and the one being joined, and records the run on the
+    /// session so the run-scoped reads — chests, floor loot, participation — follow the character. A public
+    /// arrival keeps the shared zone scope and simply clears any run pointer. The pointer is re-established on a
+    /// reconnect the same way an arrival establishes it: by looking up the character's still-open run, because
+    /// the session row it is written to does not survive the disconnect.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Walking from the shared zone into an instanced room of the same zone — or back out of it — changes the
+    /// SignalR group without changing the zone, so nothing else in the arrival path notices it. The group is the
+    /// audience, which is why the move speaks: without <c>PlayerLeft</c> the members it leaves behind keep the
+    /// character in their roster until their own next arrival, and without <c>PlayerEntered</c> the members it
+    /// joins never learn about them at all.
+    /// </para>
+    /// <para>
+    /// Walking out of a run is a departure like the disconnect's, so it goes through the same
+    /// <see cref="IZoneInstanceService.LeaveAsync"/>: participation closes and the run's emptiness grace starts
+    /// at the walk-out. Without that, a run held for longer than the grace was swept on the first tick after the
+    /// last member walked into the zone's shared rooms, and the walk back opened a fresh attempt instead of
+    /// resuming this one.
+    /// </para>
+    /// </remarks>
     /// <param name="zoneGroup">Scope the arrival belongs to, or <see langword="null"/> when unchanged.</param>
     /// <param name="instanceId">Run the character is now inside, or <see langword="null"/> for the shared zone.</param>
-    private async Task ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId)
+    /// <param name="zoneId">
+    /// Zone the arrival is in, or <see langword="null"/> to keep the zone already recorded. Only the departure and
+    /// entry announcements carry it, so a walk that crosses a border names the zone it left to the old group and
+    /// the zone it joined to the new one.
+    /// </param>
+    /// <returns>
+    /// Whether the arrival changed the scope the connection is reachable in — a different group, or a different
+    /// run. The caller uses it to decide whether an arrival that stayed inside one zone still owes a snapshot.
+    /// </returns>
+    private async Task<bool> ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId, string? zoneId = null)
     {
+        // Read before the overwrite below: the run being left is the only record of which departure this is.
+        var previousInstanceId =
+            Context.Items.TryGetValue("CurrentZoneInstanceId", out var previous) && previous is Guid left
+                ? left
+                : (Guid?)null;
+
+        // The zone the connection stands in before this arrival moves it, which is the one the group it is
+        // leaving belongs to. Recorded here because SyncArrivedZoneAsync overwrites it after the move.
+        var departedZoneId = Context.Items.TryGetValue("CurrentZoneId", out var standing) && standing is string standingZone
+            ? standingZone
+            : null;
+
+        var scopeChanged = previousInstanceId != instanceId;
+
         if (!string.IsNullOrWhiteSpace(zoneGroup))
         {
             var current = Context.Items.TryGetValue("CurrentZoneGroupName", out var value) && value is string existing
@@ -3378,18 +3912,70 @@ public class GameHub : Hub
 
             if (!string.Equals(current, zoneGroup, StringComparison.Ordinal))
             {
+                scopeChanged = true;
+
                 if (!string.IsNullOrWhiteSpace(current))
                     await Groups.RemoveFromGroupAsync(Context.ConnectionId, current!);
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup!);
                 Context.Items["CurrentZoneGroupName"] = zoneGroup;
+
+                // The move is only visible to the two audiences if it speaks: the members left behind keep a
+                // roster they can no longer reach, and the members joined never learn the character is here.
+                await AnnounceScopeMoveAsync(current, zoneGroup!, departedZoneId, zoneId ?? departedZoneId);
             }
         }
 
         Context.Items["CurrentZoneInstanceId"] = instanceId;
 
         if (TryGetCharacterId(out var characterId))
+        {
+            // A different run, or no run at all, means this arrival left the previous one. `LeaveAsync` refreshes
+            // the grace only for a run that is still Open, so the path that clears an already-closed run — the
+            // respawn onto the shared zone — stays a no-op, and walking between two rooms of the same run never
+            // reports a departure.
+            if (previousInstanceId is not null && previousInstanceId != instanceId && _zoneInstances is not null)
+                await _zoneInstances.LeaveAsync(previousInstanceId.Value, characterId);
+
             await _playerSessionRepo.SetZoneInstanceAsync(characterId, instanceId);
+        }
+
+        return scopeChanged;
+    }
+
+    /// <summary>
+    /// Tells the group the caller left and the group the caller joined that the character moved between them.
+    /// A scope change inside one zone is otherwise completely silent — the zone is unchanged, so nothing in
+    /// the arrival path speaks — and both sides keep a roster they can no longer reach.
+    /// </summary>
+    /// <param name="departedGroup">Group the connection was reachable in, or <see langword="null"/> if it had none.</param>
+    /// <param name="joinedGroup">Group the connection is reachable in now.</param>
+    /// <param name="departedZoneId">Zone the departed group belongs to.</param>
+    /// <param name="joinedZoneId">Zone the joined group belongs to.</param>
+    private async Task AnnounceScopeMoveAsync(
+        string? departedGroup,
+        string joinedGroup,
+        string? departedZoneId,
+        string? joinedZoneId)
+    {
+        if (!TryGetCharacterId(out var characterId) || !TryGetCharacterName(out var characterName))
+            return;
+
+        if (!string.IsNullOrWhiteSpace(departedGroup))
+            await Clients.Group(departedGroup!).SendAsync("PlayerLeft", new
+            {
+                CharacterId = characterId,
+                CharacterName = characterName,
+                ZoneId = departedZoneId,
+            });
+
+        // OthersInGroup, not Group: the caller is already a member and does not need to be told about itself.
+        await Clients.OthersInGroup(joinedGroup).SendAsync("PlayerEntered", new
+        {
+            CharacterId = characterId,
+            CharacterName = characterName,
+            ZoneId = joinedZoneId,
+        });
     }
 
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";
@@ -3480,7 +4066,15 @@ public class GameHub : Hub
                 {
                     var zoneIdForWho = Context.Items.TryGetValue("CurrentZoneId", out var zObj) && zObj is string z ? z : null;
                     if (zoneIdForWho is null) { await Clients.Caller.SendAsync("SystemMessage", "You are not in a zone."); return; }
-                    var sessions = await _playerSessionRepo.GetByZoneIdAsync(zoneIdForWho);
+
+                    // The list names the players standing beside the caller, not the zone's population, so it comes
+                    // from the same scope read the arrival snapshots use: the run's members inside a run, otherwise
+                    // the shared occupants on the caller's side of the difficulty split. The zone type is what
+                    // declares that split; a zone the catalog does not know has none. Inside a run the type is not
+                    // consulted at all, so it is resolved lazily rather than fetched on every invocation.
+                    var sessions = await ReadOwnScopeAsync(
+                        zoneIdForWho,
+                        async () => (await _zoneRepo.GetByIdAsync(zoneIdForWho))?.Type);
                     var names = sessions.Count == 0
                         ? "No players in this zone."
                         : string.Join(", ", sessions.Select(s => s.CharacterName));
@@ -3883,12 +4477,21 @@ public class GameHub : Hub
                     if (goldChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
 
                     var goldAttrs = ParseAttrs(goldChar.Attributes);
+                    var previousGold = goldAttrs.TryGetValue("Gold", out var existingGold) ? existingGold : 0;
                     goldAttrs["Gold"] = goldAmount;
                     goldChar.Attributes = JsonSerializer.Serialize(goldAttrs);
                     await _characterRepo.UpdateAsync(goldChar);
 
+                    // The client's GoldChanged handler reads goldAdded/newGoldTotal; a GM set is a diff rather
+                    // than an award, but the payload has to match that contract or the target's stat goes undefined.
                     await Clients.Client(goldSession.ConnectionId).SendAsync("GoldChanged",
-                        new { CharacterId = goldCharId, Gold = goldAmount, Source = "Admin" });
+                        new
+                        {
+                            CharacterId = goldCharId,
+                            GoldAdded = goldAmount - previousGold,
+                            NewGoldTotal = goldAmount,
+                            Source = "Admin",
+                        });
                     await Clients.Caller.SendAsync("SystemMessage",
                         $"Set gold to {goldAmount} for {goldSession.CharacterName}.");
                     return;
@@ -3918,8 +4521,11 @@ public class GameHub : Hub
                     hpChar.Attributes = JsonSerializer.Serialize(hpAttrs);
                     await _characterRepo.UpdateAsync(hpChar);
 
+                    // The client's DamageTaken handler reads damage/currentHP/maxHP/isDead; this is the only
+                    // remaining sender of the event, so its payload has to match that contract exactly. IsDead is
+                    // what lets a GM heal clear the death banner instead of leaving it stuck until a reload.
                     await Clients.Client(hpSession.ConnectionId).SendAsync("DamageTaken",
-                        new { CharacterId = hpCharId, DamageAmount = 0, CurrentHealth = clamped, MaxHealth = maxHealth, IsDead = clamped == 0, Source = "Admin" });
+                        new { CharacterId = hpCharId, damage = 0, currentHP = clamped, maxHP = maxHealth, isDead = clamped == 0, Source = "Admin" });
                     await Clients.Caller.SendAsync("SystemMessage",
                         $"Set health to {clamped}/{maxHealth} for {hpSession.CharacterName}.");
                     return;
@@ -4151,6 +4757,86 @@ public class GameHub : Hub
             : fallbackNodeId;
     }
 
+    /// <summary>
+    /// Where a character whose instanced run is gone wakes, and what to tell them. <see langword="null"/> means the
+    /// room they stood on was never instanced, the zone has no lobby this character can use, or that lobby has no
+    /// node on the zone's own map — all of which keep the saved position.
+    /// </summary>
+    /// <param name="NodeId">The lobby's node on the zone graph, or <see langword="null"/> to keep the saved node.</param>
+    /// <param name="Slug">The lobby's location slug, written beside the node.</param>
+    /// <param name="Message">The single sentence the player is told, or <see langword="null"/> for a silent stay.</param>
+    private readonly record struct SweptRunWake(string? NodeId, string? Slug, string? Message);
+
+    /// <summary>
+    /// Resolves the zone's lobby — its safe-respawn location — as the place to wake a character whose instanced
+    /// run is gone, or <see langword="null"/> when the room they stood on was never instanced, the zone has no
+    /// safe location, or that location has no node on the zone's own map.
+    /// </summary>
+    /// <param name="zoneId">Zone the character is resuming into.</param>
+    /// <param name="characterId">Character reconnecting, whose hidden-location unlocks decide the lobby.</param>
+    /// <param name="locationSlug">Location the character stood on when their connection dropped.</param>
+    /// <param name="zoneGraph">The zone's map graph, which owns the node the lobby stands on.</param>
+    /// <returns>The lobby's node and slug, or <see langword="null"/> to keep the saved position.</returns>
+    private async Task<SweptRunWake?> ResolveSweptInstanceLobbyAsync(
+        string zoneId,
+        Guid characterId,
+        string? locationSlug,
+        MapGraph? zoneGraph)
+    {
+        // Both halves are registered in the server's container; a hub built without them (some tests) has no
+        // catalogue to ask, so it keeps the saved position rather than moving the character on a guess.
+        if (_locations is null || _lobbies is null || zoneGraph is null || string.IsNullOrWhiteSpace(locationSlug))
+            return null;
+
+        // Only an instanced room has a run behind it. Everywhere else the shared scope is where the character
+        // belongs anyway, so there is nothing to explain and nowhere of ours to move them.
+        var stoodOn = await _locations.GetBySlugAsync(locationSlug);
+        if (stoodOn is not { IsInstanced: true } ||
+            !string.Equals(stoodOn.ZoneId, zoneId, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // The lobby is the zone's safe location — the same rule the respawn uses, resolved the same way, so a hidden
+        // lobby the character has unlocked is reachable instead of silently turning this wake into a no-op.
+        var resolution = await _lobbies.ResolveAsync(zoneId, characterId);
+
+        switch (resolution.Status)
+        {
+            case ZoneLobbyStatus.Resolved when resolution.Lobby is { } lobby:
+                var node = zoneGraph.Nodes.FirstOrDefault(candidate =>
+                    candidate.NodeType == MapNodeType.Location &&
+                    string.Equals(candidate.RefId, lobby.Slug, StringComparison.OrdinalIgnoreCase));
+
+                if (node is null)
+                {
+                    _logger.LogError(
+                        "Zone {ZoneId} has no map node for its safe respawn location {LocationSlug}; character {CharacterIdPrefix} keeps the saved node after their run was swept",
+                        zoneId, lobby.Slug, characterId.ToString()[..8]);
+                    return null;
+                }
+
+                _logger.LogInformation(
+                    "Character {CharacterIdPrefix} woke in {LocationSlug} of zone {ZoneId} after their instanced run was swept",
+                    characterId.ToString()[..8], lobby.Slug, zoneId);
+                return new SweptRunWake(node.Id, lobby.Slug, ExpiredInstanceMessage);
+
+            case ZoneLobbyStatus.NotUnlocked when resolution.LockedLobby is { } locked:
+                // The zone authored a lobby, but this character cannot see it. Say so: the wake keeps the saved node,
+                // and a player left silently on a node whose run is gone has no way to understand why.
+                _logger.LogError(
+                    "Zone {ZoneId} has a hidden safe respawn location {LocationSlug} that character {CharacterIdPrefix} has not unlocked; the swept-run wake keeps the saved node",
+                    zoneId, locked.Slug, characterId.ToString()[..8]);
+                return new SweptRunWake(null, null, LockedLobbyMessage);
+
+            default:
+                _logger.LogError(
+                    "Zone {ZoneId} has no lobby a swept-run wake can use for character {CharacterIdPrefix} ({Status}); keeping the saved node",
+                    zoneId, characterId.ToString()[..8], resolution.Status);
+                return null;
+        }
+    }
+
     private async Task SendInventorySnapshotAsync(
         Guid characterId,
         GetInventoryHubResult result,
@@ -4218,11 +4904,6 @@ public class GameHub : Hub
 /// <param name="CostInGold">Gold deducted for the rest (default: 10).</param>
 public record RestAtLocationHubRequest(string LocationId, int CostInGold = 10);
 
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.AwardSkillXp"/>.</summary>
-/// <param name="SkillId">Skill identifier (e.g. <c>"swordsmanship"</c>, <c>"herbalism"</c>).</param>
-/// <param name="Amount">XP amount to award. Must be positive.</param>
-public record AwardSkillXpHubRequest(string SkillId, int Amount);
-
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.EquipItem"/>.</summary>
 /// <param name="Slot">
 /// Slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>). Optional: when omitted or empty the server
@@ -4231,21 +4912,6 @@ public record AwardSkillXpHubRequest(string SkillId, int Amount);
 /// </param>
 /// <param name="ItemRef">Item-reference slug to equip, or <see langword="null"/> to clear the slot.</param>
 public record EquipItemHubRequest(string? Slot, string? ItemRef);
-
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.GainExperience"/>.</summary>
-/// <param name="Amount">Positive number of experience points to award.</param>
-/// <param name="Source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
-public record GainExperienceHubRequest(int Amount, string? Source = null);
-
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.AddGold"/>.</summary>
-/// <param name="Amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
-/// <param name="Source">Optional label for the gold source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
-public record AddGoldHubRequest(int Amount, string? Source = null);
-
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.TakeDamage"/>.</summary>
-/// <param name="DamageAmount">Positive number of hit points to remove.</param>
-/// <param name="Source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
-public record TakeDamageHubRequest(int DamageAmount, string? Source = null);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.VisitShop"/>.</summary>
 /// <param name="ZoneId">ID of the zone whose merchant to visit.</param>

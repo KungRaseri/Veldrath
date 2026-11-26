@@ -66,6 +66,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<LootChest> LootChests => Set<LootChest>();
     /// <summary>People standing at zone locations, the placement an authored actor archetype needs to be met.</summary>
     public DbSet<LocationNpc> LocationNpcs => Set<LocationNpc>();
+    /// <summary>One-shot dialogue options each character has already taken.</summary>
+    public DbSet<CharacterDialogueChoice> CharacterDialogueChoices => Set<CharacterDialogueChoice>();
     /// <summary>Live runs of instanced zones, the aggregate root a delve's state points at.</summary>
     public DbSet<ZoneInstance> ZoneInstances => Set<ZoneInstance>();
     /// <summary>Characters who have taken part in an instance run.</summary>
@@ -323,6 +325,19 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<CharacterDialogueChoice>(e =>
+        {
+            // The choice is the key: one row per option already taken, so a repeat is a duplicate insert rather than
+            // a second state to reconcile — which is what stops a gold-bearing option being farmed by clicking.
+            e.HasKey(c => new { c.CharacterId, c.SpeakerSlug, c.OptionKey });
+            e.Property(c => c.SpeakerSlug).HasMaxLength(128).IsRequired();
+            e.Property(c => c.OptionKey).HasMaxLength(64).IsRequired();
+            e.HasOne(c => c.Character)
+             .WithMany()
+             .HasForeignKey(c => c.CharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
         builder.Entity<LocationNpc>(e =>
         {
             e.HasKey(n => n.Id);
@@ -346,6 +361,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(i => i.ZoneGroup).HasMaxLength(200).IsRequired();
             e.Property(i => i.LocationSlug).HasMaxLength(128).IsRequired();
             e.Property(i => i.ArchetypeSlug).HasMaxLength(200).IsRequired();
+            // Null for a pool spawn; the instance slug is what rebuilds the composed template on reload.
+            e.Property(i => i.InstanceSlug).HasMaxLength(200);
             e.Property(i => i.Name).HasMaxLength(200).IsRequired();
             // One living archetype instance per location per spawn instant.
             e.HasIndex(i => new { i.ZoneGroup, i.LocationSlug, i.ArchetypeSlug, i.SpawnedAt }).IsUnique();

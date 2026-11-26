@@ -1,0 +1,4 @@
+{
+	"$comment": "Fixture allowlist. Empty on purpose: the fixture tree authors no deliberately similar pair, and an authored citation of an attested form is handled by the check rather than recorded here.",
+	"allow": []
+}

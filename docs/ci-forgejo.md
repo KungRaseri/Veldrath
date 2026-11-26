@@ -112,6 +112,23 @@ Cobertura export (`web/client/coverage/cobertura-coverage.xml`) goes through the
 so the client gets a comment and artifact with line, branch, function and full-function numbers;
 its 90% gate stays vitest's own thresholds.
 
+**That report's Total row is the gate's number; only its per-directory rows carry the other
+accounting.** The reporter is pinned to `v1.0.4`, which reads the Cobertura root
+`branches-valid`/`branches-covered` counters instead of summing the per-line `condition-coverage`
+attributes, so on the web report its branch Total is the pair the gate enforces. The per-directory
+rows under it are still built from the per-line conditions, and istanbul writes those only for a
+site it can place on a source line: on PR #88 they summed to 4,180 conditions against 4,902 sites
+(`89.8%` in the comment beside `90.33%` in the gate) — the discrepancy that release fixed, for the
+Total row only.
+`scripts/web-coverage-gate.mjs` therefore heads the `web` section with the totals the coverage step
+printed, parsed from that step's log so vitest's `ERROR: Coverage for …` threshold lines — global
+and per-glob — travel with it, and states both numbers for the run beside the per-directory table,
+which it labels as the Cobertura accounting. `coverage.reportOnFailure` is on, so a red gate still
+writes the report and posts the comment rather than leaving the previous head's numbers in place.
+The decision and the measurements are in
+[`plans/web-feature-parity-and-coverage.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/development/plans/web-feature-parity-and-coverage.md)
+(that plan is not on the published docs site, hence the absolute link).
+
 Both write into **one shared coverage comment** (`scripts/forgejo-pr-comment.sh --section …`): the
 .NET job owns the `dotnet` section, the web job the `web` section, so a PR shows a single summary
 with both. The script replaces only its own section, deletes the superseded one-comment-per-job
@@ -128,18 +145,44 @@ review comment, must still yield a single `746`, not `746` twice. That was a rea
 `scripts/tests/forgejo-pr-comment.test.sh`, which runs the real script against a fake `curl` on
 PATH (no token, no network, no pull request) and asserts the method, URL and payload of every
 request for the shared path, the legacy `--marker` path, the match-at-end-of-list case, the
-no-match create case and the duplicate-comment cleanup.
+no-match create case, the duplicate-comment cleanup and the e2e comment's own marker.
+
+### E2E reports
+
+Playwright gets its own sticky comment (`<!-- ci-e2e -->`), deliberately **not** a section of the
+coverage comment: a table of test counts under `## Coverage summary` is the wrong document, and
+one broken report must not take the other down with it. The same
+`scripts/forgejo-pr-comment.sh` writes both — `--marker` may now be combined with
+`--section`/`--title`, and `--heading` replaces the hard-coded coverage heading, so the e2e
+comment reads `## E2E summary`.
+
+| Piece | Where | Fact |
+|---|---|---|
+| Spec sets | `web/client/tests/e2e-manifest.json` | The single list of which spec runs in which run. The list used to be copied by hand into `web/client/package.json` **and** this workflow, and the copy had dropped `tests/encounters.e2e.ts`, so the combat and death journey never ran in CI. |
+| Runner | `web/client/tests/run-e2e.mjs` | Expands a run name into the Playwright invocation and points the reporters at per-run files, because one job runs Playwright twice. `--list` and `--dry-run` work without `npm ci`. |
+| Reporters | `web/client/playwright.config.ts` | `list`, `html` (never opens), `json` and `junit`, written to the `PW_*` paths the runner sets. Without them there is nothing to summarise — and the `playwright-report/` artifact both web jobs uploaded was empty for exactly that reason. |
+| Summary | `scripts/e2e-summary.mjs` | `E2EReport/Summary.md`: totals, a per-spec table slowest-first, each failure with its error headline and trace path, and each skip with its reason. |
+| Integrity gate | `scripts/check-e2e-manifest.mjs` | Fails when a manifest spec produced no result, when an unexpected spec ran, or when a skip has no allow-listed reason. It never fails on a red test — pass/fail is the job's own exit code. |
+
+The gate is what replaces "the spec list lives somewhere in the workflow". Flaky tests are counted
+and named but never gate a build: `retries: 1` already hides one flake, and a flaky budget would go
+red on its first day. Per-run floors live in `web/client/tests/e2e-baseline.json`, where an empty
+`runs` object means "not measured yet" — `--suggest` prints the number to commit after a green run.
+Both are covered by `scripts/tests/e2e-reporting.test.mjs` (`node --test scripts/tests/e2e-reporting.test.mjs`),
+which runs the real scripts against fixtures, including the negative control for a spec that no run
+claims.
 
 ### What runs where
 
-Every workflow watches the same two integration branches, and none of them publishes from a
-pull request:
+Every workflow that triggers on `push` watches both integration branches, and none of them publishes
+from a pull request:
 
 | Trigger | What runs |
 |---|---|
 | push to `main` | build + test, **and** the publish/deploy jobs |
 | push to `development` | build + test; publish jobs are skipped |
-| pull request whose **base** is `main` or `development` | build + test only |
+| pull request whose **base** is `development` | build + test only |
+| pull request whose **base** is `main` | the merge gate only (see below) |
 | `workflow_dispatch` | build + test only |
 | `workflow_dispatch` with `publish: true` | build + test, **and** the publish/deploy jobs |
 
@@ -159,10 +202,52 @@ measured on this instance rather than assumed:
   still open; merge into it only when rebasing would rewrite a branch someone else has already
   pulled.
 
+**The `main` row is deliberately asymmetric, and it is what keeps `development` commits from being
+marked red.** Ten pull requests have ever targeted `main`: eight came from `development` — seven
+merged, and #78 still open — and two were closed unmerged from branches of their own, #177 (a
+throwaway probe for this contract) and #31 (a wiki-submodule pin). The release PR is #78, so its
+head commit *is* a `development` commit, and the `push` runs that judge that commit already report
+there. A `pull_request` run of the same workflow, at the same commit, is a second verdict on the
+same tree, and it is the one that does damage: the next push to `development` synchronises the
+release PR, Forgejo cancels the superseded run, and the cancellation is recorded as `failure / "Has
+been cancelled"` on the `development` commit that run was started for. Measured on 2026-11-21 at tip
+`8df3e780`: 14 statuses, 13 of them `failure / "Has been cancelled"`, all 13 `(pull_request)`; the
+`docs.yml pull_request` runs 2900/2909/2918/2927 at four consecutive tips are `cancelled` while the
+paired `docs.yml push` runs at the same commits (2893/2902/2911/2920) queued and then finished
+`success`. So the six component workflows and
+`docs.yml` declare `pull_request.branches: [ development ]`, and the merge gate — the one workflow a
+release PR still runs — never cancels.
+
+That relies on `pull_request.branches` filtering on the base branch, so it was measured before it
+was relied on. Two throwaway probe pull requests carried the same head branch: #174 against
+`development` and #177 against `main`. Both were built from a probe workflow with `branches:
+[ development ]` and a control that lists `main` as well. On #177 the control ran (run #3212) and
+the `development`-only workflow produced **no run at all**; the six component workflows, `docs.yml`
+and the merge gate ran their whole matrix again at a commit #174 had already judged (runs
+#3204–#3211) — exactly the duplicate the contract removes.
+
+The alternative — keep the release-PR matrix and merely stop cancelling it — was measured on the
+same probes and rejected on cost. `cancel-in-progress: false` does stop the cancellation: the five
+probe commits produced five completed runs of that workflow (runs #3181, #3187, #3190, #3194 and
+#3196, all `success`), while its `cancel-in-progress: true` control wrote three `failure / "Has been
+cancelled"` rows (runs #3186, #3189 and #3192) on the commits it was superseded at. What it does not
+do is stop the work. At `d0050f96` the release PR's eight `(pull_request)` jobs took 20 s, 2 m 14 s,
+5 m 47 s, 1 m 54 s, 6 s, 2 m 31 s, 1 m 33 s and 8 m 19 s — about 22 minutes of runner time per
+synchronise on a two-slot runner. That buys a second copy of a verdict the `push` lane mostly
+already has: six of those eight jobs have a `push` twin at that commit and reached the same verdict
+it did. The two that do not are `ci-web`, whose `paths` list that push did not match, and the merge
+gate, which has no `push` trigger at all. A pull request into `main` from a branch of its own would
+get the matrix back only by adding `main` to `pull_request.branches` again — the last such PR was
+#31, a wiki-submodule pin closed unmerged — while the narrow list stays specific to the release
+lane, and `scripts/ci-merge-gate.sh`'s L5 fails the lint if the merge gate loses `main`.
+
 Each workflow keeps its `push` and `pull_request` path lists **identical**, and lists
-`.github/agent-memory/**` by name even though `**/*.md` already matches it — the memory file is the
-one Markdown file every session touches, and a silent skip there is invisible until a stale entry
-ships.
+`.github/agent-memory/**` by name even though `**/*.md` already matches it — that is the path every
+session writes, and a note whose front matter is invalid has to fail its own pull request rather than
+the next one to touch the hub. The hub itself no longer changes when a note is added: it is
+[`scripts/memory/veldrath-memory.template.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/memory/veldrath-memory.template.md)
+verbatim, so the memory workflow validates the notes *and* that equality, and nothing is regenerated
+after a merge.
 
 So the filters are not decorative: before this was fixed every workflow listed only `main`,
 which meant the release PR (`development` → `main`) was the only PR ever tested and the
@@ -286,7 +371,7 @@ file the repository can diff, so it is recorded here and applied by
 | `push_whitelist_usernames` | `[]` | `["kungraseri"]` | The bypass is one named account — see below |
 | `push_whitelist_teams` | `[]` | `[]` | Account-only: no team inherits the push path |
 | `push_whitelist_deploy_keys` | `false` | `false` | A deploy key is not a second break-glass path |
-| `required_approvals` | `0` | `0` | The instance has one account, and an author cannot approve their own PR |
+| `required_approvals` | `1` | `1` | One approving review, from an account that is not the author's: every agent profile publishes under its own account, and the review profile signs as `sela`, so an approval always comes from an account other than the author's. Read back with an admin token from `GET /api/v1/repos/Veldrath/Veldrath/branch_protections` (2026-11-25); `scripts/apply-branch-protection.sh` sends the same `1` |
 | `apply_to_admins` | `false` | `false` | The administrator exemption was removed on request — see below |
 | `block_on_outdated_branch` | `false` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
 | `require_signed_commits` | `false` | `false` | Commits here are not signed |
@@ -308,9 +393,9 @@ branch main`); enabling push for one account is a separate switch.
 What each exception costs, stated plainly:
 
 - `apply_to_admins: false` hands *repository* admins the `force_merge` override that
-  `CheckPullMergeable` already gives an instance admin. The instance has one account, so
-  today this changes nothing for the person operating it; it matters the day a second admin
-  exists.
+  `CheckPullMergeable` already gives an instance admin. Exactly one account on the instance is
+  an *admin*, `kungraseri`; every other account is not, so the exemption changes nothing for
+  them. It is a one-admin switch, and it matters the day a second admin exists.
 - `main` accepts pushes from exactly one account, `kungraseri`. Every other identity, and
   every push to `development`, is still refused by the pre-receive hook. A direct push to
   `main` skips the status checks, so it is for repairing a broken deployment, never for
@@ -330,7 +415,7 @@ The obvious list is the build gates that report on a pull request today:
 - `CI - .NET Coverage Gate / Enforce .NET Coverage Floors (pull_request)`
 - `Deploy Documentation / Build Docs (pull_request)`
 
-It cannot be that list. Every workflow is filtered by `on.pull_request.paths`
+It cannot be that list. Each of those workflows is filtered by `on.pull_request.paths`
 ([`ci-engine.yml:28`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/ci-engine.yml)), and a required pattern that
 matches no status is `pending`, not skipped: in `MergeRequiredContextsCommitStatus`
 (`services/pull/commit_status.go` at v15.0.11) the loop breaks with
@@ -360,8 +445,37 @@ reads:
 
 What follows from that, all of it deliberate:
 
-- `pending` blocks — a queued or running job, and a job cancelled by the `concurrency`
-  group, keep the merge waiting.
+- `pending` blocks — a queued or running job keeps the merge waiting.
+- A job **cancelled** by its `concurrency` group is not `pending`, and this is the one place the
+  wording of the rule above matters: it reports `failure` with the description "Has been
+  cancelled", so it does not hold the merge, it **refuses** it. Measured:
+  `GET /api/v1/repos/Veldrath/Veldrath/commits/753b0210/status` on 2026-11-21 returned 17 of its
+  22 statuses as `failure / "Has been cancelled"` — a merged `development` commit that no run
+  judged as a whole (three `push` contexts did reach a verdict and pass — engine, discord and
+  content — and two `push` contexts were skipped), marked red by the runs that superseded the
+  rest. Whether a lost run is safe depends on whose commit it would have reported on, not on the
+  event name:
+  - Harmless when the run belongs to a **pull request whose head is a branch of its own**: the
+    pull request only ever shows its latest head, and the cancelled status lands there rather
+    than on a base-branch commit.
+  - Not harmless when the run reports on a **base-branch commit**. That is every `push` run on
+    `main` or `development`, and it is also the release PR (`development` → `main`, #78), whose
+    head *is* `development`: its `pull_request` runs report on `development` commits. Measured on
+    2026-11-21 on tip `8df3e780`: 14 statuses, 13 of them `failure / "Has been cancelled"`, all
+    13 `(pull_request)`. The paired runs show both behaviours side by side — 2900/2909/2918/2927
+    (`pull_request` #78) are `cancelled`, while 2893/2902/2911/2920 (`push` … `development`) were
+    queued `waiting` in one group at the same commits and have all since finished `success`
+    (3 m 1 s, 2 m 32 s, 2 m 55 s and 2 m 51 s).
+
+  So the rule for every workflow that triggers on `push` is to cancel PR runs only —
+  `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`. A `push` run on `main` or
+  `development` is then never superseded, so it finishes and records the verdict it actually
+  reached. The release PR lane is removed instead of covered by that expression, because no
+  concurrency setting can move its verdicts somewhere harmless: its `pull_request.branches` list is
+  `development` only (see "What runs where"), so a push to `development` starts no run for it in the
+  six component workflows or `docs.yml`, and `merge-gate.yml` — the only workflow a release PR still
+  runs — does not cancel at all (`cancel-in-progress: false`: a superseded run queues and completes,
+  where a cancelled one is a `failure` on a `development` commit).
 - A workflow filtered out by `paths` neither helps nor blocks: it is simply not part of the
   set. The `paths` lists stay the single source of truth for *which* components a change
   touches, and no second copy of them has to be maintained here. That holds only while
@@ -420,24 +534,29 @@ The alternatives were measured against the tree instead of argued:
 
 | Alternative | Why not |
 |---|---|
-| Add root-config paths to an existing list | The set is not three files: 39 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
-| Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
+| Add root-config paths to an existing list | The set is not three files: 36 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
+| Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: `CheckPullMergeable` clears the protection error for any token holding instance-admin rights, so documenting it would make "whoever holds the admin token certifies their own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
-The job lints the workflow definitions; it builds nothing. Its rules are the two ways this
-repository has actually broken CI, plus the invariant that keeps this remedy alive:
+The job lints the workflow definitions; it builds nothing. Its rules are the failure modes this
+repository has actually hit, plus the invariants that keep this remedy alive:
 
 - **L1** every workflow file declares a top-level `name:` — that string is the status context.
 - **L2** every `uses:` names one of the six actions mirrored on this instance (section 1). That
   failure mode is documented above as "fails in under a second, logs nothing"; the rule turns it into
   a message that names the file, the action and the fix (import it with `POST /repos/migrate`, then
   add it to the allow-list and to the table in section 1).
-- **L3** every `pull_request` workflow triggers on both `main` and `development`. Session-92 fixed
-  exactly this drift: every workflow said `branches: [ main ]` while pull requests targeted
-  `development`, so a change landing there ran no CI at all.
+- **L3** every `pull_request` workflow lists `development`. Session-92 fixed exactly this drift:
+  every workflow said `branches: [ main ]` while pull requests targeted `development`, so a change
+  landing there ran no CI at all. `main` is optional on purpose — a `pull_request` run there
+  duplicates the `push` run at the same commit and reddens the `development` commits it is
+  superseded at ("What runs where").
 - **L4** at least one `pull_request` workflow declares neither `paths` nor `paths-ignore`. That is
   the invariant behind the remedy: give `merge-gate.yml` a `paths` filter and the zero-status
   deadlock returns, so the lint fails the pull request that does it.
+- **L5** `merge-gate.yml` lists both `main` and `development`. It is the only workflow a release PR
+  still runs, so it is the one status a release PR is guaranteed to have; dropping `main` there
+  would restore the zero-status deadlock for a release whose head commit matched no `paths` list.
 
 Cost: one job — one `actions/checkout@v7` and one `bash scripts/ci-merge-gate.sh --lint`, with no
 SDK, npm, docker or service container. **Measured on 2026-11-03: 5 s** for the whole job (`duration`
@@ -465,18 +584,16 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### What it deliberately does not protect
 
-- **Reviews.** `required_approvals` is `0` because the instance has exactly one account
-  (`GET /admin/users` returns only `kungraseri`) and Forgejo does not let an author approve
-  their own pull request, so any non-zero value would block every merge instead of adding a
-  reviewer. Raise it the day a second account exists.
 - **The administrator.** `CheckPullMergeable` (`services/pull/check.go`) clears the
   protection error when `force_merge` is set and the doer is an instance admin, and because
   `apply_to_admins` is now `false` a *repository* admin gets the same override. That is the
   break-glass path — a stuck `pending` status must never lock the only operator out — and
-  it is why this rule is a review contract, not a lock. Every worker here authenticates as that
-  account, so the override is available to an agent, not only to the human at the keyboard: the
-  gate is enforced by discipline, and a worker that runs `force_merge` is self-certifying. Use it
-  to unblock, never to land a red change.
+  it is why this rule is a review contract, not a lock. The override follows the token, not the
+  person at the keyboard: any token holding instance-admin rights can set `force_merge`, and the
+  one admin credential lives in the automation host's environment file beside the worker
+  credentials, so the override is reachable by an agent and not only by the human. The gate is
+  enforced by discipline, and a worker that runs `force_merge` is self-certifying. Use it to
+  unblock, never to land a red change.
 - **Direct pushes to `main`.** Exactly one account, `kungraseri`, may push there; `development`
   refuses every push, and that refusal was exercised: `git push` to it answers
   `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The
@@ -490,33 +607,69 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against the tree on 2026-11-04 (`git ls-files`, 1618 paths, the merge gate and its script
-included): **36 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
-zero statuses and deadlocked the gate; now they produce exactly one — the merge gate — and merge with
-**no build and no test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
+Measured over `development` at `fd6ac0ba` (2026-11-22), on the change that names
+`game-context/budget.yaml` in `ci-server.yml`: **36 paths match no `on.pull_request.paths` pattern.**
+Before the merge gate they produced zero statuses and deadlocked the gate; now they produce exactly
+one — the merge gate — and merge with **no build and no test**. Regenerate the list with
+`bash scripts/ci-merge-gate.sh --uncovered`; it prints that count above a footer carrying the live
+figures for whatever tree you run it on — `(git ls-files: 2082 paths; 105 pull_request path patterns;
+…)` for this one — so quote the footer instead of hand-counting. Both are a snapshot of that tree,
+not a standing number. The content guard, `.github/workflows/ci-content.yml` (merged in #108),
+contributes nine of those patterns. The set was 37 at `3d3320ac` (2007 tracked files, 102 patterns):
+these paths plus `game-context/budget.yaml`, which `MerchantBandTests` reads and this change now
+names in that job's `paths`, so all 75 files added between the two measurements are covered by some
+`paths` entry; the only pattern change since is the pair `scripts/check-content-names.mjs` and
+`scripts/content-name-collisions.allow.json` (#134), which name a script `docs.yml` runs.
 
 The path count halved when `Veldrath.Assets` and its 1,837 art files were deleted (2026-11-04); the
 uncovered *set* barely moved, which is the point — the art never matched a workflow's `paths` either.
+It shrank by two on 2026-11-20 for the opposite reason: `scripts/check-e2e-manifest.mjs` and
+`scripts/e2e-summary.mjs` are executed by `ci-web.yml`, so that workflow now names them in both of its
+path lists. The rule is the one `scripts/web-coverage-gate.mjs` and `scripts/tests/**` already follow:
+**a script the job executes is in the job's paths.**
 
 | Class | Count | Paths |
 |---|---|---|
 | Root dotfiles and editor config | 10 | `.dockerignore`, `.editorconfig`, `.env.example`, `.gitignore`, `.gitmodules`, `.hermes/skills`, `.roomodes`, `.vscode/launch.json`, `.vscode/tasks.json`, `LICENSE` |
-| Root build metadata | 3 | `NuGet.config`, `dotnet-tools.json`, `toc.yml` |
+| Root build metadata | 1 | `dotnet-tools.json` |
 | Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
-| Observability and deploy config | 10 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml` |
-| Scripts no workflow names | 7 | `scripts/ci-merge-gate.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
+| Observability and deploy config | 11 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.e2e.yml`, `docker-compose.prod.yml` |
+| Scripts no workflow names | 8 | `scripts/ci-merge-gate.sh`, `scripts/create-release-tag.ps1`, `scripts/e2e-stack.sh`, `scripts/format-json-files.py`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
 | Submodule pin | 1 | `wiki` |
 | The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
 
 Two of those classes deserve an explicit warning, because "merges without a build" is not the same
 as "cannot break the build":
 
-- **`NuGet.config` and `dotnet-tools.json`** decide how every .NET job restores and which tools it
-  runs. Add them to `ci-coverage.yml`'s `paths` when that matters; until then a change to package
-  sources merges on the merge gate alone.
+- **`dotnet-tools.json`** pins the local tool set every `dotnet` invocation resolves, and no `paths`
+  list names it, so a tool-version change merges on the merge gate alone — name it in the `paths` of
+  whichever job installs those tools when a tool pin starts to matter. `NuGet.config` has left
+  this class: `ci-content.yml` names it in both of its `paths` lists (`push` and `pull_request`), so
+  a package-source change now gets a content-guard status. Read that status for what it is — not a
+  build. The guard runs `dotnet run --project Veldrath.ContentPack`, so the sources that project
+  resolves are restored through the changed file; a source only another project needs stays unseen
+  until an unrelated change runs that project's job, which then fails on a pull request that did not
+  touch it.
 - **The four component `.slnx` files** decide which projects each solution builds. `Realm.Full.slnx`
   is covered by `ci-coverage.yml`; `RealmEngine.slnx` and the three `Veldrath.*.slnx` are not, so
   adding a project to `Veldrath.Server.slnx` alone reports the merge gate and no build.
+
+Seven of the eight entries in the scripts class are developer-only, which is why no list names them
+and none should:
+
+- **`scripts/e2e-stack.sh`** starts the isolated local stack the full-flow Playwright specs need. CI
+  never calls it — the `e2e-game` job starts its own Postgres and `Veldrath.Server` — and the script's
+  own header calls it "the local equivalent" of that job. It stays unnamed on purpose, not by oversight.
+- **`scripts/create-release-tag.ps1`**, **`scripts/generate-version.ps1`** and
+  **`scripts/generate-coverage-report.ps1`** are the PowerShell twins kept for local and Windows use;
+  the workflows run `scripts/forgejo-release.sh`, `scripts/generate-version.sh` and
+  `scripts/coverage-report.sh` instead.
+- **`scripts/format-json-files.py`** is a formatting helper, and the two `*_labeled.png` files are
+  annotation assets for issue screenshots. No job executes either.
+
+The eighth, **`scripts/ci-merge-gate.sh`**, is the exception in that class: it runs on **every** pull
+request, but `merge-gate.yml` declares no `paths` at all, so no list can name it — and that is what
+makes the rest of this table safe to have.
 
 #### When to switch back to named contexts
 
@@ -712,6 +865,10 @@ All four of these have actually happened in this repository.
 | Release created but no asset | The zip glob did not match; check the `Upload artifacts` step output. |
 | Publish job skipped on a dispatch | The dispatch left `publish` at `false`, which is the default: a dispatch is build-only by design. Re-dispatch with `publish: true` if you meant to publish. |
 | PR comment duplicated | A different `--marker` was used; markers must be stable per component. |
+| No `E2E summary` comment on a pull request | The summary was never rendered — `E2EReport/Summary.md` is missing, and the comment step exits 0 by design rather than failing a red job over a comment. Check the `Render the E2E summary` step. |
+| The e2e gate fails with `produced no result` for a spec that passes locally | The spec is not part of the run that job executes. Add it (once) to `web/client/tests/e2e-manifest.json`; a new spec file that no run claims fails the static check in the same step. |
+| `playwright-report/` is empty although the job ran Playwright | A bare `npx playwright test` bypassed `tests/run-e2e.mjs`, so no `PW_*` output path was set, or the reporters block was removed from `playwright.config.ts`. |
+| A skip makes the e2e gate fail | Intentional skips need an entry in the manifest's `allowedSkips` with a reason; the failure message quotes the skip text so it can be matched exactly. |
 | Last step of the coverage job fails with `curl: (3) bad/illegal URL`, and the log shows the id twice — `Updating the shared coverage comment 746` then `746 (section: dotnet)` | `find_comment` printed the id twice when another comment followed the match, so `COMMENT_ID` held `746\n746` and the PATCH URL carried a newline. Fixed by the `found` guard in `scripts/forgejo-pr-comment.sh`; pinned by `scripts/tests/forgejo-pr-comment.test.sh`. |
 
 ### Reading a job log

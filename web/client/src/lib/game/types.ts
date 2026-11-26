@@ -1,5 +1,7 @@
 /** Minimal client-side contracts for the Phase 1 game slice. */
 
+import type { ArchetypeTier } from './archetype-portraits';
+
 export interface CharacterSummary {
 	id: string;
 	slotIndex: number;
@@ -508,6 +510,18 @@ export interface LocationEnteredPayload {
 	spawnedEnemies?: SpawnedEnemy[] | null;
 }
 
+/**
+ * The enemies standing where the character already is.
+ *
+ * Sent when a resumed session asks for the roster: the roster is otherwise only ever pushed with a travel
+ * result, so a login inside a location would show an empty room until the next move.
+ */
+export interface LocationRosterPayload {
+	/** The location the roster belongs to, or `null` when the character is not standing on one. */
+	locationSlug?: string | null;
+	spawnedEnemies?: SpawnedEnemy[] | null;
+}
+
 /** A resource node standing in the current location. */
 export interface LocationNode {
 	nodeId: string;
@@ -588,6 +602,43 @@ export interface NpcTalkedPayload {
 	isQuestGiver: boolean;
 }
 
+/**
+ * One choice in a conversation, already evaluated by the server.
+ *
+ * `enabled` and `blockedReason` are computed against the character's live state — the panel renders them and never
+ * decides them, so a disabled button and a server refusal cannot disagree.
+ */
+export interface NpcDialogueOption {
+	key: string;
+	label: string;
+	enabled: boolean;
+	blockedReason?: string | null;
+	/** What taking it changes, in the server's own words. */
+	consequences: string[];
+}
+
+/** The conversation a person offers. */
+export interface NpcDialoguePayload {
+	speakerSlug: string;
+	displayName: string;
+	occupation?: string | null;
+	entrySlug: string;
+	prompt: string;
+	hasConversation: boolean;
+	options: NpcDialogueOption[];
+}
+
+/** The outcome of taking one choice. */
+export interface NpcOptionChosenPayload {
+	success: boolean;
+	speakerSlug: string;
+	displayName: string;
+	response: string;
+	applied: string[];
+	next?: NpcDialoguePayload | null;
+	ended: boolean;
+}
+
 /** A location revealed by a successful area search. */
 export interface SearchFinding {
 	slug: string;
@@ -610,6 +661,18 @@ export interface CharacterRestedPayload {
 	currentMana: number;
 	maxMana: number;
 	goldRemaining: number;
+}
+
+/**
+ * A gold change the server made for a character: a chest, a dialogue grant, a purchase, or a GM set.
+ * `newGoldTotal` is the server's own total — the client assigns it rather than adding the delta, so a
+ * missed or duplicated event can never leave the stat drifting.
+ */
+export interface GoldChangedPayload {
+	characterId?: string;
+	goldAdded: number;
+	newGoldTotal: number;
+	source?: string;
 }
 
 export interface AbilityUsedPayload {
@@ -638,6 +701,15 @@ export interface CombatStartedPayload {
 	enemyCurrentHealth: number;
 	enemyMaxHealth: number;
 	enemyAbilityNames: string[];
+	/** The archetype slug the enemy was spawned from; the portrait is addressed by it. */
+	enemyArchetypeSlug?: string | null;
+	/**
+	 * The archetype's content `typeKey` (`beasts`, `undead`, …). The client picks the fallback glyph
+	 * and the townsfolk plate from it; the tier frame still comes from `enemyTier`.
+	 */
+	enemyArchetypeTypeKey?: string | null;
+	/** The frame the portrait wears (`boss`, `elite`, `regular`). */
+	enemyTier?: string | null;
 }
 
 export interface CombatTurnPayload {
@@ -656,6 +728,26 @@ export interface CombatTurnPayload {
 	xpLost?: number;
 	xpEarned?: number;
 	goldEarned?: number;
+	/**
+	 * Level after a kill that paid experience, or null on a turn that paid none. The server awards through the
+	 * rolling `Level × 100` formula, so the level and the bar move together and the client takes the server's
+	 * numbers rather than adding `xpEarned` to the old total.
+	 */
+	newLevel?: number | null;
+	/** Experience still banked toward the next level after the award — the remainder, not the old total. */
+	newExperience?: number | null;
+	/** Whether the kill crossed a level. */
+	leveledUp?: boolean | null;
+	/** Maximum health after the award; a level-up raises it along the class curve. */
+	maxHealth?: number | null;
+	/** Health after the award. A bigger bar is not a heal: the pool is clamped, never refilled. */
+	currentHealth?: number | null;
+	/** Maximum mana after the award. */
+	maxMana?: number | null;
+	/** Mana after the award. */
+	currentMana?: number | null;
+	/** Attribute points the level-up banked, so the allocation panel can enable without a re-select. */
+	unspentAttributePoints?: number | null;
 	/** What the defeated enemy dropped into the bag, so the log can name it. */
 	itemsDropped?: { itemSlug: string; quantity: number }[] | null;
 	abilityId?: string | null;
@@ -733,6 +825,26 @@ export interface PartyInvitesChangedPayload {
 	partyId?: string | null;
 }
 
+/**
+ * Broadcast after an experience award; a quest turn-in pays through the same command, so it is what
+ * tells the client what it earned. The pools are the post-award values (a level-up rewrites them),
+ * and `unspentAttributePoints` is the balance the allocation panel budgets from — a level-up banks
+ * points, so it has to arrive with the level instead of waiting for the next character select.
+ */
+export interface ExperienceGainedPayload {
+	characterId?: string;
+	newLevel: number;
+	newExperience: number;
+	leveledUp: boolean;
+	leveledUpTo?: number | null;
+	maxHealth?: number;
+	currentHealth?: number;
+	maxMana?: number;
+	currentMana?: number;
+	unspentAttributePoints?: number;
+	source?: string;
+}
+
 export interface CharacterStats {
 	currentHealth: number;
 	maxHealth: number;
@@ -787,6 +899,15 @@ export interface CombatParticipantsPayload {
 	enemyCurrentHealth: number;
 	enemyMaxHealth: number;
 	enemyAbilityNames: string[];
+	/** The archetype slug the enemy was spawned from; the portrait is addressed by it. */
+	enemyArchetypeSlug?: string | null;
+	/**
+	 * The archetype's content `typeKey` (`beasts`, `undead`, …). The client picks the fallback glyph
+	 * and the townsfolk plate from it; the tier frame still comes from `enemyTier`.
+	 */
+	enemyArchetypeTypeKey?: string | null;
+	/** The frame the portrait wears (`boss`, `elite`, `regular`). */
+	enemyTier?: string | null;
 	participants: CombatParticipantView[];
 }
 
@@ -809,6 +930,12 @@ export interface CombatState {
 		currentHealth: number;
 		maxHealth: number;
 		abilities: string[];
+		/** The archetype slug the enemy was spawned from — the portrait key. */
+		archetypeSlug?: string | null;
+		/** The archetype's content `typeKey`, which picks the fallback glyph by silhouette class. */
+		typeKey?: string | null;
+		/** The frame the portrait wears; tier is UI, never painted into the art. */
+		tier?: ArchetypeTier;
 	} | null;
 	log: string[];
 	/** Everyone fighting the same enemy, highest contributor first. */

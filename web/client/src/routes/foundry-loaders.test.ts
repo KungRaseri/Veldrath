@@ -1401,6 +1401,100 @@ describe('language fork', () => {
 		expect(payload.phonology.allowedInitialClusters).toEqual(['th', 'sh']);
 	});
 
+	it('seeds an existing language from the stored row so its owned JSON survives approval', async () => {
+		// The form renders displayName/slug and the four phonology lists; consonants, vowels, junctionRules,
+		// morphology and registerSystem have no field. A correction therefore has to start from what the catalog
+		// already holds, or approving it would delete everything the form could not show.
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({
+				summary: {
+					id: 'lang-1',
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					contentType: 'language',
+					rarityWeight: 40,
+					isActive: true,
+					updatedAt: '2026-01-02T03:04:05.000Z'
+				},
+				payload: {
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					rarityWeight: 40,
+					isActive: true,
+					description: 'The old tongue.',
+					tonalCharacter: 'Hard + Formal',
+					phonology: {
+						consonants: [
+							{ symbol: 'v', description: 'Voiced labiodental fricative' },
+							{ symbol: 'r', description: 'Alveolar trill' }
+						],
+						vowels: [{ symbol: 'ae', sound: '/eɪ/' }],
+						allowedSyllablePatterns: ['CVC'],
+						allowedInitialClusters: ['VR-'],
+						forbiddenClusters: [],
+						allowedFinalClusters: ['-LD'],
+						junctionRules: [
+							{
+								cluster: '–l + vr–',
+								rule: 'The v elides into the following r.',
+								formalExample: 'vaeld + raeth → vaeld'
+							}
+						]
+					},
+					morphology: {
+						roots: [{ token: 'vael', coreMeaning: 'stronghold' }],
+						prefixes: [],
+						suffixes: []
+					},
+					registerSystem: {
+						registers: [
+							{ name: 'formal', usage: 'titles and law', wordOrder: 'SVO', vowelQuality: 'long' }
+						]
+					}
+				}
+			})
+		);
+
+		await redirectTo(() =>
+			action(newLanguageActions.default, {
+				displayName: 'Calethic (revised)',
+				slug: 'calethic',
+				description: 'The old tongue.',
+				syllablePatterns: 'CVC, CV',
+				initialClusters: 'VR-, THR-'
+			})
+		);
+
+		expect(contentApi.getContentDetail).toHaveBeenCalledWith('language', 'calethic');
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as { payload: string };
+		const payload = JSON.parse(submitted.payload) as {
+			displayName: string;
+			rarityWeight: number;
+			phonology: {
+				allowedSyllablePatterns: string[];
+				allowedInitialClusters: string[];
+				consonants: unknown[];
+				junctionRules: unknown[];
+			};
+			morphology: { roots: unknown[] };
+			registerSystem: { registers: unknown[] };
+		};
+
+		expect(payload.displayName).toBe('Calethic (revised)');
+		// The form's own fields still win.
+		expect(payload.phonology.allowedSyllablePatterns).toEqual(['CVC', 'CV']);
+		expect(payload.phonology.allowedInitialClusters).toEqual(['VR-', 'THR-']);
+		// The fields with no input keep their stored values.
+		expect(payload.phonology.consonants).toHaveLength(2);
+		expect(payload.phonology.junctionRules).toHaveLength(1);
+		expect(payload.morphology.roots).toHaveLength(1);
+		expect(payload.registerSystem.registers).toHaveLength(1);
+		expect(payload.rarityWeight).toBe(40);
+	});
+
 	it('turns a rejected submission into a 400', async () => {
 		foundryApi.createSubmission.mockResolvedValue(failed('You already submitted that.'));
 
@@ -1593,6 +1687,167 @@ describe('submission queue', () => {
 		expect(JSON.parse(submitted.payload)).toEqual({ displayName: 'Calethic' });
 	});
 
+	it('seeds a correction payload from the stored entity, keeping the owned JSON it cannot name', async () => {
+		// The generic form renders the schema's fields only. For a language that is displayName/slug/typeKey and
+		// four phonology lists — approving that shape as a replacement used to delete the rest of the entity.
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				contentType: 'language',
+				displayLabel: 'Languages',
+				description: '',
+				groups: [
+					{
+						label: 'Identity',
+						fields: [field('displayName', 'Text'), field('slug', 'Slug'), field('typeKey', 'Text')]
+					},
+					{
+						label: 'Phonology',
+						fields: [field('phonology.allowedSyllablePatterns', 'LongText')]
+					}
+				]
+			})
+		);
+
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({
+				summary: {
+					id: 'lang-1',
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					contentType: 'language',
+					rarityWeight: 40,
+					isActive: true,
+					updatedAt: '2026-01-02T03:04:05.000Z'
+				},
+				payload: {
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					rarityWeight: 40,
+					isActive: true,
+					description: 'The old tongue.',
+					phonology: {
+						consonants: [{ symbol: 'v', description: 'Voiced labiodental fricative' }],
+						vowels: [{ symbol: 'ae', sound: '/eɪ/' }],
+						allowedSyllablePatterns: ['CVC'],
+						allowedInitialClusters: ['VR-'],
+						forbiddenClusters: [],
+						allowedFinalClusters: ['-LD'],
+						junctionRules: [
+							{
+								cluster: '–l + vr–',
+								rule: 'The v elides into the following r.',
+								formalExample: 'vaeld + raeth → vaeld'
+							}
+						]
+					},
+					morphology: {
+						roots: [{ token: 'vael', coreMeaning: 'stronghold' }],
+						prefixes: [],
+						suffixes: []
+					},
+					registerSystem: {
+						registers: [
+							{ name: 'formal', usage: 'titles and law', wordOrder: 'SVO', vowelQuality: 'long' }
+						]
+					}
+				}
+			})
+		);
+
+		await redirectTo(() =>
+			action(submissionActions.create, {
+				contentType: 'language',
+				title: 'Calethic',
+				displayName: 'Calethic (revised)',
+				slug: 'calethic',
+				typeKey: 'imperial'
+			})
+		);
+
+		expect(contentApi.getContentDetail).toHaveBeenCalledWith('language', 'calethic');
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as { payload: string };
+		const payload = JSON.parse(submitted.payload) as {
+			displayName: string;
+			phonology: { consonants: unknown[]; junctionRules: unknown[] };
+			morphology: { roots: unknown[] };
+			registerSystem: { registers: unknown[] };
+		};
+
+		expect(payload.displayName).toBe('Calethic (revised)');
+		expect(payload.phonology.consonants).toHaveLength(1);
+		expect(payload.phonology.junctionRules).toHaveLength(1);
+		expect(payload.morphology.roots).toHaveLength(1);
+		expect(payload.registerSystem.registers).toHaveLength(1);
+	});
+
+	it('keeps a stored stat the form posted blank, so a seeded trait is never left without it', async () => {
+		// The form renders every scalar field and posts them all, so `stats.cooldown` arrives empty while the
+		// stored `traits.hasCooldown` comes along from the seeded row. Writing the blank left a power flagged as
+		// having a cooldown but declaring none, which the content rules refuse — approval never landed.
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				contentType: 'power',
+				displayLabel: 'Powers',
+				description: '',
+				groups: [
+					{
+						label: 'Identity',
+						fields: [field('displayName', 'Text'), field('slug', 'Slug')]
+					},
+					{
+						label: 'Stats',
+						fields: [
+							{
+								...field('stats.cooldown', 'Decimal'),
+								required: false
+							},
+							{ ...field('rarityWeight', 'Integer'), required: false, default: '50' }
+						]
+					}
+				]
+			})
+		);
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({
+				summary: { ...detail.summary },
+				payload: {
+					slug: 'fireball',
+					displayName: 'Fireball',
+					rarityWeight: 60,
+					stats: { cooldown: 4, manaCost: 0 },
+					traits: { hasCooldown: true }
+				}
+			})
+		);
+
+		await redirectTo(() =>
+			action(submissionActions.create, {
+				contentType: 'power',
+				title: 'Fireball rename',
+				displayName: 'Fireball II',
+				slug: 'fireball',
+				'stats.cooldown': '',
+				rarityWeight: '50'
+			})
+		);
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as { payload: string };
+		const payload = JSON.parse(submitted.payload) as {
+			displayName: string;
+			rarityWeight: number;
+			stats: { cooldown: number };
+			traits: { hasCooldown: boolean };
+		};
+
+		expect(payload.displayName).toBe('Fireball II');
+		expect(payload.stats.cooldown).toBe(4);
+		expect(payload.traits.hasCooldown).toBe(true);
+		expect(payload.rarityWeight).toBe(60);
+	});
+
 	it('accepts only a +1 or -1 vote', async () => {
 		const bad = (await action(
 			submissionActions.vote,
@@ -1771,5 +2026,253 @@ describe('fallbacks when the API answers without a message', () => {
 		)) as { status: number; data: { error: string } };
 		expect(create.status).toBe(400);
 		expect(create.data.error).toBe('Could not create the submission.');
+	});
+});
+
+/**
+ * The map editor when the graph API answers with nothing.
+ *
+ * Every map action has the same shape — read the stored graph, call the API, then a
+ * `status || 502` and a `?? fallback` — and the happy path reaches none of it. Those fallbacks are
+ * what the author reads when the graph store is unreachable or answers 204, so each is driven
+ * directly rather than left to the mocks' defaults.
+ */
+describe('map editor fallbacks', () => {
+	const params = { mapId: 'zone:fenwick' };
+	const editor = { params, parentData: { canViewContent: true, canManageContent: true } };
+	const silent = (status = 0) => ({ status, data: null, error: null });
+
+	/** The status and message a SvelteKit `error(...)` was thrown with (`HttpError` carries both). */
+	async function thrownError(run: () => Promise<unknown> | unknown) {
+		try {
+			await run();
+		} catch (thrown) {
+			const { status, body } = thrown as { status?: number; body?: { message?: string } };
+			return { status, message: body?.message ?? '' };
+		}
+
+		throw new Error('expected the call to throw');
+	}
+
+	it('words a missing graph itself, and counts a statusless answer as upstream failure', async () => {
+		mapsApi.getMap.mockResolvedValue(silent(404));
+		expect(await thrownError(() => callLoad(mapPage, signedIn({ params })))).toEqual({
+			status: 404,
+			message: 'Map not found.'
+		});
+
+		mapsApi.getMap.mockResolvedValue(silent());
+		expect(await thrownError(() => callLoad(mapPage, signedIn({ params })))).toEqual({
+			status: 502,
+			message: 'Map not found.'
+		});
+
+		mapsApi.getMap.mockResolvedValue({
+			status: 500,
+			data: null,
+			error: 'the graph store fell over'
+		});
+		expect(await thrownError(() => callLoad(mapPage, signedIn({ params })))).toEqual({
+			status: 500,
+			message: 'the graph store fell over'
+		});
+	});
+
+	it('names the reference catalog when it cannot be read, with or without a message', async () => {
+		mapsApi.getMapTargets.mockResolvedValue(silent());
+		expect(await thrownError(() => callLoad(mapPage, signedIn({ params })))).toEqual({
+			status: 502,
+			message: 'Could not load the reference catalog.'
+		});
+
+		mapsApi.getMapTargets.mockResolvedValue({
+			status: 503,
+			data: null,
+			error: 'the catalog is down'
+		});
+		expect(await thrownError(() => callLoad(mapPage, signedIn({ params })))).toEqual({
+			status: 503,
+			message: 'the catalog is down'
+		});
+	});
+
+	it('renders a zone map with no location options when the catalog read fails', async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({
+				id: 'zone:fenwick',
+				mapType: 'Zone',
+				ownerId: 'fenwick',
+				nodes: [],
+				edges: [],
+				version: 3
+			})
+		);
+		contentApi.listZoneLocations.mockResolvedValue(failed('the catalog is down'));
+
+		const result = (await callLoad(mapPage, signedIn({ params }))) as { zoneLocations: unknown[] };
+
+		// The panel loses its suggestions; the map itself still opens.
+		expect(result.zoneLocations).toEqual([]);
+	});
+
+	it('answers a submit the API did not complete with its own status and copy', async () => {
+		mapsApi.submitMap.mockResolvedValue(silent());
+		expect(await action(mapActions.submit, {}, editor)).toEqual({
+			status: 502,
+			data: { message: 'Submitted for review.' }
+		});
+
+		mapsApi.submitMap.mockResolvedValue({
+			status: 503,
+			data: null,
+			error: 'the graph store is down'
+		});
+		expect(await action(mapActions.submit, {}, editor)).toEqual({
+			status: 503,
+			data: { message: 'the graph store is down' }
+		});
+	});
+
+	it('falls back to its own copy when a successful submit carries no message', async () => {
+		mapsApi.submitMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: null, issues: [] })
+		);
+
+		expect(await action(mapActions.submit, {}, editor)).toEqual({
+			done: true,
+			message: 'Submitted for review.',
+			issues: []
+		});
+	});
+
+	it('states the refusal when a rejected lifecycle answer carries no message', async () => {
+		mapsApi.reviewMap.mockResolvedValue(
+			ok({ success: false, status: 'invalid', message: null, issues: [] })
+		);
+
+		expect(await action(mapActions.review, { approved: 'true' }, editor)).toEqual({
+			status: 400,
+			data: { message: 'Approved; the map is live.', issues: [] }
+		});
+	});
+
+	it('reads a review with no decision field as a rejection', async () => {
+		mapsApi.reviewMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: null, issues: [] })
+		);
+
+		expect(await action(mapActions.review, {}, editor)).toEqual({
+			done: true,
+			message: 'Rejected.',
+			issues: []
+		});
+		expect(mapsApi.reviewMap).toHaveBeenCalledWith(expect.anything(), 'zone:fenwick', {
+			approved: false,
+			notes: null
+		});
+
+		mapsApi.reviewMap.mockResolvedValue(silent());
+		expect(await action(mapActions.review, { approved: 'true' }, editor)).toEqual({
+			status: 502,
+			data: { message: 'Approved; the map is live.' }
+		});
+	});
+
+	it('404s a save whose stored graph has gone, with and without a message', async () => {
+		mapsApi.getMap.mockResolvedValue(silent());
+		expect(await action(mapActions.save, {}, editor)).toEqual({
+			status: 404,
+			data: { message: 'Map not found.' }
+		});
+
+		mapsApi.getMap.mockResolvedValue({ status: 404, data: null, error: 'No graph named that.' });
+		expect(await action(mapActions.save, {}, editor)).toEqual({
+			status: 404,
+			data: { message: 'No graph named that.' }
+		});
+		expect(mapsApi.saveMap).not.toHaveBeenCalled();
+	});
+
+	it('sends the stored version when the form carries none, or a non-number', async () => {
+		mapsApi.saveMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', version: 4, issues: [], message: 'Saved.' })
+		);
+
+		await action(mapActions.save, {}, editor);
+		expect(mapsApi.saveMap).toHaveBeenLastCalledWith(
+			expect.anything(),
+			'zone:fenwick',
+			expect.anything(),
+			3
+		);
+
+		await action(mapActions.save, { version: 'not-a-number' }, editor);
+		expect(mapsApi.saveMap).toHaveBeenLastCalledWith(
+			expect.anything(),
+			'zone:fenwick',
+			expect.anything(),
+			3
+		);
+	});
+
+	it('answers a save the API did not complete with its own status and copy', async () => {
+		mapsApi.saveMap.mockResolvedValue(silent());
+		expect(await action(mapActions.save, {}, editor)).toEqual({
+			status: 502,
+			data: { message: 'The map could not be saved.' }
+		});
+
+		mapsApi.saveMap.mockResolvedValue({
+			status: 503,
+			data: null,
+			error: 'the graph store is down'
+		});
+		expect(await action(mapActions.save, {}, editor)).toEqual({
+			status: 503,
+			data: { message: 'the graph store is down' }
+		});
+	});
+
+	it('refuses an invalid save with a 400 and its own copy when the server gave no message', async () => {
+		mapsApi.saveMap.mockResolvedValue(
+			ok({ success: false, status: 'invalid', version: 3, issues: [], message: null })
+		);
+
+		expect(await action(mapActions.save, {}, editor)).toEqual({
+			status: 400,
+			data: { message: 'The graph was refused.', issues: [] }
+		});
+	});
+
+	it('404s a validation whose stored graph has gone', async () => {
+		mapsApi.getMap.mockResolvedValue(silent());
+		expect(await action(mapActions.validate, {}, editor)).toEqual({
+			status: 404,
+			data: { message: 'Map not found.' }
+		});
+
+		mapsApi.getMap.mockResolvedValue({ status: 404, data: null, error: 'No graph named that.' });
+		expect(await action(mapActions.validate, {}, editor)).toEqual({
+			status: 404,
+			data: { message: 'No graph named that.' }
+		});
+	});
+
+	it('answers a validation the API did not complete with its own status and copy', async () => {
+		mapsApi.validateMap.mockResolvedValue(silent());
+		expect(await action(mapActions.validate, {}, editor)).toEqual({
+			status: 502,
+			data: { message: 'The graph could not be validated.' }
+		});
+
+		mapsApi.validateMap.mockResolvedValue({
+			status: 503,
+			data: null,
+			error: 'the validator is down'
+		});
+		expect(await action(mapActions.validate, {}, editor)).toEqual({
+			status: 503,
+			data: { message: 'the validator is down' }
+		});
 	});
 });

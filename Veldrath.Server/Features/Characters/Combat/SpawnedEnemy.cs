@@ -23,6 +23,13 @@ public class SpawnedEnemy
     /// <summary>Gets the archetype slug this enemy was generated from (used to re-spawn on death).</summary>
     public string ArchetypeSlug { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Gets the actor instance slug this enemy was spawned from, or <see langword="null"/> when it came from a bare
+    /// pool entry. Carried so a reload can rebuild the composed template — the instance alone knows the overrides,
+    /// and without it a reloaded named actor would fight at its archetype's damage.
+    /// </summary>
+    public string? InstanceSlug { get; init; }
+
     /// <summary>Gets the display name of this enemy.</summary>
     public string Name { get; init; } = string.Empty;
 

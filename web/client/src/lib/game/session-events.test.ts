@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
 	InventoryItem,
+	MapGraph,
+	MapNode,
 	PartyMemberView,
 	PartySnapshot,
 	QuestLogEntry,
 	SkillView,
-	SkillXpGainedPayload
+	SkillXpGainedPayload,
+	SpawnedEnemy
 } from './types';
 
 /**
@@ -135,6 +138,55 @@ function party(overrides: Partial<PartySnapshot> = {}): PartySnapshot {
 	};
 }
 
+function mapNode(id: string, overrides: Partial<MapNode> = {}): MapNode {
+	return {
+		id,
+		mapId: 'map-1',
+		nodeType: 'Location',
+		refId: id,
+		displayName: id,
+		description: '',
+		isEntryPoint: false,
+		isExitPoint: false,
+		isHidden: false,
+		sortOrder: 0,
+		...overrides
+	};
+}
+
+/** A zone map with the gate the character entered by and one room, the node the character wakes on. */
+function halrowMap(): MapGraph {
+	return {
+		id: 'map-1',
+		mapType: 'Zone',
+		ownerId: 'zone-halrow',
+		name: 'The Halrow',
+		description: '',
+		entryNodeId: 'node-gate',
+		nodes: [
+			mapNode('node-gate', {
+				nodeType: 'EntryPoint',
+				refId: 'the-halrow',
+				displayName: 'Halrow Gate',
+				isEntryPoint: true
+			}),
+			mapNode('node-cellars', {
+				refId: 'rootbound-cellars',
+				displayName: 'Rootbound Cellars'
+			})
+		],
+		edges: []
+	};
+}
+
+const warden = {
+	id: 'warden',
+	name: 'Rootbound Warden',
+	level: 7,
+	currentHealth: 40,
+	maxHealth: 40
+};
+
 let hub: FakeHub;
 
 async function connected(): Promise<InstanceType<typeof GameSession>> {
@@ -256,6 +308,20 @@ describe('GameSession combat and stat events', () => {
 		expect(session.stats.currentHealth).toBe(12);
 	});
 
+	it('clears the death banner when the server restores health', async () => {
+		const session = await connected();
+
+		hub.emit('DamageTaken', { damage: 90, currentHP: 0, maxHP: 100, isDead: true });
+		expect(session.dead).toBe(true);
+
+		// `/sethealth` sends the same event with the restored pool and isDead false; the flag has to follow both
+		// edges, or a GM heal leaves the banner up until a reload.
+		hub.emit('DamageTaken', { damage: 0, currentHP: 40, maxHP: 100, isDead: false });
+
+		expect(session.dead).toBe(false);
+		expect(session.stats.currentHealth).toBe(40);
+	});
+
 	it('keeps every attribute when the server sends an empty map', async () => {
 		const session = await connected();
 		session.attributes = {
@@ -311,6 +377,43 @@ describe('GameSession combat and stat events', () => {
 		expect(session.attributes.strength).toBe(16);
 		expect(session.attributes.dexterity).toBe(11);
 		expect(session.stats.unspentAttributePoints).toBe(1);
+	});
+
+	it('adopts the banked attribute points a level-up reports', async () => {
+		const session = await connected();
+		// The state after selecting the character: level 2, no points banked yet, allocation disabled.
+		session.stats = { ...session.stats, level: 2, experience: 90, unspentAttributePoints: 0 };
+
+		hub.emit('ExperienceGained', {
+			characterId: 'char-1',
+			newLevel: 3,
+			newExperience: 0,
+			leveledUp: true,
+			leveledUpTo: 3,
+			unspentAttributePoints: 3,
+			source: 'Quest'
+		});
+
+		// No re-select: the panel's budget is the value the turn-in just banked.
+		expect(session.stats.unspentAttributePoints).toBe(3);
+		expect(session.stats).toMatchObject({ level: 3, experience: 0 });
+		expect(session.chat.at(-1)?.message).toBe('Level up! You are now level 3.');
+	});
+
+	it('keeps the current balance when the experience event carries none', async () => {
+		const session = await connected();
+		session.stats = { ...session.stats, unspentAttributePoints: 2 };
+
+		hub.emit('ExperienceGained', {
+			newLevel: 2,
+			newExperience: 10,
+			leveledUp: false,
+			leveledUpTo: 0
+		});
+
+		// An award inside the level carries no balance change; an older server omits the field entirely.
+		expect(session.stats.unspentAttributePoints).toBe(2);
+		expect(session.stats).toMatchObject({ level: 2, experience: 10 });
 	});
 });
 
@@ -449,6 +552,23 @@ describe('GameSession map and location events', () => {
 		expect(hub.lastCall('GetMapGraph')).toEqual([null]);
 	});
 
+	it('re-reads the map after a respawn so the node the server moved is the one drawn', async () => {
+		await connected();
+
+		hub.emit('CharacterRespawned', {
+			characterId: 'char-1',
+			currentHealth: 25,
+			currentMana: 40,
+			locationSlug: 'sunken-estate',
+			locationDisplayName: 'The Sunken Estate'
+		});
+
+		await flush();
+		// The respawn moves CurrentNodeId server-side as well as the location, so the graph on screen is stale and the
+		// current-node marker has to come back from the server rather than be guessed here.
+		expect(hub.lastCall('GetMapGraph')).toEqual([null]);
+	});
+
 	it('skips the shop catalog request when the hub is already gone', async () => {
 		const session = await connected();
 		await session.disconnect();
@@ -458,6 +578,164 @@ describe('GameSession map and location events', () => {
 		expect(hub.methods()).not.toContain('GetShopCatalog');
 		expect(session.shopZone).toBe('Aldenmere');
 		expect(session.showShop).toBe(true);
+	});
+
+	it('asks for the room roster when a resumed character is inside a zone', async () => {
+		await connected();
+
+		hub.emit('CharacterSelected', { id: 'char-1', currentZoneId: 'the-halrow' });
+		await flush();
+
+		// The roster is only ever pushed with a travel result, so a resume has to ask for it or the room it wakes
+		// into renders empty. It is asked for after EnterZone, which is what has placed the character.
+		expect(hub.methods()).toContain('GetLocationRoster');
+		expect(hub.methods().indexOf('GetLocationRoster')).toBeGreaterThan(
+			hub.methods().indexOf('EnterZone')
+		);
+	});
+
+	it('does not ask for a room roster when the character is not inside a zone', async () => {
+		await connected();
+
+		hub.emit('CharacterSelected', { id: 'char-1' });
+		await flush();
+
+		expect(hub.methods()).not.toContain('EnterZone');
+		expect(hub.methods()).not.toContain('GetLocationRoster');
+	});
+
+	it('renders the roster a resumed session asked for', async () => {
+		const session = await connected();
+		session.enemies = [{ id: 'stale', name: 'Stale', level: 1, currentHealth: 1, maxHealth: 1 }];
+
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [
+				{ id: 'warden', name: 'Rootbound Warden', level: 7, currentHealth: 40, maxHealth: 40 }
+			]
+		});
+
+		expect(session.enemies.map((enemy: SpawnedEnemy) => enemy.id)).toEqual(['warden']);
+	});
+
+	it('makes the room a resumed session woke in usable, so Engage can name it', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterSelected', {
+			id: 'char-1',
+			currentZoneId: 'the-halrow',
+			currentNodeId: 'node-cellars'
+		});
+		await flush();
+
+		// The resume burst: the graph names the node the character woke on, then the roster names its room.
+		hub.emit('MapGraphReceived', {
+			success: true,
+			map: halrowMap(),
+			currentNodeId: 'node-cellars'
+		});
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [warden]
+		});
+
+		// The roster alone lists the enemies; the room object is what the header, `canRest` and Engage read. Its
+		// name comes from the node the shell stands on, because the roster carries only the slug.
+		expect(session.location).toEqual({
+			locationSlug: 'rootbound-cellars',
+			locationDisplayName: 'Rootbound Cellars',
+			typeKey: 'Location',
+			spawnedEnemies: [warden]
+		});
+
+		// The interaction the card restores: without the location, `engageEnemy` returns and the button is dead.
+		await session.engageEnemy('warden');
+		expect(hub.lastCall('EngageEnemy')).toEqual([
+			{ locationSlug: 'rootbound-cellars', enemyId: 'warden' }
+		]);
+	});
+
+	it('does not rebuild a room from a roster that arrives after walking out of it', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterSelected', {
+			id: 'char-1',
+			currentZoneId: 'the-halrow',
+			currentNodeId: 'node-cellars'
+		});
+		await flush();
+		hub.emit('MapGraphReceived', {
+			success: true,
+			map: halrowMap(),
+			currentNodeId: 'node-cellars'
+		});
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [warden]
+		});
+		expect(session.location?.locationSlug).toBe('rootbound-cellars');
+
+		// Walking out onto the entry point clears the location; a roster read still in flight for the room must not
+		// put it back. The node the shell now stands on is what makes that judgement — there is no location left.
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			nodeId: 'node-gate',
+			nodeType: 'EntryPoint',
+			locationSlug: null,
+			spawnedEnemies: []
+		});
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [warden]
+		});
+
+		expect(session.location).toBeNull();
+		expect(session.enemies).toEqual([]);
+	});
+
+	it('leaves the enemy being fought out of the location roster', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', {
+			characterId: 'char-1',
+			enemyId: 'warden',
+			enemyName: 'Rootbound Warden',
+			enemyLevel: 7,
+			enemyCurrentHealth: 40,
+			enemyMaxHealth: 40
+		});
+
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [
+				{ id: 'warden', name: 'Rootbound Warden', level: 7, currentHealth: 40, maxHealth: 40 },
+				{ id: 'rat', name: 'Cellar Rat', level: 3, currentHealth: 8, maxHealth: 8 }
+			]
+		});
+
+		// The fight is in the combat panel; the same enemy in the room list would be a second target.
+		expect(session.enemies.map((enemy: SpawnedEnemy) => enemy.id)).toEqual(['rat']);
+	});
+
+	it('ignores a roster for a room the character has already left', async () => {
+		const session = await connected();
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'collapsed-vault',
+			spawnedEnemies: [
+				{ id: 'vault-rat', name: 'Vault Rat', level: 4, currentHealth: 9, maxHealth: 9 }
+			]
+		});
+
+		hub.emit('LocationRoster', {
+			locationSlug: 'rootbound-cellars',
+			spawnedEnemies: [
+				{ id: 'warden', name: 'Rootbound Warden', level: 7, currentHealth: 40, maxHealth: 40 }
+			]
+		});
+
+		expect(session.enemies.map((enemy: SpawnedEnemy) => enemy.id)).toEqual(['vault-rat']);
 	});
 });
 

@@ -1,0 +1,57 @@
+# docs/design/content/pools/ashfields.yaml
+# Veldrath spawn pools — zone: ashfields (region: cinderplain)
+# Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4),
+# with the 2026-11-20 amendments applied by card t_6c70dc04 (L3).
+# DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
+# rejects an unknown spawn archetype (missing-spawn-archetype, Error), so a pool imports only
+# once every archetype it names is seeded. The design file stays the design set; each zone's
+# pack is written beside it at content/zonelocations/ashfields.yaml and is what the importer
+# reads (pool-matrix.md §8).
+# The roster roll is 2-4 per location, from one global const pair (ActorPoolResolver.cs:32-33,
+# rolled at :94), and it is a fill target, not a cap: the location's placed hostile instances
+# go in first and the pool fills from their count up to the roll (:117). Five or more hostile
+# placements at one location would exceed it.
+# There is no per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:193-204), never percentages, and must be
+# >= 1. The importer must not normalise them; only the ratio is meaningful.
+# "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
+# point or a dungeon lobby that has no pool and no placements deliberately spawns nothing
+# (ActorPoolResolver.cs:86-92). An empty pool does not suppress the location's hostile
+# placements — those spawn on their own, exactly as placed, never topped up (:111-115) — and a
+# non-hostile placement is dropped with a warning (:100-106).
+schema_version: 1
+zone: ashfields
+region: cinderplain
+locations:
+  - slug: obsidian-grove
+    # band: b19-22 (D0 budget) | location L20-25
+    level_range: [20, 25]
+    excluded: true
+    exclusion_class: safe_respawn
+    exclusion_reason: 'SafeRespawn since 2026-11-20: the zone respawn point moved here from scorched-battlefield. The grove is the quiet node next to the zone entrance, so it is the one a dead character walks out of.'
+    pool: []   # empty by design
+  - slug: scorched-battlefield
+    # band: b19-22 (D0 budget) | location L21-25
+    level_range: [21, 25]
+    pool:
+      # ash-jack and forge-deserter must be seeded 19-22 rather than their 19-20 roster band: this location
+      # starts at level 21 and the engine's overlap guard needs their MaxLevel to reach it
+      # (SeededEncounterCoverageTests.cs:207-239; pool-matrix.md §6).
+      - archetype: cinderling
+        weight: 5   # band: 19-20 | seeded 20-26
+      - archetype: ash-jack
+        weight: 3   # band: 19-20 | seeded 19-22
+      - archetype: forge-deserter
+        weight: 3   # band: 19-20 | seeded 19-22
+  - slug: ash-shrine
+    # band: b19-22 (D0 budget) | location L20-25
+    level_range: [20, 25]
+    excluded: true
+    exclusion_class: safe_respawn
+    exclusion_reason: 'SafeRespawn since 2026-11-20: a keeper-only shrine is a rest point, not a spawn. It is also IsHidden + quest-unlocked, so the hidden-filtered zone query never offers it as the zone respawn anchor.'
+    pool: []   # empty by design
+
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 1 | excluded 2
+# The two quiet nodes are the grove (respawn point) and the shrine (keeper-only, hidden); the
+# battlefield carries the zone's only pool. See amendments 3 and 4 of the 2026-11-20 decision.

@@ -84,7 +84,7 @@ public class EnemyRespawnServiceTests : IDisposable
         enemy.Participants.Add(hero.Id);
         enemy.CurrentHealth = 0;
         await store.SaveAsync(enemy, "zone:test", "square", CancellationToken.None);
-        (await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None)).Should().BeTrue();
+        (await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None)).Should().NotBeNull();
 
         await MakeDueAsync(db, enemy.Id);
 

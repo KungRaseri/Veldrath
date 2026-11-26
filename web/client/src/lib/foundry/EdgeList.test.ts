@@ -100,6 +100,33 @@ describe('EdgeList', () => {
 		expect(onDelete).toHaveBeenCalledWith('a');
 	});
 
+	it('renders a read-only row with every control disabled and no delete button', () => {
+		render(EdgeList, { graph: graph([edge()]), canEdit: false, onPatch: noop, onDelete: noop });
+
+		// A reader sees the connection, not a form: every field is inert and the row cannot be removed.
+		for (const control of screen.getAllByRole('combobox')) expect(control).toBeDisabled();
+		expect(screen.getByPlaceholderText('—')).toBeDisabled();
+		expect(screen.queryByRole('button', { name: /Delete the edge/ })).toBeNull();
+		// A one-way edge has no return edge, so it carries no reciprocal marker.
+		expect(screen.queryByText('↔')).toBeNull();
+	});
+
+	it('reports a label as typed, not only as cleared', async () => {
+		const onPatch = vi.fn();
+		render(EdgeList, {
+			graph: graph([edge({ label: null })]),
+			canEdit: true,
+			onPatch,
+			onDelete: noop
+		});
+
+		await fireEvent.input(screen.getByPlaceholderText('—'), {
+			target: { value: 'Road of Kings' }
+		});
+
+		expect(onPatch).toHaveBeenCalledWith('a', { label: 'Road of Kings' });
+	});
+
 	it('explains the connect gesture when there are no edges, and hides the delete control from a reader', () => {
 		render(EdgeList, { graph: graph([]), canEdit: false, onPatch: noop, onDelete: noop });
 

@@ -44,6 +44,7 @@ public class ContentValidatorCoverageTests
         ContentReferenceRules.MissingQuestTarget.Should().Be("missing-quest-target");
         ContentReferenceRules.UnsupportedQuestKind.Should().Be("unsupported-quest-kind");
         ContentReferenceRules.MissingMapNode.Should().Be("missing-map-node");
+        ContentReferenceRules.UnclaimedZoneStock.Should().Be("unclaimed-zone-stock");
     }
 
     [Fact]

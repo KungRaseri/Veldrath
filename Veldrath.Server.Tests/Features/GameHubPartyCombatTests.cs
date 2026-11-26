@@ -646,8 +646,8 @@ public class GameHubPartyCombatTests : IDisposable
         {
             Success = true,
             EnemyDefeated = true,
-            EnemyName = "Goblin",
-            EnemyArchetypeSlug = "goblin",
+            EnemyName = "Goblin Scout",
+            EnemyArchetypeSlug = "goblin-scout",
             ParticipantIds = [killer.Id, ally.Id],
         });
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1 });
@@ -662,14 +662,93 @@ public class GameHubPartyCombatTests : IDisposable
             .Select(c => (c.CharacterId, c.Key))
             .ToList();
         advances.Should().BeEquivalentTo([
-            (killer.Id, "goblin"),
-            (killer.Id, "Goblin"),
-            (ally.Id, "goblin"),
-            (ally.Id, "Goblin"),
+            (killer.Id, "goblin-scout"),
+            (killer.Id, "Goblin Scout"),
+            (ally.Id, "goblin-scout"),
+            (ally.Id, "Goblin Scout"),
         ]);
 
         clients.Connection("conn-ally").SentMessages.Should()
             .Contain(m => m.Method == "QuestLogReceived", "the ally's journal is pushed to their own connection");
+    }
+
+    [Fact]
+    public async Task AttackEnemy_On_A_Shared_Kill_Ends_The_Other_Fighters_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var killer = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var defenderAccount = await HubHarness.SeedAccountAsync(db);
+        var defender = await HubHarness.SeedCharacterAsync(db, defenderAccount.Id);
+        await HubHarness.SeedSessionAsync(db, defender, "conn-defender");
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(killer.Id);
+        mediator.Returns(new AttackEnemyHubResult
+        {
+            Success = true,
+            EnemyDefeated = true,
+            EnemyName = "Goblin",
+            EnemyArchetypeSlug = "goblin",
+            ParticipantIds = [killer.Id, defender.Id],
+            ReleasedCombatCharacterIds = [killer.Id, defender.Id],
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1 });
+
+        await hub.AttackEnemy();
+
+        // The kill removed the defender's session too, so the other connection is told its fight is over. Without
+        // this it keeps a combat panel for a fight the server dropped and its next Defend is answered "Not in combat".
+        clients.Connection("conn-defender").SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = defender.Id, Reason = "shared kill" });
+
+        // The killer's own turn already closed their panel; a second, contradicting end event would overwrite it.
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "CombatEnded");
+    }
+
+    [Fact]
+    public async Task AttackEnemy_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new AttackEnemyHubResult
+        {
+            Success = true,
+            EnemyRemainingHealth = 12,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.AttackEnemy();
+
+        // The turn carries the death; the end event is what closes the shell's combat panel. Order matters to the
+        // client, which applies the death penalty from the turn and only then drops the panel.
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
+    }
+
+    [Fact]
+    public async Task AttackEnemy_On_A_Survived_Turn_Does_Not_End_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(Guid.NewGuid());
+        mediator.Returns(new AttackEnemyHubResult
+        {
+            Success = true,
+            EnemyRemainingHealth = 12,
+            PlayerRemainingHealth = 18,
+        });
+
+        await hub.AttackEnemy();
+
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "CombatEnded");
     }
 
     // ── Combat: DefendAction ─────────────────────────────────────────────────
@@ -740,6 +819,30 @@ public class GameHubPartyCombatTests : IDisposable
                 PlayerRemainingHealth = 29,
                 PlayerDefeated = false,
             });
+    }
+
+    [Fact]
+    public async Task DefendAction_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new DefendActionHubResult
+        {
+            Success = true,
+            EnemyDamage = 9,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.DefendAction();
+
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
     }
 
     // ── Combat: FleeFromCombat ───────────────────────────────────────────────
@@ -829,6 +932,32 @@ public class GameHubPartyCombatTests : IDisposable
         });
     }
 
+    [Fact]
+    public async Task FleeFromCombat_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new FleeFromCombatHubResult
+        {
+            Success = true,
+            Fled = false,
+            EnemyDamage = 9,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.FleeFromCombat();
+
+        // The failed escape did not open a door, but the counter-attack ended the fight: the panel must close.
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
+    }
+
     // ── Combat: UseAbilityInCombat ───────────────────────────────────────────
 
     [Fact]
@@ -905,7 +1034,7 @@ public class GameHubPartyCombatTests : IDisposable
     }
 
     [Fact]
-    public async Task UseAbilityInCombat_On_A_Kill_Announces_It_And_Advances_The_Kill_Objective()
+    public async Task UseAbilityInCombat_On_A_Kill_Advances_The_Kill_Objective_By_Slug_And_Display_Name()
     {
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
@@ -917,7 +1046,9 @@ public class GameHubPartyCombatTests : IDisposable
             Success = true,
             AbilityId = "fireball",
             EnemyDefeated = true,
-            EnemyName = "Goblin",
+            EnemyName = "Goblin Scout",
+            EnemyArchetypeSlug = "goblin-scout",
+            ParticipantIds = [characterId],
         });
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
 
@@ -925,10 +1056,155 @@ public class GameHubPartyCombatTests : IDisposable
 
         clients.OthersInGroupNamed("zone:crestfall").SentMessages.Should()
             .ContainSingle(m => m.Method == "EnemyDefeated");
-        var advance = mediator.Invocations.Select(i => i.Arguments[0])
-            .OfType<AdvanceQuestObjectivesHubCommand>().Single();
-        advance.Kind.Should().Be("kill");
-        advance.Key.Should().Be("Goblin");
+
+        // Same contract as a melee kill: the slug is what content authors, the display name keeps a legacy
+        // journal progressing, and neither key is advanced twice.
+        var advances = mediator.Invocations.Select(i => i.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(c => (c.CharacterId, c.Kind, c.Key))
+            .ToList();
+        advances.Should().BeEquivalentTo([
+            (characterId, "kill", "goblin-scout"),
+            (characterId, "kill", "Goblin Scout"),
+        ]);
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_A_Kill_Advances_A_Case_Colliding_Archetype_Once()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+
+        // Cinderling's display name and slug differ only by case, and the journal matches objective keys
+        // OrdinalIgnoreCase, so advancing both would credit the same objective twice for one kill.
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyDefeated = true,
+            EnemyName = "Cinderling",
+            EnemyArchetypeSlug = "cinderling",
+            ParticipantIds = [characterId],
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        clients.OthersInGroupNamed("zone:crestfall").SentMessages.Should()
+            .ContainSingle(m => m.Method == "EnemyDefeated");
+
+        var advances = mediator.Invocations.Select(i => i.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(c => (c.CharacterId, c.Kind, c.Key))
+            .ToList();
+        advances.Should().BeEquivalentTo([(characterId, "kill", "cinderling")]);
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_A_Shared_Kill_Advances_The_Kill_Objective_For_Every_Participant()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var caster = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var allyAccount = await HubHarness.SeedAccountAsync(db);
+        var ally = await HubHarness.SeedCharacterAsync(db, allyAccount.Id);
+        await HubHarness.SeedSessionAsync(db, ally, "conn-ally");
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(caster.Id);
+
+        // The ally damaged the enemy but the caster landed the killing ability: the kill is one fight, so both are
+        // credited — the same credited set a melee kill passes. Crediting only the caster would leave the ally owed
+        // a kill objective the identical melee blow would have advanced.
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyDefeated = true,
+            EnemyName = "Goblin Scout",
+            EnemyArchetypeSlug = "goblin-scout",
+            ParticipantIds = [caster.Id, ally.Id],
+            ReleasedCombatCharacterIds = [caster.Id, ally.Id],
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1 });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        clients.OthersInGroupNamed("zone:crestfall").SentMessages.Should()
+            .ContainSingle(m => m.Method == "EnemyDefeated");
+
+        var advances = mediator.Invocations.Select(i => i.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(c => (c.CharacterId, c.Kind, c.Key))
+            .ToList();
+
+        // Once per participant per key: each fighter gets the slug and the legacy display name, and neither twice.
+        advances.Should().HaveCount(4);
+        advances.Should().BeEquivalentTo([
+            (caster.Id, "kill", "goblin-scout"),
+            (caster.Id, "kill", "Goblin Scout"),
+            (ally.Id, "kill", "goblin-scout"),
+            (ally.Id, "kill", "Goblin Scout"),
+        ]);
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_A_Shared_Kill_Ends_The_Other_Fighters_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var caster = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var defenderAccount = await HubHarness.SeedAccountAsync(db);
+        var defender = await HubHarness.SeedCharacterAsync(db, defenderAccount.Id);
+        await HubHarness.SeedSessionAsync(db, defender, "conn-defender");
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(caster.Id);
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyDefeated = true,
+            EnemyName = "Goblin",
+            ReleasedCombatCharacterIds = [caster.Id, defender.Id],
+        });
+        mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        // An ability kill is a kill: it releases every session pointed at the enemy, and the other fighter has to be
+        // told rather than left with a panel the server no longer backs.
+        clients.Connection("conn-defender").SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = defender.Id, Reason = "shared kill" });
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "CombatEnded");
+    }
+
+    [Fact]
+    public async Task UseAbilityInCombat_On_Player_Defeat_Ends_The_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        var characterId = Guid.NewGuid();
+        ctx.EnterZoneState(characterId);
+        mediator.Returns(new UseAbilityInCombatHubResult
+        {
+            Success = true,
+            AbilityId = "fireball",
+            EnemyRemainingHealth = 4,
+            PlayerRemainingHealth = 0,
+            PlayerDefeated = true,
+        });
+
+        await hub.UseAbilityInCombat(new UseAbilityInCombatHubRequest("fireball"));
+
+        var methods = clients.Caller.SentMessages.Select(m => m.Method).ToList();
+        methods.Should().ContainInOrder("CombatTurn", "CombatEnded");
+        clients.Caller.SentMessages.Single(m => m.Method == "CombatEnded").Args[0]
+            .Should().BeEquivalentTo(new { CharacterId = characterId, Reason = "defeated" });
     }
 
     // ── Combat: Respawn ──────────────────────────────────────────────────────
