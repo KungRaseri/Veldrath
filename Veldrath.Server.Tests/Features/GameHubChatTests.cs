@@ -1,6 +1,7 @@
 using Veldrath.Contracts.Chat;
 using Veldrath.Contracts.Connection;
 using Veldrath.Server.Features.Auth;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
@@ -313,7 +314,11 @@ public class GameHubChatTests : IDisposable
         await db.SaveChangesAsync();
 
         var (hub, clients, _, ctx, _, _) = HubHarness.Create(db, account.Id);
-        ctx.EnterZoneState(mine.Id, mine.Name, "the-droveway", "zone:the-droveway_normal#i1:" + runId.ToString("D"));
+        ctx.EnterZoneState(
+            mine.Id,
+            mine.Name,
+            "the-droveway",
+            ZoneGroupName.ForInstance("the-droveway", "normal", runId).Value);
         ctx.Items["CurrentZoneInstanceId"] = runId;
 
         await hub.SendChatMessage(new ChatMessageHubRequest("/who"));
