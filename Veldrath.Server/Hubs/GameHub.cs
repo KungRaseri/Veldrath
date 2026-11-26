@@ -1231,6 +1231,64 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Sends the caller the enemy roster standing at the node their character already occupies, so a resumed
+    /// session renders the room it is in instead of an empty one. Sends <c>LocationRoster</c> to the caller.
+    /// </summary>
+    /// <remarks>
+    /// The roster is otherwise only ever delivered inside a travel result, which is why a login inside a location
+    /// had nothing to render until the next move. This is a read, not a move: it spawns the cohort on first contact
+    /// exactly as walking in does, and it takes the position from the character row rather than from the caller —
+    /// after a swept run the resume point is the zone's lobby, and only the server knows that.
+    /// </remarks>
+    public async Task GetLocationRoster()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationRoster");
+            return;
+        }
+
+        if (!TryGetCurrentZoneGroup(out var zoneGroup))
+        {
+            await Clients.Caller.SendAsync("Error", "EnterZone must be called before GetLocationRoster");
+            return;
+        }
+
+        // The scope the connection is actually rendering under. A resumed run owns its own group and its run id,
+        // and reading the roster under the shared zone name would spawn a second cohort nobody in the run can see.
+        var instanceId = Context.Items.TryGetValue("CurrentZoneInstanceId", out var rawInstance) && rawInstance is Guid run
+            ? run
+            : (Guid?)null;
+
+        try
+        {
+            var result = await _mediator.Send(new GetLocationRosterHubCommand(characterId, zoneGroup, instanceId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to read the location roster");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("LocationRoster", new
+            {
+                result.LocationSlug,
+                result.SpawnedEnemies,
+            });
+
+            foreach (var warning in result.ContentWarnings)
+            {
+                await Clients.Caller.SendAsync("SystemMessage", warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetLocationRoster for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to read the location roster");
+        }
+    }
+
     // Character progression
     /// <summary>
     /// Spend a character's unallocated attribute points.

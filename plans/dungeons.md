@@ -466,7 +466,7 @@ which already logs and adopts the winner.
 | The run empties | State Empty and `LastOccupiedAt` now; after a configurable grace, Purging then delete, cascading enemies, ground items, participants and room state |
 | Party disbands inside | `OwnerPartyId` is provenance, not a live foreign key; the run survives until empty |
 | Death | respawn at the run's lobby if the run is still open, otherwise the public zone lobby |
-| Disconnect and reconnect | `PlayerSession.ZoneInstanceId` restores the run; the group is recomputed from the row. A run that was swept while the character was away cannot be re-entered, so they wake at the zone's safe location (`IsSafeRespawn`) and are told why, in the same words the respawn path uses |
+| Disconnect and reconnect | `PlayerSession.ZoneInstanceId` restores the run; the group is recomputed from the row. A run that was swept while the character was away cannot be re-entered, so they wake at the zone's safe location (`IsSafeRespawn`) and are told why, in the same words the respawn path uses. The roster at the node they wake on is read on resume through the same read a walk uses (`GetLocationRoster` → `LocationRosterReader`), so a room with an active pool is not shown empty until their next move |
 
 #### F2.5 Hardening rules
 

@@ -4,7 +4,6 @@ using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
-using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Zones;
 using ZoneEntity = Veldrath.Server.Data.Entities.Zone;
 
@@ -132,9 +131,7 @@ public class TravelToNodeHubCommandHandler
     private readonly IPlayerSessionRepository _sessionRepo;
     private readonly IZoneRepository _zoneRepo;
     private readonly IZoneLocationRepository _locationRepo;
-    private readonly ActorPoolResolver _actorPoolResolver;
-    private readonly IEnemyInstanceStore _enemyStore;
-    private readonly IActorInstanceRepository _actorInstances;
+    private readonly LocationRosterReader _rosters;
     private readonly IZoneInstanceService _instances;
     private readonly ILogger<TravelToNodeHubCommandHandler> _logger;
 
@@ -145,9 +142,7 @@ public class TravelToNodeHubCommandHandler
     /// <param name="sessionRepo">Active player-session repository.</param>
     /// <param name="zoneRepo">Zone catalog repository used to resolve the destination region.</param>
     /// <param name="locationRepo">Zone-location repository used for discovery and rosters.</param>
-    /// <param name="actorPoolResolver">Resolver that spawns the destination enemy roster.</param>
-    /// <param name="enemyStore">Store for the live enemy instances at the destination.</param>
-    /// <param name="actorInstances">Repository for the named actors placed at the destination location.</param>
+    /// <param name="rosters">Reader that returns the destination's live roster, spawning it on first contact.</param>
     /// <param name="instances">Instance-run service, used when the destination location is instanced.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public TravelToNodeHubCommandHandler(
@@ -157,9 +152,7 @@ public class TravelToNodeHubCommandHandler
         IPlayerSessionRepository sessionRepo,
         IZoneRepository zoneRepo,
         IZoneLocationRepository locationRepo,
-        ActorPoolResolver actorPoolResolver,
-        IEnemyInstanceStore enemyStore,
-        IActorInstanceRepository actorInstances,
+        LocationRosterReader rosters,
         IZoneInstanceService instances,
         ILogger<TravelToNodeHubCommandHandler> logger)
     {
@@ -169,9 +162,7 @@ public class TravelToNodeHubCommandHandler
         _sessionRepo = sessionRepo;
         _zoneRepo = zoneRepo;
         _locationRepo = locationRepo;
-        _actorPoolResolver = actorPoolResolver;
-        _enemyStore = enemyStore;
-        _actorInstances = actorInstances;
+        _rosters = rosters;
         _instances = instances;
         _logger = logger;
     }
@@ -436,55 +427,11 @@ public class TravelToNodeHubCommandHandler
             ? $"zone:{zoneId}"
             : zoneGroup;
 
-        // The node's RefId must resolve to a real location; a dangling one is content debt, not a normal state.
-        if (location is null)
-        {
-            _logger.LogError(
-                "Map node {NodeId} references unknown zone location '{LocationSlug}'; no roster was spawned",
-                destinationNode.Id,
-                destinationNode.RefId);
-
-            return ([], [$"Content error: the location '{destinationNode.RefId}' is missing from the content catalog."]);
-        }
-
-        var pool = location.ActorPool ?? [];
-
-        // A named actor placed here is part of the roster, not part of the pool: it is emitted once, whatever the pool
-        // draws, because "the chief stands in the clearing" is content and not a probability.
-        var placements = await _actorInstances.GetPlacedAsync(destinationNode.RefId, CancellationToken.None);
-
-        // Reads the stored roster, spawning it on first arrival. Dead rows with an elapsed respawn time are
-        // revived by the store, so this is also where a wiped world comes back.
-        var alive = await _enemyStore.GetAliveOrSpawnAsync(
+        return await _rosters.ReadAsync(
             effectiveZoneGroup,
             destinationNode.RefId,
-            _ => _actorPoolResolver.SpawnRosterAsync(pool, placements),
-            zoneInstanceId,
-            CancellationToken.None);
-
-        _logger.LogInformation(
-            "{Count} enemies present at {ZoneGroup}/{LocationSlug}",
-            alive.Count,
-            effectiveZoneGroup,
-            destinationNode.RefId);
-
-        // Failsafe, not fallback: an authored pool that produced nothing, with nothing placed here either, means
-        // broken content. A location that relies on its placements is not a broken pool.
-        var warnings = new List<string>();
-        if (alive.Count == 0 && pool.Count > 0 && placements.Count == 0)
-        {
-            warnings.Add(
-                $"Content error: the spawn pool for '{location.Slug}' references no known actors. Please report this to a staff member.");
-        }
-
-        return (alive
-            .Select(enemy => new SpawnedEnemySummary(
-                enemy.Id,
-                enemy.Name,
-                enemy.Level,
-                enemy.CurrentHealth,
-                enemy.MaxHealth))
-            .ToList(), warnings);
+            location,
+            zoneInstanceId);
     }
 
     private async Task<IReadOnlyList<ZoneLocationEntry>> RunPassiveDiscoveryAsync(
