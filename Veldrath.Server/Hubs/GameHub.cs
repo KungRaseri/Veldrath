@@ -1033,7 +1033,7 @@ public class GameHub : Hub
         // Compute and store the zone group name based on zone type and difficulty. A resumed run already owns
         // its scope — the group its other members are in — so re-composing the shared name here would put the
         // character next to their party in the map and nowhere near them in chat, enemies or loot.
-        var difficultyMode = Context.Items.TryGetValue("DifficultyMode", out var dm) && dm is string d ? d : "normal";
+        var difficultyMode = CurrentDifficultyMode();
         var zoneGroup = resumedRun?.ZoneGroup ?? ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
         Context.Items["CurrentZoneGroupName"] = zoneGroup;
         Context.Items["CurrentZoneInstanceId"] = resumedRun?.Id;
@@ -1051,10 +1051,11 @@ public class GameHub : Hub
 
         // Send current zone occupants back to caller. The roster describes the caller's own scope, because a
         // run is a SignalR group of its own: inside one the list is the run's members, and in the shared zone it
-        // is the zone's shared occupants. A party mid-delve is in another group the connection can neither see
-        // nor chat with, so naming them here would advertise a reach the caller does not have.
+        // is the zone's shared occupants on the caller's side of the difficulty split. A party mid-delve, or a
+        // character in the other difficulty shard, is in another group the connection can neither see nor chat
+        // with, so naming them here would advertise a reach the caller does not have.
         var occupants = (resumedRun is null
-                ? await _playerSessionRepo.GetOnSharedScopeAsync(zoneId)
+                ? await _playerSessionRepo.GetOnSharedZoneAsync(zoneId, SharedScopeDifficulty(zone.Type, difficultyMode))
                 : await _playerSessionRepo.GetByZoneInstanceAsync(resumedRun.Id))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
@@ -3613,8 +3614,41 @@ public class GameHub : Hub
         await Clients.Caller.SendAsync("ReceiveChatMessage", echoDto);
     }
 
+    /// <summary>
+    /// Builds the SignalR group a connection joins for a zone's shared scope, which wilderness shards by difficulty
+    /// and every other zone type does not.
+    /// </summary>
+    /// <param name="zoneType">Type of the zone being entered.</param>
+    /// <param name="zoneId">Zone slug.</param>
+    /// <param name="difficultyMode">The character's difficulty mode.</param>
+    /// <returns>The shared scope name as SignalR sees it.</returns>
     private static string ComputeZoneGroup(ZoneType zoneType, string zoneId, string difficultyMode) =>
-        zoneType == ZoneType.Wilderness ? $"zone:{zoneId}_{difficultyMode}" : $"zone:{zoneId}";
+        ZoneGroupName.ForZone(zoneId, SharedScopeDifficulty(zoneType, difficultyMode)).Value;
+
+    /// <summary>
+    /// The difficulty dimension a zone's shared scope carries, or <see langword="null"/> when the scope covers the
+    /// whole zone. Wilderness shards its shared scope by difficulty; every other zone type has one shared room for
+    /// all of them. The same pair feeds the group name and the occupant read — <see cref="ZoneGroupName.ForZone"/>
+    /// composes the name from it and <see cref="IPlayerSessionRepository.GetOnSharedZoneAsync"/> reads the roster
+    /// from it — so a caller always sees the players standing beside it in its own group.
+    /// </summary>
+    /// <param name="zoneType">Type of the zone whose shared scope is being addressed.</param>
+    /// <param name="difficultyMode">The character's difficulty mode.</param>
+    /// <returns>The difficulty suffix for the scope, or <see langword="null"/> for a zone-wide scope.</returns>
+    private static string? SharedScopeDifficulty(ZoneType zoneType, string difficultyMode) =>
+        zoneType == ZoneType.Wilderness ? difficultyMode : null;
+
+    /// <summary>
+    /// The selected character's difficulty mode, defaulting to <c>normal</c> the way the scope name does when the
+    /// caller never recorded one.
+    /// </summary>
+    /// <returns>The difficulty mode the character's shared scope is composed from.</returns>
+    private string CurrentDifficultyMode() =>
+        Context.Items.TryGetValue("DifficultyMode", out var stored)
+        && stored is string mode
+        && !string.IsNullOrWhiteSpace(mode)
+            ? mode
+            : "normal";
 
     private bool TryGetCurrentZoneGroup([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? groupName)
     {
@@ -3687,15 +3721,18 @@ public class GameHub : Hub
 
         // The snapshot describes the caller's own scope, exactly as EnterZone's does. ApplyArrivalGroupAsync has
         // already recorded the run this arrival belongs to, so a walk that crossed into a run lists its members
-        // and a walk that stayed in the shared zone lists the zone's shared occupants. The zone's whole
-        // population would name the parties inside runs, whom the connection can neither see nor chat with.
+        // and a walk that stayed in the shared zone lists the zone's shared occupants on the caller's side of the
+        // difficulty split. The zone's whole population would name the parties inside runs and the characters in
+        // the other difficulty shard, whom the connection can neither see nor chat with.
         var instanceId = Context.Items.TryGetValue("CurrentZoneInstanceId", out var instance) && instance is Guid run
             ? run
             : (Guid?)null;
 
         var occupants = (instanceId is { } arrivingRun
                 ? await _playerSessionRepo.GetByZoneInstanceAsync(arrivingRun)
-                : await _playerSessionRepo.GetOnSharedScopeAsync(result.ZoneId!))
+                : await _playerSessionRepo.GetOnSharedZoneAsync(
+                    result.ZoneId!,
+                    SharedScopeDifficulty(zone.Type, CurrentDifficultyMode())))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
         await Clients.Caller.SendAsync("ZoneEntered", new

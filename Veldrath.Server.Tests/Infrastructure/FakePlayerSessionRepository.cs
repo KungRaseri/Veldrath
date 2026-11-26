@@ -35,7 +35,8 @@ internal sealed class FakePlayerSessionRepository : IPlayerSessionRepository
     public Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId) => Task.FromResult(new List<PlayerSession>());
 
     /// <inheritdoc />
-    public Task<List<PlayerSession>> GetOnSharedScopeAsync(string zoneId) => Task.FromResult(new List<PlayerSession>());
+    public Task<List<PlayerSession>> GetOnSharedZoneAsync(string zoneId, string? difficultyMode) =>
+        Task.FromResult(new List<PlayerSession>());
 
     /// <inheritdoc />
     public Task<List<PlayerSession>> GetByZoneInstanceAsync(Guid instanceId) =>

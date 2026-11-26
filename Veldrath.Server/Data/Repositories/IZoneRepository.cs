@@ -26,17 +26,35 @@ public interface IPlayerSessionRepository
     /// This is the whole zone's population: it includes characters inside an instance run, which is what the
     /// public zone counts publish. Never use it for a roster the caller has to reach — a run is its own
     /// SignalR group, so use <see cref="GetByZoneInstanceAsync"/> inside a run and
-    /// <see cref="GetOnSharedScopeAsync"/> in the shared zone.
+    /// <see cref="GetOnSharedZoneAsync"/> in the shared zone.
     /// </remarks>
     Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId);
 
     /// <summary>
-    /// Returns the zone's shared-scope sessions — everyone standing in the zone who is not inside an instance
-    /// run. Characters in a run are in a different SignalR group they can neither see nor chat with, so a
-    /// shared-scope roster must not name them.
+    /// Returns the sessions sharing the caller's own scope of a zone: everyone standing in the zone who is not
+    /// inside an instance run, and who is on the caller's side of the zone's difficulty split.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The scope has two dimensions and this read applies both, because a roster must only name connections the
+    /// caller can actually reach. A character in a run is in a different SignalR group, so <paramref name="zoneId"/>
+    /// plus a cleared run pointer is the first dimension.
+    /// </para>
+    /// <para>
+    /// The second dimension is difficulty. A wilderness zone shards its shared scope by difficulty — the group is
+    /// <c>zone:{zoneId}_{difficultyMode}</c> — so a normal-difficulty character and a hardcore one in the same zone
+    /// are in different groups and can neither see nor chat with each other. Every other zone type has one shared
+    /// scope for all difficulties, and passes <see langword="null"/>. The pair is the same pair that composes the
+    /// scope's group name (<see cref="Veldrath.Server.Features.Zones.ZoneGroupName.ForZone"/>); passing a different pair here than
+    /// the one the connection joined names players the caller cannot reach.
+    /// </para>
+    /// </remarks>
     /// <param name="zoneId">Zone whose shared scope to read.</param>
-    Task<List<PlayerSession>> GetOnSharedScopeAsync(string zoneId);
+    /// <param name="difficultyMode">
+    /// The zone's difficulty suffix, or <see langword="null"/> when the zone's shared scope is not split by
+    /// difficulty.
+    /// </param>
+    Task<List<PlayerSession>> GetOnSharedZoneAsync(string zoneId, string? difficultyMode);
 
     /// <summary>
     /// Returns the sessions pointing at one instance run — the run's own occupants, which excludes everyone
