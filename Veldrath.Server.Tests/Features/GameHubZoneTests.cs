@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Shared.Models;
@@ -6,6 +7,7 @@ using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Chests;
+using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Characters.Harvesting;
 using Veldrath.Server.Features.Characters.Npcs;
 using Veldrath.Server.Features.Map;
@@ -728,6 +730,200 @@ public class GameHubZoneTests : IDisposable
             "zone:crestfall:location:vault-of-echoes",
             "a shared room is not an instance, so there is no run to have been swept and no lobby to wake in");
         clients.Caller.SentMessages.Should().NotContain(message => message.Method == "SystemMessage");
+    }
+
+    // ── Respawn: waking out of a run that is gone ────────────────────────────
+
+    /// <summary>
+    /// Seeds the state a respawn out of a gone run starts from: the character in <paramref name="zoneId"/> pointing at
+    /// a run in the given state, with a neighbour standing in the same zone's shared rooms on each side of the
+    /// difficulty split.
+    /// </summary>
+    /// <param name="db">Context to write to.</param>
+    /// <param name="zoneId">Zone the character died in.</param>
+    /// <param name="runState">State of the run the character was inside.</param>
+    /// <param name="callerDifficulty">Difficulty mode of the character being resurrected.</param>
+    /// <returns>The character, their session, the run, and one neighbour per difficulty shard.</returns>
+    private static async Task<(
+        Veldrath.Server.Data.Entities.Character Character,
+        PlayerSession Session,
+        ZoneInstance Run,
+        Veldrath.Server.Data.Entities.Character ShardMate,
+        Veldrath.Server.Data.Entities.Character OtherShard)> SeedRespawnOutOfARunAsync(
+        ApplicationDbContext db,
+        string zoneId,
+        ZoneInstanceState runState,
+        string callerDifficulty)
+    {
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneId = zoneId;
+        character.DifficultyMode = callerDifficulty;
+        character.CurrentMapId = $"zone:{zoneId}";
+        character.CurrentNodeId = $"zone:{zoneId}:location:road";
+        await db.SaveChangesAsync();
+
+        // One neighbour per side of the split, standing in the zone's shared rooms.
+        var shardAccount = await HubHarness.SeedAccountAsync(db);
+        var shardMate = await HubHarness.SeedCharacterAsync(db, shardAccount.Id);
+        shardMate.DifficultyMode = callerDifficulty;
+        await HubHarness.SeedSessionAsync(db, shardMate, "conn-shard-mate", zoneId);
+
+        var otherAccount = await HubHarness.SeedAccountAsync(db);
+        var otherShard = await HubHarness.SeedCharacterAsync(db, otherAccount.Id);
+        otherShard.DifficultyMode = callerDifficulty == "hardcore" ? "normal" : "hardcore";
+        await HubHarness.SeedSessionAsync(db, otherShard, "conn-other-shard", zoneId);
+        await db.SaveChangesAsync();
+
+        // The run's own scope, composed exactly as the arrival handler composes it: only a wilderness zone carries
+        // the difficulty in the name.
+        var zone = await db.Zones.AsNoTracking().SingleAsync(row => row.Id == zoneId);
+        var run = new ZoneInstance
+        {
+            ZoneId = zoneId,
+            CreatedByCharacterId = character.Id,
+            ZoneGroup = ZoneGroupName.ForInstance(
+                zoneId,
+                zone.Type == ZoneType.Wilderness ? callerDifficulty : null,
+                Guid.NewGuid()).Value,
+            State = runState,
+        };
+        db.ZoneInstances.Add(run);
+        await db.SaveChangesAsync();
+
+        var session = await HubHarness.SeedSessionAsync(db, character, "conn-respawn", zoneId);
+        session.ZoneInstanceId = run.Id;
+        await db.SaveChangesAsync();
+
+        return (character, session, run, shardMate, otherShard);
+    }
+
+    [Fact]
+    public async Task Respawn_Out_Of_A_Gone_Run_Rejoins_The_Characters_Wilderness_Shard()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, session, run, shardMate, _) =
+            await SeedRespawnOutOfARunAsync(db, "the-droveway", ZoneInstanceState.Empty, "hardcore");
+
+        var mediator = new Mock<ISender>();
+        mediator.Returns(new RespawnHubResult
+        {
+            Success = true,
+            CurrentHealth = 25,
+            CurrentMana = 10,
+            LocationSlug = "drove-road",
+            LocationDisplayName = "The Drove Road",
+        });
+
+        var (hub, clients, groups, ctx, _, _) =
+            HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn");
+        ctx.EnterZoneState(
+            character.Id, character.Name, zoneId: "the-droveway", zoneGroup: run.ZoneGroup,
+            currentMapId: "zone:the-droveway");
+        ctx.Items["CurrentZoneInstanceId"] = run.Id;
+        ctx.Items["DifficultyMode"] = "hardcore";
+
+        await hub.Respawn();
+
+        // The wilderness split is the shard, not the bare zone: `zone:the-droveway` is a group nobody else is in.
+        groups.AddedGroups.Should().Contain("zone:the-droveway_hardcore");
+        groups.AddedGroups.Should().NotContain("zone:the-droveway");
+        groups.RemovedGroups.Should().Contain(run.ZoneGroup);
+        ctx.Items["CurrentZoneGroupName"].Should().Be("zone:the-droveway_hardcore");
+        ctx.Items["CurrentZoneInstanceId"].Should().BeNull();
+
+        // The shard learns the character is here; the other difficulty never hears about them.
+        clients.OthersInGroupNamed("zone:the-droveway_hardcore").SentMessages.Should()
+            .ContainSingle(m => m.Method == "PlayerEntered");
+        clients.OthersInGroupNamed("zone:the-droveway").SentMessages.Should().BeEmpty(
+            "nothing is in the unsuffixed group, so nothing there needed to be told anything");
+
+        // The wake is a scope change, so it owes the snapshot the walk out of a run sends: the roster the client
+        // keeps is only ever rewritten from one, and the run's roster names players it can no longer reach.
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Id = "the-droveway",
+            ZoneType = "Wilderness",
+            CurrentMapId = "zone:the-droveway",
+            CurrentNodeId = "zone:the-droveway:location:road",
+            Occupants = new[]
+            {
+                new { CharacterId = shardMate.Id, CharacterName = shardMate.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "the snapshot names the players in the shard the character just joined");
+
+        db.PlayerSessions.Local.Single(row => row.Id == session.Id).ZoneInstanceId
+            .Should().BeNull("the run is gone, so nothing points at it");
+
+        clients.Caller.SentMessages.Where(m => m.Method == "SystemMessage").Should()
+            .ContainSingle()
+            .Which.Args[0].Should().Be("The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    [Fact]
+    public async Task Respawn_Out_Of_A_Gone_Run_Keeps_A_Town_Scope_Whole()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, _, run, shardMate, otherShard) =
+            await SeedRespawnOutOfARunAsync(db, "crestfall", ZoneInstanceState.Purging, "hardcore");
+
+        var mediator = new Mock<ISender>();
+        mediator.Returns(new RespawnHubResult { Success = true, CurrentHealth = 25, CurrentMana = 10 });
+
+        var (hub, clients, groups, ctx, _, _) =
+            HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn");
+        ctx.EnterZoneState(
+            character.Id, character.Name, zoneId: "crestfall", zoneGroup: run.ZoneGroup);
+        ctx.Items["CurrentZoneInstanceId"] = run.Id;
+        ctx.Items["DifficultyMode"] = "hardcore";
+
+        await hub.Respawn();
+
+        groups.AddedGroups.Should().Contain(
+            "zone:crestfall", "a town has one shared scope for every difficulty, so the wake joins it unsuffixed");
+        groups.AddedGroups.Should().NotContain("zone:crestfall_hardcore");
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Occupants = new[]
+            {
+                new { CharacterId = shardMate.Id, CharacterName = shardMate.Name },
+                new { CharacterId = otherShard.Id, CharacterName = otherShard.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "both difficulties stand in the same town group, so both are in the roster");
+    }
+
+    [Fact]
+    public async Task Respawn_Inside_A_Run_That_Is_Still_Open_Keeps_Its_Group_And_Stays_Silent()
+    {
+        await using var db = _factory.CreateContext();
+        var (character, session, run, _, _) =
+            await SeedRespawnOutOfARunAsync(db, "the-droveway", ZoneInstanceState.Open, "hardcore");
+
+        var mediator = new Mock<ISender>();
+        mediator.Returns(new RespawnHubResult { Success = true, CurrentHealth = 25, CurrentMana = 10 });
+
+        var (hub, clients, groups, ctx, _, _) =
+            HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn");
+        ctx.EnterZoneState(
+            character.Id, character.Name, zoneId: "the-droveway", zoneGroup: run.ZoneGroup,
+            currentMapId: "zone:the-droveway");
+        ctx.Items["CurrentZoneInstanceId"] = run.Id;
+        ctx.Items["DifficultyMode"] = "hardcore";
+
+        await hub.Respawn();
+
+        groups.AddedGroups.Should().BeEmpty("a run that can still receive the character is not a scope change");
+        groups.RemovedGroups.Should().BeEmpty();
+        ctx.Items["CurrentZoneGroupName"].Should().Be(run.ZoneGroup);
+        ctx.Items["CurrentZoneInstanceId"].Should().Be(run.Id);
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "ZoneEntered");
+        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "SystemMessage");
+        db.PlayerSessions.Local.Single(row => row.Id == session.Id).ZoneInstanceId.Should().Be(run.Id);
     }
 
     // ── TravelToNode: walking out of a run ───────────────────────────────────
