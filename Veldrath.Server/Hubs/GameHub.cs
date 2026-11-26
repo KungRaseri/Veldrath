@@ -3660,6 +3660,39 @@ public class GameHub : Hub
             ? mode
             : "normal";
 
+    /// <summary>
+    /// Reads the sessions standing beside the caller in their own scope of <paramref name="zoneId"/>: the run's
+    /// members while the caller is inside an instance run, otherwise the zone's shared occupants on the caller's
+    /// side of the difficulty split.
+    /// </summary>
+    /// <remarks>
+    /// This is the one read behind every roster the hub shows a connection — the arrival snapshot and <c>/who</c>.
+    /// The zone's whole population (<see cref="IPlayerSessionRepository.GetByZoneIdAsync"/>) is what the public zone
+    /// counts publish, and naming it to a character advertises reach they do not have: a party inside an instance run
+    /// and a character in the other wilderness difficulty shard are both in SignalR groups this connection can
+    /// neither see nor chat with. The pair that selects the shared scope is the pair that composed the group the
+    /// connection joined, so the roster always names the players actually in the caller's room.
+    /// </remarks>
+    /// <param name="zoneId">Zone the caller stands in.</param>
+    /// <param name="zoneType">
+    /// Type of that zone, or <see langword="null"/> when the catalog does not know it. A zone without a declared
+    /// type declares no difficulty split either, so its shared scope is read whole and only the run dimension
+    /// narrows the list.
+    /// </param>
+    /// <returns>The sessions in the caller's own scope.</returns>
+    private async Task<List<PlayerSession>> ReadOwnScopeAsync(string zoneId, ZoneType? zoneType)
+    {
+        var instanceId = Context.Items.TryGetValue("CurrentZoneInstanceId", out var instance) && instance is Guid run
+            ? run
+            : (Guid?)null;
+
+        return instanceId is { } currentRun
+            ? await _playerSessionRepo.GetByZoneInstanceAsync(currentRun)
+            : await _playerSessionRepo.GetOnSharedZoneAsync(
+                zoneId,
+                zoneType is { } type ? SharedScopeDifficulty(type, CurrentDifficultyMode()) : null);
+    }
+
     private bool TryGetCurrentZoneGroup([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? groupName)
     {
         if (Context.Items.TryGetValue("CurrentZoneGroupName", out var val) && val is string s)
@@ -3753,15 +3786,7 @@ public class GameHub : Hub
         // and a walk that stayed in the shared zone lists the zone's shared occupants on the caller's side of the
         // difficulty split. The zone's whole population would name the parties inside runs and the characters in
         // the other difficulty shard, whom the connection can neither see nor chat with.
-        var instanceId = Context.Items.TryGetValue("CurrentZoneInstanceId", out var instance) && instance is Guid run
-            ? run
-            : (Guid?)null;
-
-        var occupants = (instanceId is { } arrivingRun
-                ? await _playerSessionRepo.GetByZoneInstanceAsync(arrivingRun)
-                : await _playerSessionRepo.GetOnSharedZoneAsync(
-                    result.ZoneId!,
-                    SharedScopeDifficulty(zone.Type, CurrentDifficultyMode())))
+        var occupants = (await ReadOwnScopeAsync(result.ZoneId!, zone.Type))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
         await Clients.Caller.SendAsync("ZoneEntered", new
@@ -3991,7 +4016,13 @@ public class GameHub : Hub
                 {
                     var zoneIdForWho = Context.Items.TryGetValue("CurrentZoneId", out var zObj) && zObj is string z ? z : null;
                     if (zoneIdForWho is null) { await Clients.Caller.SendAsync("SystemMessage", "You are not in a zone."); return; }
-                    var sessions = await _playerSessionRepo.GetByZoneIdAsync(zoneIdForWho);
+
+                    // The list names the players standing beside the caller, not the zone's population, so it comes
+                    // from the same scope read the arrival snapshot uses: the run's members inside a run, otherwise
+                    // the shared occupants on the caller's side of the difficulty split. The zone type is what
+                    // declares that split; a zone the catalog does not know has none.
+                    var zoneForWho = await _zoneRepo.GetByIdAsync(zoneIdForWho);
+                    var sessions = await ReadOwnScopeAsync(zoneIdForWho, zoneForWho?.Type);
                     var names = sessions.Count == 0
                         ? "No players in this zone."
                         : string.Join(", ", sessions.Select(s => s.CharacterName));

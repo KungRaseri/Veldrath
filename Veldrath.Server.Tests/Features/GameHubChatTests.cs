@@ -245,7 +245,7 @@ public class GameHubChatTests : IDisposable
     }
 
     [Fact]
-    public async Task Who_Lists_Every_Character_Session_In_The_Zone()
+    public async Task Who_Lists_The_Shared_Scope_Of_The_Zone()
     {
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
@@ -262,6 +262,97 @@ public class GameHubChatTests : IDisposable
 
         var text = clients.Caller.SentMessages.Single().Args[0].Should().BeOfType<string>().Subject;
         text.Should().Be($"Players here: {mine.Name}, {other.Name}");
+    }
+
+    [Fact]
+    public async Task Who_Does_Not_Name_A_Character_Inside_An_Instance_Run()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var mine = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+        var delverAccount = await HubHarness.SeedAccountAsync(db);
+        var delver = await HubHarness.SeedCharacterAsync(db, delverAccount.Id);
+
+        await HubHarness.SeedSessionAsync(db, mine, "conn-mine", "the-droveway");
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
+        var delverSession = await HubHarness.SeedSessionAsync(db, delver, "conn-delver", "the-droveway");
+        delverSession.ZoneInstanceId = Guid.NewGuid();
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(mine.Id, mine.Name, "the-droveway");
+
+        await hub.SendChatMessage(new ChatMessageHubRequest("/who"));
+
+        var text = clients.Caller.SentMessages.Single().Args[0].Should().BeOfType<string>().Subject;
+        text.Should().StartWith("Players here: ");
+        text["Players here: ".Length..].Split(", ").Should().BeEquivalentTo(
+            [mine.Name, resident.Name],
+            "the delver stands in its run's SignalR group, which the shared scope cannot see or chat with");
+    }
+
+    [Fact]
+    public async Task Who_Inside_An_Instance_Run_Lists_The_Runs_Members_And_Not_The_Shared_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var mine = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var partyAccount = await HubHarness.SeedAccountAsync(db);
+        var party = await HubHarness.SeedCharacterAsync(db, partyAccount.Id);
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+
+        var runId = Guid.NewGuid();
+        var mineSession = await HubHarness.SeedSessionAsync(db, mine, "conn-mine", "the-droveway");
+        var partySession = await HubHarness.SeedSessionAsync(db, party, "conn-party", "the-droveway");
+        mineSession.ZoneInstanceId = runId;
+        partySession.ZoneInstanceId = runId;
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(mine.Id, mine.Name, "the-droveway", "zone:the-droveway_normal#i1:" + runId.ToString("D"));
+        ctx.Items["CurrentZoneInstanceId"] = runId;
+
+        await hub.SendChatMessage(new ChatMessageHubRequest("/who"));
+
+        var text = clients.Caller.SentMessages.Single().Args[0].Should().BeOfType<string>().Subject;
+        text.Should().StartWith("Players here: ");
+        text["Players here: ".Length..].Split(", ").Should().BeEquivalentTo(
+            [mine.Name, party.Name],
+            "a run is its own SignalR group, so the shared resident beside the dungeon door is not in it");
+    }
+
+    [Fact]
+    public async Task Who_In_A_Wilderness_Zone_Lists_The_Callers_Difficulty_Shard_Only()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var mine = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var shardmateAccount = await HubHarness.SeedAccountAsync(db);
+        var shardmate = await HubHarness.SeedCharacterAsync(db, shardmateAccount.Id);
+        var hardcoreAccount = await HubHarness.SeedAccountAsync(db);
+        var hardcore = await HubHarness.SeedCharacterAsync(db, hardcoreAccount.Id);
+        hardcore.DifficultyMode = "hardcore";
+        await db.SaveChangesAsync();
+
+        await HubHarness.SeedSessionAsync(db, mine, "conn-mine", "the-droveway");
+        await HubHarness.SeedSessionAsync(db, shardmate, "conn-shardmate", "the-droveway");
+        await HubHarness.SeedSessionAsync(db, hardcore, "conn-hardcore", "the-droveway");
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(mine.Id, mine.Name, "the-droveway", "zone:the-droveway_normal");
+        ctx.Items["DifficultyMode"] = "normal";
+
+        await hub.SendChatMessage(new ChatMessageHubRequest("/who"));
+
+        var text = clients.Caller.SentMessages.Single().Args[0].Should().BeOfType<string>().Subject;
+        text.Should().StartWith("Players here: ");
+        text["Players here: ".Length..].Split(", ").Should().BeEquivalentTo(
+            [mine.Name, shardmate.Name],
+            "the hardcore character is in zone:the-droveway_hardcore, not in the caller's group");
     }
 
     // ── Slash commands: /whisper ─────────────────────────────────────────────
