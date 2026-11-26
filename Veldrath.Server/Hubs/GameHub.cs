@@ -1049,28 +1049,10 @@ public class GameHub : Hub
             ZoneId = zoneId,
         });
 
-        // Send current zone occupants back to caller. The roster describes the caller's own scope, because a
-        // run is a SignalR group of its own: inside one the list is the run's members, and in the shared zone it
-        // is the zone's shared occupants on the caller's side of the difficulty split. A party mid-delve, or a
-        // character in the other difficulty shard, is in another group the connection can neither see nor chat
-        // with, so naming them here would advertise a reach the caller does not have. The read is the same
-        // helper /who and the walk's snapshot use, so the hub's rosters cannot disagree; the run pointer above
-        // is already written, so the helper selects the scope this connection just joined.
-        var occupants = (await ReadOwnScopeAsync(zoneId, zone.Type))
-            .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
-
-        await Clients.Caller.SendAsync("ZoneEntered", new
-        {
-            zone.Id,
-            zone.Name,
-            zone.Description,
-            ZoneType = zone.Type.ToString(),
-            CurrentMapId = zoneGraph?.Id,
-            CurrentNodeId = resumeNodeId,
-            Occupants = occupants,
-            HasInn = zone.HasInn,
-            HasMerchant = zone.HasMerchant,
-        });
+        // The arrival's snapshot is the hub's one ZoneEntered payload, so its occupant list is read the same way a
+        // walk's and a respawn wake's are: the caller's own scope. The run pointer above is already written, so the
+        // read selects the scope this connection just joined.
+        await SendZoneSnapshotAsync(zone, zoneGraph?.Id, resumeNodeId);
 
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);
 
@@ -3628,11 +3610,14 @@ public class GameHub : Hub
     /// Builds the SignalR group a connection joins for a zone's shared scope, which wilderness shards by difficulty
     /// and every other zone type does not.
     /// </summary>
-    /// <param name="zoneType">Type of the zone being entered.</param>
+    /// <param name="zoneType">
+    /// Type of the zone being entered, or <see langword="null"/> when the catalog has no row for it. A zone whose type
+    /// is unknown declares no difficulty split either, so its scope is the bare zone.
+    /// </param>
     /// <param name="zoneId">Zone slug.</param>
     /// <param name="difficultyMode">The character's difficulty mode.</param>
     /// <returns>The shared scope name as SignalR sees it.</returns>
-    private static string ComputeZoneGroup(ZoneType zoneType, string zoneId, string difficultyMode) =>
+    private static string ComputeZoneGroup(ZoneType? zoneType, string zoneId, string difficultyMode) =>
         ZoneGroupName.ForZone(zoneId, SharedScopeDifficulty(zoneType, difficultyMode)).Value;
 
     /// <summary>
@@ -3642,10 +3627,12 @@ public class GameHub : Hub
     /// composes the name from it and <see cref="IPlayerSessionRepository.GetOnSharedZoneAsync"/> reads the roster
     /// from it — so a caller always sees the players standing beside it in its own group.
     /// </summary>
-    /// <param name="zoneType">Type of the zone whose shared scope is being addressed.</param>
+    /// <param name="zoneType">
+    /// Type of the zone whose shared scope is being addressed, or <see langword="null"/> when the catalog has no row.
+    /// </param>
     /// <param name="difficultyMode">The character's difficulty mode.</param>
     /// <returns>The difficulty suffix for the scope, or <see langword="null"/> for a zone-wide scope.</returns>
-    private static string? SharedScopeDifficulty(ZoneType zoneType, string difficultyMode) =>
+    private static string? SharedScopeDifficulty(ZoneType? zoneType, string difficultyMode) =>
         zoneType == ZoneType.Wilderness ? difficultyMode : null;
 
     /// <summary>
@@ -3708,7 +3695,7 @@ public class GameHub : Hub
 
         return await _playerSessionRepo.GetOnSharedZoneAsync(
             zoneId,
-            zoneType is { } type ? SharedScopeDifficulty(type, CurrentDifficultyMode()) : null);
+            SharedScopeDifficulty(zoneType, CurrentDifficultyMode()));
     }
 
     private bool TryGetCurrentZoneGroup([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? groupName)
@@ -3726,6 +3713,22 @@ public class GameHub : Hub
     /// Clears the character's run when it no longer exists or is being purged, so a resurrection lands in the
     /// shared zone instead of a group nothing else will ever join.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Waking out of a gone run is a scope change inside one zone — the same event as walking out of it — so it owes
+    /// the same two things <see cref="ApplyArrivalGroupAsync"/> and <see cref="SyncArrivedZoneAsync"/> give a walk:
+    /// the <c>PlayerLeft</c>/<c>PlayerEntered</c> pair, and a <c>ZoneEntered</c> snapshot. The client rewrites its
+    /// occupant list only from a snapshot, so without one it kept the run's roster: players it can no longer see,
+    /// chat with or fight beside.
+    /// </para>
+    /// <para>
+    /// The group joined is the character's own shard, not the bare zone. In a wilderness zone the shared scope is
+    /// <c>zone:{zoneId}_{difficulty}</c>, so composing it without the difficulty puts the character in a group nobody
+    /// else is in — their <c>PlayerEntered</c> never reaches their shard, and the shard's chat and roster never reach
+    /// them. The pair used here is the pair <see cref="ComputeZoneGroup"/> composes names from and
+    /// <see cref="ReadOwnScopeAsync(string, ZoneType?)"/> reads rosters with, so the group and the snapshot agree.
+    /// </para>
+    /// </remarks>
     /// <param name="characterId">Character being resurrected.</param>
     private async Task LeaveExpiredInstanceAsync(Guid characterId)
     {
@@ -3740,13 +3743,26 @@ public class GameHub : Hub
         if (run is { State: Veldrath.Server.Data.Entities.ZoneInstanceState.Open })
             return;
 
-        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone) && zone is string id ? id : null;
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone)
+                     && zone is string id
+                     && !string.IsNullOrWhiteSpace(id)
+            ? id
+            : null;
+        var zoneEntity = zoneId is null ? null : await _zoneRepo.GetByIdAsync(zoneId);
+
         await ApplyArrivalGroupAsync(
-            string.IsNullOrWhiteSpace(zoneId)
-                ? null
-                : Veldrath.Server.Features.Zones.ZoneGroupName.ForZone(zoneId).Value,
+            zoneId is null ? null : ComputeZoneGroup(zoneEntity?.Type, zoneId, CurrentDifficultyMode()),
             null,
             zoneId);
+
+        // This method only gets past the run check with a run the connection is pointing at, so the wake always
+        // changes the scope, and the snapshot is owed whenever there is a zone to describe. The character row is
+        // where the respawn handler recorded the node they woke on, so the snapshot describes where they now stand.
+        if (zoneEntity is not null)
+        {
+            var character = await _characterRepo.GetByIdAsync(characterId);
+            await SendZoneSnapshotAsync(zoneEntity, character?.CurrentMapId, character?.CurrentNodeId);
+        }
 
         await Clients.Caller.SendAsync(
             "SystemMessage",
@@ -3799,12 +3815,28 @@ public class GameHub : Hub
         if (zone is null)
             return;
 
-        // The snapshot describes the caller's own scope, exactly as EnterZone's does. ApplyArrivalGroupAsync has
-        // already recorded the run this arrival belongs to, so a walk that crossed into a run lists its members
-        // and a walk that stayed in the shared zone lists the zone's shared occupants on the caller's side of the
-        // difficulty split. The zone's whole population would name the parties inside runs and the characters in
-        // the other difficulty shard, whom the connection can neither see nor chat with.
-        var occupants = (await ReadOwnScopeAsync(result.ZoneId!, zone.Type))
+        await SendZoneSnapshotAsync(zone, result.MapId, result.NodeId);
+    }
+
+    /// <summary>
+    /// Sends the caller the snapshot of the zone they now stand in: the zone's identity and flags, the map node they
+    /// occupy, and the occupants of their own scope.
+    /// </summary>
+    /// <remarks>
+    /// This is the one <c>ZoneEntered</c> payload, so every path that moves a connection — the <see cref="EnterZone"/>
+    /// arrival, a walk that crossed a border or changed scope (<see cref="SyncArrivedZoneAsync"/>), and the respawn
+    /// that woke out of a run which no longer exists (<see cref="LeaveExpiredInstanceAsync"/>) — describes the zone
+    /// the same way. The occupant list is <see cref="ReadOwnScopeAsync(string, ZoneType?)"/>, which names the players
+    /// in the scope the connection actually joined: the run's members inside a run, and the caller's own difficulty
+    /// shard otherwise. The zone's whole population would name a party mid-delve and the characters in the other
+    /// wilderness shard, whom the connection can neither see nor chat with.
+    /// </remarks>
+    /// <param name="zone">Zone the caller stands in.</param>
+    /// <param name="mapId">Map the caller stands on, or <see langword="null"/> when nothing records which.</param>
+    /// <param name="nodeId">Node the caller occupies, or <see langword="null"/> when nothing records which.</param>
+    private async Task SendZoneSnapshotAsync(Zone zone, string? mapId, string? nodeId)
+    {
+        var occupants = (await ReadOwnScopeAsync(zone.Id, zone.Type))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
         await Clients.Caller.SendAsync("ZoneEntered", new
@@ -3813,8 +3845,8 @@ public class GameHub : Hub
             zone.Name,
             zone.Description,
             ZoneType = zone.Type.ToString(),
-            CurrentMapId = result.MapId,
-            CurrentNodeId = result.NodeId,
+            CurrentMapId = mapId,
+            CurrentNodeId = nodeId,
             Occupants = occupants,
             HasInn = zone.HasInn,
             HasMerchant = zone.HasMerchant,
