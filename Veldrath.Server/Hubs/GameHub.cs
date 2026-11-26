@@ -1162,14 +1162,18 @@ public class GameHub : Hub
             }
 
             // An instanced destination moves the connection into the run's own group, which is what keeps
-            // two parties' enemies, loot and chat apart while they clear the same dungeon.
-            await ApplyArrivalGroupAsync(result.ZoneGroup, result.ZoneInstanceId);
+            // two parties' enemies, loot and chat apart while they clear the same dungeon. Walking in or out of
+            // a run inside one zone is exactly that move, so it is also a change of neighbours.
+            var scopeChanged = await ApplyArrivalGroupAsync(
+                result.ZoneGroup, result.ZoneInstanceId, result.ZoneId);
 
             await Clients.Caller.SendAsync("NodeTraveled", result);
 
             // A walk can cross a zone boundary, and NodeTraveled carries only the zone id: without the zone
-            // snapshot that follows, the client keeps showing the zone it just left.
-            await SyncArrivedZoneAsync(result);
+            // snapshot that follows, the client keeps showing the zone it just left. The same snapshot is owed
+            // when the zone stays the same and the scope changes: the occupant list belongs to the scope, and
+            // only the snapshot rewrites it.
+            await SyncArrivedZoneAsync(result, scopeChanged);
 
             // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
             foreach (var warning in result.ContentWarnings)
@@ -1224,9 +1228,15 @@ public class GameHub : Hub
                 return;
             }
 
-            await ApplyArrivalGroupAsync(result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId);
+            // Entering an instanced room is the same group move a walk makes, so it is announced and snapshotted
+            // the same way: the arrival's own scope answers who is here, and "here" may be a run inside the zone
+            // the caller already stood in.
+            var scopeChanged = await ApplyArrivalGroupAsync(
+                result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId, result.Arrival.ZoneId);
 
             await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
+
+            await SyncArrivedZoneAsync(result.Arrival, scopeChanged);
 
             // What grows here, what is waiting to be opened, and who is here to talk to. A safe location answers
             // with empty lists, which the client renders as nothing.
@@ -3684,7 +3694,8 @@ public class GameHub : Hub
             string.IsNullOrWhiteSpace(zoneId)
                 ? null
                 : Veldrath.Server.Features.Zones.ZoneGroupName.ForZone(zoneId).Value,
-            null);
+            null,
+            zoneId);
 
         await Clients.Caller.SendAsync(
             "SystemMessage",
@@ -3693,22 +3704,40 @@ public class GameHub : Hub
 
     /// <summary>
     /// Brings the caller's zone state in line with an arrival that crossed a zone boundary, or walked out
-    /// onto the region map. The name, the inn and merchant flags and the occupant list all belong to the
-    /// zone; a walk is as much an arrival as <see cref="EnterZone"/>, so it sends the same snapshot.
+    /// onto the region map, or changed scope inside the zone it was already standing in. The name, the inn
+    /// and merchant flags and the occupant list all belong to the zone; a walk is as much an arrival as
+    /// <see cref="EnterZone"/>, so it sends the same snapshot.
     /// </summary>
+    /// <remarks>
+    /// A scope change inside one zone is invisible to the zone id and visible only in the roster: a room of
+    /// the shared zone and a room of an instance run are two different SignalR groups holding two different
+    /// sets of players. The client rewrites its occupant list only from a zone snapshot, so staying silent
+    /// there left both sides holding characters they can no longer reach. <see cref="ApplyArrivalGroupAsync"/>
+    /// has already moved the group and recorded the run by the time this runs, so the read below describes the
+    /// scope the character now stands in.
+    /// </remarks>
     /// <param name="result">Successful arrival, whose zone is authoritative after the move.</param>
-    private async Task SyncArrivedZoneAsync(TravelToNodeHubResult result)
+    /// <param name="scopeChanged">
+    /// Whether the arrival changed the group or run the connection is reachable in, which is the one kind of
+    /// arrival inside a zone that still changes what the snapshot describes.
+    /// </param>
+    private async Task SyncArrivedZoneAsync(TravelToNodeHubResult result, bool scopeChanged)
     {
         var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var current) && current is string id
             ? id
             : null;
 
-        if (string.Equals(currentZoneId, result.ZoneId, StringComparison.OrdinalIgnoreCase))
+        var crossedZone = !string.Equals(currentZoneId, result.ZoneId, StringComparison.OrdinalIgnoreCase);
+
+        if (!crossedZone && !scopeChanged)
             return;
 
-        Context.Items["CurrentZoneId"] = result.ZoneId;
-        Context.Items["CurrentMapId"] = result.MapId;
-        Context.Items["CurrentNodeId"] = result.NodeId;
+        if (crossedZone)
+        {
+            Context.Items["CurrentZoneId"] = result.ZoneId;
+            Context.Items["CurrentMapId"] = result.MapId;
+            Context.Items["CurrentNodeId"] = result.NodeId;
+        }
 
         // Stepping onto the region map leaves every zone behind; the client clears its banner from the
         // arrival instead, because a zone snapshot would have nothing to say.
@@ -3750,28 +3779,55 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Moves the connection into the group the arrival belongs to when that differs from where it was, and
-    /// records the run on the session so the run-scoped reads — chests, floor loot, participation — follow the
-    /// character. A public arrival keeps the shared zone scope and simply clears any run pointer. The pointer
-    /// is re-established on a reconnect the same way an arrival establishes it: by looking up the character's
-    /// still-open run, because the session row it is written to does not survive the disconnect.
+    /// Moves the connection into the group the arrival belongs to when that differs from where it was,
+    /// announces the move to both the audience being left and the one being joined, and records the run on the
+    /// session so the run-scoped reads — chests, floor loot, participation — follow the character. A public
+    /// arrival keeps the shared zone scope and simply clears any run pointer. The pointer is re-established on a
+    /// reconnect the same way an arrival establishes it: by looking up the character's still-open run, because
+    /// the session row it is written to does not survive the disconnect.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// Walking from the shared zone into an instanced room of the same zone — or back out of it — changes the
+    /// SignalR group without changing the zone, so nothing else in the arrival path notices it. The group is the
+    /// audience, which is why the move speaks: without <c>PlayerLeft</c> the members it leaves behind keep the
+    /// character in their roster until their own next arrival, and without <c>PlayerEntered</c> the members it
+    /// joins never learn about them at all.
+    /// </para>
+    /// <para>
     /// Walking out of a run is a departure like the disconnect's, so it goes through the same
     /// <see cref="IZoneInstanceService.LeaveAsync"/>: participation closes and the run's emptiness grace starts
     /// at the walk-out. Without that, a run held for longer than the grace was swept on the first tick after the
     /// last member walked into the zone's shared rooms, and the walk back opened a fresh attempt instead of
     /// resuming this one.
+    /// </para>
     /// </remarks>
     /// <param name="zoneGroup">Scope the arrival belongs to, or <see langword="null"/> when unchanged.</param>
     /// <param name="instanceId">Run the character is now inside, or <see langword="null"/> for the shared zone.</param>
-    private async Task ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId)
+    /// <param name="zoneId">
+    /// Zone the arrival is in, or <see langword="null"/> to keep the zone already recorded. Only the departure and
+    /// entry announcements carry it, so a walk that crosses a border names the zone it left to the old group and
+    /// the zone it joined to the new one.
+    /// </param>
+    /// <returns>
+    /// Whether the arrival changed the scope the connection is reachable in — a different group, or a different
+    /// run. The caller uses it to decide whether an arrival that stayed inside one zone still owes a snapshot.
+    /// </returns>
+    private async Task<bool> ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId, string? zoneId = null)
     {
         // Read before the overwrite below: the run being left is the only record of which departure this is.
         var previousInstanceId =
             Context.Items.TryGetValue("CurrentZoneInstanceId", out var previous) && previous is Guid left
                 ? left
                 : (Guid?)null;
+
+        // The zone the connection stands in before this arrival moves it, which is the one the group it is
+        // leaving belongs to. Recorded here because SyncArrivedZoneAsync overwrites it after the move.
+        var departedZoneId = Context.Items.TryGetValue("CurrentZoneId", out var standing) && standing is string standingZone
+            ? standingZone
+            : null;
+
+        var scopeChanged = previousInstanceId != instanceId;
 
         if (!string.IsNullOrWhiteSpace(zoneGroup))
         {
@@ -3781,11 +3837,17 @@ public class GameHub : Hub
 
             if (!string.Equals(current, zoneGroup, StringComparison.Ordinal))
             {
+                scopeChanged = true;
+
                 if (!string.IsNullOrWhiteSpace(current))
                     await Groups.RemoveFromGroupAsync(Context.ConnectionId, current!);
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup!);
                 Context.Items["CurrentZoneGroupName"] = zoneGroup;
+
+                // The move is only visible to the two audiences if it speaks: the members left behind keep a
+                // roster they can no longer reach, and the members joined never learn the character is here.
+                await AnnounceScopeMoveAsync(current, zoneGroup!, departedZoneId, zoneId ?? departedZoneId);
             }
         }
 
@@ -3802,6 +3864,43 @@ public class GameHub : Hub
 
             await _playerSessionRepo.SetZoneInstanceAsync(characterId, instanceId);
         }
+
+        return scopeChanged;
+    }
+
+    /// <summary>
+    /// Tells the group the caller left and the group the caller joined that the character moved between them.
+    /// A scope change inside one zone is otherwise completely silent — the zone is unchanged, so nothing in
+    /// the arrival path speaks — and both sides keep a roster they can no longer reach.
+    /// </summary>
+    /// <param name="departedGroup">Group the connection was reachable in, or <see langword="null"/> if it had none.</param>
+    /// <param name="joinedGroup">Group the connection is reachable in now.</param>
+    /// <param name="departedZoneId">Zone the departed group belongs to.</param>
+    /// <param name="joinedZoneId">Zone the joined group belongs to.</param>
+    private async Task AnnounceScopeMoveAsync(
+        string? departedGroup,
+        string joinedGroup,
+        string? departedZoneId,
+        string? joinedZoneId)
+    {
+        if (!TryGetCharacterId(out var characterId) || !TryGetCharacterName(out var characterName))
+            return;
+
+        if (!string.IsNullOrWhiteSpace(departedGroup))
+            await Clients.Group(departedGroup!).SendAsync("PlayerLeft", new
+            {
+                CharacterId = characterId,
+                CharacterName = characterName,
+                ZoneId = departedZoneId,
+            });
+
+        // OthersInGroup, not Group: the caller is already a member and does not need to be told about itself.
+        await Clients.OthersInGroup(joinedGroup).SendAsync("PlayerEntered", new
+        {
+            CharacterId = characterId,
+            CharacterName = characterName,
+            ZoneId = joinedZoneId,
+        });
     }
 
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";

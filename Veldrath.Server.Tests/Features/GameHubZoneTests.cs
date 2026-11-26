@@ -5,6 +5,9 @@ using Veldrath.Contracts.Map;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Characters.Chests;
+using Veldrath.Server.Features.Characters.Harvesting;
+using Veldrath.Server.Features.Characters.Npcs;
 using Veldrath.Server.Features.Map;
 using Veldrath.Server.Features.Quest;
 using Veldrath.Server.Features.Zones;
@@ -1242,7 +1245,266 @@ public class GameHubZoneTests : IDisposable
 
         clients.Caller.SentMessages.Should().NotContain(
             m => m.Method == "ZoneEntered",
-            "walking inside one zone leaves the banner untouched");
+            "walking inside one zone without changing scope leaves the banner and the roster untouched");
+        clients.EveryMessage.Should().NotContain(
+            m => m.Method == "PlayerEntered" || m.Method == "PlayerLeft",
+            "nobody's roster changes when the walk stays in the same scope");
+    }
+
+    // ── TravelToNode: a scope change inside one zone ─────────────────────────
+
+    /// <summary>
+    /// Seeds an open run in <paramref name="zoneId"/> holding the given characters, with their sessions already
+    /// pointing at it — the state a walk between one zone's shared rooms and its instanced ones starts from.
+    /// </summary>
+    /// <param name="db">Context to write to.</param>
+    /// <param name="zoneId">Zone the run lives in.</param>
+    /// <param name="members">Characters inside the run and the connection ids their sessions use.</param>
+    /// <returns>The open run.</returns>
+    private static async Task<ZoneInstance> SeedRunAsync(
+        ApplicationDbContext db,
+        string zoneId,
+        params (Veldrath.Server.Data.Entities.Character Character, string ConnectionId)[] members)
+    {
+        var run = new ZoneInstance
+        {
+            ZoneId = zoneId,
+            CreatedByCharacterId = members[0].Character.Id,
+            ZoneGroup = $"zone:{zoneId}#i1:{Guid.NewGuid():D}",
+        };
+        db.ZoneInstances.Add(run);
+        await db.SaveChangesAsync();
+
+        foreach (var (member, connectionId) in members)
+        {
+            db.ZoneInstanceParticipants.Add(new ZoneInstanceParticipant
+            {
+                ZoneInstanceId = run.Id,
+                CharacterId = member.Id,
+            });
+
+            var session = await HubHarness.SeedSessionAsync(db, member, connectionId, zoneId: zoneId);
+            session.ZoneInstanceId = run.Id;
+        }
+
+        await db.SaveChangesAsync();
+        return run;
+    }
+
+    [Fact]
+    public async Task TravelToNode_Entering_A_Run_Inside_One_Zone_Snapshots_The_Run_And_Announces_The_Move()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        // The Droveway holds one neighbour in its shared rooms and one party already inside its instanced
+        // cellars, so the walk that follows changes the neighbours without changing the zone.
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
+
+        var partyAccount = await HubHarness.SeedAccountAsync(db);
+        var partyMember = await HubHarness.SeedCharacterAsync(db, partyAccount.Id);
+        var run = await SeedRunAsync(db, "the-droveway", (partyMember, "conn-party"));
+
+        await HubHarness.SeedSessionAsync(db, character, "conn-descending", "the-droveway");
+
+        var (hub, clients, groups, ctx, mediator, _) =
+            HubHarness.Create(db, account.Id, connectionId: "conn-descending");
+        ctx.EnterZoneState(
+            character.Id, character.Name, "the-droveway", "zone:the-droveway", currentMapId: "zone:the-droveway");
+
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:the-droveway",
+            NodeId = "zone:the-droveway:location:rootbound-cellars",
+            ZoneId = "the-droveway",
+            LocationSlug = "rootbound-cellars",
+            ZoneGroup = run.ZoneGroup,
+            ZoneInstanceId = run.Id,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest(
+            "zone:the-droveway", "zone:the-droveway:location:rootbound-cellars"));
+
+        groups.RemovedGroups.Should().Contain("zone:the-droveway", "the instanced room is another group");
+        groups.AddedGroups.Should().Contain(run.ZoneGroup);
+
+        // The zone id is unchanged, so nothing but this snapshot tells the client its neighbours changed: the
+        // shared resident it can no longer reach has to leave session.occupants, and the run's members arrive.
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Id = "the-droveway",
+            Name = "The Droveway",
+            CurrentNodeId = "zone:the-droveway:location:rootbound-cellars",
+            Occupants = new[]
+            {
+                new { CharacterId = partyMember.Id, CharacterName = partyMember.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "the run is the scope: the party member is reachable inside it, the shared neighbour is not, and the "
+           + "caller's own row moved into the run before the list was read");
+
+        // Both sides are told. Without these the shared rooms keep the departed character in their roster until
+        // their own next arrival, and the party inside the cellars never learns anybody joined.
+        clients.GroupNamed("zone:the-droveway").SentMessages
+            .Should().ContainSingle(m => m.Method == "PlayerLeft")
+            .Which.Args[0].Should().BeEquivalentTo(new
+            {
+                CharacterId = character.Id,
+                CharacterName = character.Name,
+                ZoneId = "the-droveway",
+            });
+        clients.OthersInGroupNamed(run.ZoneGroup).SentMessages
+            .Should().ContainSingle(m => m.Method == "PlayerEntered")
+            .Which.Args[0].Should().BeEquivalentTo(new
+            {
+                CharacterId = character.Id,
+                CharacterName = character.Name,
+                ZoneId = "the-droveway",
+            });
+        clients.OthersInGroupNamed("zone:the-droveway").SentMessages
+            .Should().NotContain(m => m.Method == "PlayerEntered", "the caller was already in the shared rooms");
+        clients.GroupNamed(run.ZoneGroup).SentMessages
+            .Should().NotContain(m => m.Method == "PlayerLeft", "the run is being joined, not left");
+    }
+
+    [Fact]
+    public async Task TravelToNode_Leaving_A_Run_Inside_One_Zone_Snapshots_The_Shared_Roster_And_Announces_The_Move()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        var partyAccount = await HubHarness.SeedAccountAsync(db);
+        var partyMember = await HubHarness.SeedCharacterAsync(db, partyAccount.Id);
+
+        // The caller stands inside the cellars with a party member, and the shared rooms of the same zone hold a
+        // neighbour the run has been keeping out of the roster.
+        var run = await SeedRunAsync(db, "the-droveway", (character, "conn-walking-out"), (partyMember, "conn-party"));
+
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
+
+        var (hub, clients, groups, ctx, mediator, _) =
+            HubHarness.Create(db, account.Id, connectionId: "conn-walking-out");
+        ctx.EnterZoneState(
+            character.Id, character.Name, "the-droveway", run.ZoneGroup, currentMapId: "zone:the-droveway");
+        ctx.Items["CurrentZoneInstanceId"] = run.Id;
+
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:the-droveway",
+            NodeId = "zone:the-droveway:location:droveway-market",
+            ZoneId = "the-droveway",
+            LocationSlug = "droveway-market",
+            ZoneGroup = "zone:the-droveway",
+            ZoneInstanceId = null,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest(
+            "zone:the-droveway", "zone:the-droveway:location:droveway-market"));
+
+        groups.RemovedGroups.Should().Contain(run.ZoneGroup);
+        groups.AddedGroups.Should().Contain("zone:the-droveway");
+        (await db.PlayerSessions.SingleAsync(s => s.CharacterId == character.Id)).ZoneInstanceId
+            .Should().BeNull("the character stands in the shared zone now");
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Id = "the-droveway",
+            Occupants = new[]
+            {
+                new { CharacterId = resident.Id, CharacterName = resident.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "the shared rooms are the scope now: the party member left behind is gone from the list");
+
+        clients.GroupNamed(run.ZoneGroup).SentMessages
+            .Should().ContainSingle(m => m.Method == "PlayerLeft")
+            .Which.Args[0].Should().BeEquivalentTo(new
+            {
+                CharacterId = character.Id,
+                CharacterName = character.Name,
+                ZoneId = "the-droveway",
+            });
+        clients.OthersInGroupNamed("zone:the-droveway").SentMessages
+            .Should().ContainSingle(m => m.Method == "PlayerEntered")
+            .Which.Args[0].Should().BeEquivalentTo(new
+            {
+                CharacterId = character.Id,
+                CharacterName = character.Name,
+                ZoneId = "the-droveway",
+            });
+        clients.GroupNamed("zone:the-droveway").SentMessages
+            .Should().NotContain(m => m.Method == "PlayerLeft", "the shared rooms are being joined, not left");
+        clients.OthersInGroupNamed(run.ZoneGroup).SentMessages
+            .Should().NotContain(m => m.Method == "PlayerEntered", "the run is being left, not joined");
+    }
+
+    [Fact]
+    public async Task EnterLocation_Into_A_Run_Inside_The_Zone_Snapshots_The_Run_And_Announces_The_Move()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+
+        var partyAccount = await HubHarness.SeedAccountAsync(db);
+        var partyMember = await HubHarness.SeedCharacterAsync(db, partyAccount.Id);
+        var run = await SeedRunAsync(db, "the-droveway", (partyMember, "conn-party"));
+
+        await HubHarness.SeedSessionAsync(db, character, "conn-clicking", "the-droveway");
+
+        var (hub, clients, groups, ctx, mediator, _) =
+            HubHarness.Create(db, account.Id, connectionId: "conn-clicking");
+        ctx.EnterZoneState(
+            character.Id, character.Name, "the-droveway", "zone:the-droveway", currentMapId: "zone:the-droveway");
+
+        // The dungeon command enters the room through EnterLocation, not a walk, so the same arrival has to be
+        // snapshotted and announced from here too.
+        mediator.Returns(new EnterZoneLocationHubResult
+        {
+            Success = true,
+            Arrival = new TravelToNodeHubResult
+            {
+                Success = true,
+                MapId = "zone:the-droveway",
+                NodeId = "zone:the-droveway:location:rootbound-cellars",
+                ZoneId = "the-droveway",
+                LocationSlug = "rootbound-cellars",
+                ZoneGroup = run.ZoneGroup,
+                ZoneInstanceId = run.Id,
+            },
+        });
+        mediator.Returns<IReadOnlyList<LocationNodeDto>>([]);
+        mediator.Returns<IReadOnlyList<LocationChestDto>>([]);
+        mediator.Returns<IReadOnlyList<LocationNpcDto>>([]);
+
+        await hub.EnterLocation(new EnterZoneLocationHubRequest("the-droveway", "rootbound-cellars"));
+
+        groups.RemovedGroups.Should().Contain("zone:the-droveway");
+        groups.AddedGroups.Should().Contain(run.ZoneGroup);
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Id = "the-droveway",
+            Occupants = new[]
+            {
+                new { CharacterId = partyMember.Id, CharacterName = partyMember.Name },
+                new { CharacterId = character.Id, CharacterName = character.Name },
+            },
+        }, "the click into the cellars lands in the run's scope, whose roster is the run's members");
+
+        clients.GroupNamed("zone:the-droveway").SentMessages.Should().ContainSingle(m => m.Method == "PlayerLeft");
+        clients.OthersInGroupNamed(run.ZoneGroup).SentMessages.Should()
+            .ContainSingle(m => m.Method == "PlayerEntered");
     }
 
     [Fact]
