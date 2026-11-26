@@ -361,18 +361,11 @@ public class GameHubZoneTests : IDisposable
         });
         await db.SaveChangesAsync();
 
-        var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
-        locations.Setup(repo => repo.GetBySlugAsync("vault-of-echoes"))
-                 .ReturnsAsync(new ZoneLocationEntry(
-                     "vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14,
-                     IsInstanced: true));
-        // No safe location in the zone, so the lobby the character would otherwise wake in does not exist and the
-        // saved node stands — the fallback has its own case below.
-        locations.Setup(repo => repo.GetByZoneIdAsync("crestfall"))
-                 .ReturnsAsync(new List<ZoneLocationEntry>());
-
+        // The instanced room exists but the zone has no safe location, so the lobby the character would otherwise
+        // wake in does not exist and the saved node stands — the fallback has its own case below.
         var (hub, _, groups, ctx, _, _) =
-            HubHarness.Create(db, account.Id, connectionId: "conn-resumed", locations: locations.Object);
+            HubHarness.Create(db, account.Id, connectionId: "conn-resumed",
+                locations: SweptRunLocations(withLobby: false));
         ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
@@ -409,30 +402,31 @@ public class GameHubZoneTests : IDisposable
 
     /// <summary>
     /// The catalog around a dungeon room and the zone's lobby: the room is instanced, the square is the zone's
-    /// safe location, and nothing else is either.
+    /// safe location, and nothing else is either. The room stays in the catalog even when the lobby is dropped, so
+    /// the case under test is "no lobby" rather than "no room".
     /// </summary>
     /// <param name="withLobby">Whether the zone has a safe location at all, so a test can drop it.</param>
     /// <param name="roomIsInstanced">Whether the room the character stood on is an instance at all.</param>
+    /// <param name="lobbyIsHidden">Whether the lobby is hidden until unlocked, the way <c>ashlen-wood</c> authors one.</param>
     /// <returns>The catalog the hub is built with.</returns>
-    private static Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository> SweptRunLocations(
+    private static RealmEngine.Shared.Abstractions.IZoneLocationRepository SweptRunLocations(
         bool withLobby = true,
-        bool roomIsInstanced = true)
+        bool roomIsInstanced = true,
+        bool lobbyIsHidden = false)
     {
-        var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
-        locations.Setup(repo => repo.GetBySlugAsync("vault-of-echoes"))
-                 .ReturnsAsync(new ZoneLocationEntry(
-                     "vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14,
-                     IsInstanced: roomIsInstanced));
-        locations.Setup(repo => repo.GetByZoneIdAsync("crestfall"))
-                 .ReturnsAsync(withLobby
-                     ? new List<ZoneLocationEntry>
-                     {
-                         new("vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14, IsInstanced: roomIsInstanced),
-                         new("town-square", "Crestfall Square", "locations", "crestfall", 10, null, null, IsSafeRespawn: true),
-                     }
-                     : new List<ZoneLocationEntry>());
+        var locations = new List<ZoneLocationEntry>
+        {
+            new("vault-of-echoes", "The Vault of Echoes", "dungeons", "crestfall", 30, 11, 14, IsInstanced: roomIsInstanced),
+        };
 
-        return locations;
+        if (withLobby)
+        {
+            locations.Add(new ZoneLocationEntry(
+                "town-square", "Crestfall Square", "locations", "crestfall", 10, null, null,
+                IsHidden: lobbyIsHidden, IsSafeRespawn: true));
+        }
+
+        return new FakeZoneLocationRepository(locations);
     }
 
     [Fact]
@@ -459,7 +453,7 @@ public class GameHubZoneTests : IDisposable
                .ReturnsAsync(SweptRunMap());
 
         var (hub, clients, groups, ctx, _, _) = HubHarness.Create(
-            db, account.Id, connectionId: "conn-woken", mapRepo: mapRepo, locations: SweptRunLocations().Object);
+            db, account.Id, connectionId: "conn-woken", mapRepo: mapRepo, locations: SweptRunLocations());
         ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
@@ -501,7 +495,7 @@ public class GameHubZoneTests : IDisposable
                .ReturnsAsync(SweptRunMap());
 
         var (hub, clients, _, ctx, _, _) = HubHarness.Create(
-            db, account.Id, connectionId: "conn-purged", mapRepo: mapRepo, locations: SweptRunLocations().Object);
+            db, account.Id, connectionId: "conn-purged", mapRepo: mapRepo, locations: SweptRunLocations());
         ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
@@ -514,6 +508,89 @@ public class GameHubZoneTests : IDisposable
         clients.Caller.SentMessages.Where(message => message.Method == "SystemMessage").Should()
             .ContainSingle("one wake-up, one explanation")
             .Which.Args[0].Should().Be("The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Wakes_In_A_Hidden_Lobby_The_Character_Unlocked()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        // The zone's safe location is hidden — the shape ashlen-wood authors ("a safe island inside a hostile
+        // wood") — and this character has opened it, so it is a lobby rather than an invisible one.
+        db.CharacterUnlockedLocations.Add(new CharacterUnlockedLocation
+        {
+            CharacterId = character.Id,
+            LocationSlug = "town-square",
+            UnlockSource = "test",
+        });
+        await db.SaveChangesAsync();
+
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("crestfall", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(SweptRunMap());
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id, connectionId: "conn-hidden-lobby", mapRepo: mapRepo,
+            locations: SweptRunLocations(lobbyIsHidden: true));
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be(
+            "zone:crestfall:location:town-square",
+            "a hidden lobby the character unlocked is still the zone's lobby");
+        stored.CurrentZoneLocationSlug.Should().Be("town-square");
+
+        var entered = clients.Caller.SentMessages.Single(message => message.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new { CurrentNodeId = "zone:crestfall:location:town-square" });
+
+        clients.Caller.SentMessages.Where(message => message.Method == "SystemMessage").Should()
+            .ContainSingle("one wake-up, one explanation")
+            .Which.Args[0].Should().Be("The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    [Fact]
+    public async Task EnterZone_Reconnect_Keeps_The_Saved_Node_When_The_Lobby_Is_Hidden_And_Not_Unlocked()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneLocationSlug = "vault-of-echoes";
+        await db.SaveChangesAsync();
+
+        // No unlock row: the lobby is authored but closed to this character, so the saved node stands. Silence here
+        // would leave the player on a node whose run is gone with no way to know why.
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("crestfall", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(SweptRunMap());
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id, connectionId: "conn-locked-lobby", mapRepo: mapRepo,
+            locations: SweptRunLocations(lobbyIsHidden: true));
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be(
+            "zone:crestfall:location:vault-of-echoes",
+            "a lobby the character has not unlocked is not somewhere they may wake");
+        stored.CurrentZoneLocationSlug.Should().Be("vault-of-echoes");
+
+        var entered = clients.Caller.SentMessages.Single(message => message.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new { CurrentNodeId = "zone:crestfall:location:vault-of-echoes" });
+
+        clients.Caller.SentMessages.Where(message => message.Method == "SystemMessage").Should()
+            .ContainSingle("the wake could not happen, and the player is told why")
+            .Which.Args[0].Should().Be(
+                "The instance you were in has closed. You wake where you logged out; this zone's safe haven is not yet open to you.");
     }
 
     [Fact]
@@ -533,7 +610,7 @@ public class GameHubZoneTests : IDisposable
         // move the character somewhere the zone does not have.
         var locations = SweptRunLocations(withLobby: false);
         var (hub, clients, _, ctx, _, _) = HubHarness.Create(
-            db, account.Id, connectionId: "conn-nolobby", mapRepo: mapRepo, locations: locations.Object);
+            db, account.Id, connectionId: "conn-nolobby", mapRepo: mapRepo, locations: locations);
         ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
@@ -564,7 +641,7 @@ public class GameHubZoneTests : IDisposable
 
         var (hub, clients, _, ctx, _, _) = HubHarness.Create(
             db, account.Id, connectionId: "conn-shared", mapRepo: mapRepo,
-            locations: SweptRunLocations(roomIsInstanced: false).Object);
+            locations: SweptRunLocations(roomIsInstanced: false));
         ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 

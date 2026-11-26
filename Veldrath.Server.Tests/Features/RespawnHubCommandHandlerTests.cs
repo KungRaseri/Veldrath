@@ -7,6 +7,7 @@ using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
 using MapGraph = RealmEngine.Shared.Models.MapGraph;
@@ -31,7 +32,9 @@ public class RespawnHubCommandHandlerTests : IDisposable
         new(
             new CharacterRepository(db),
             _sessions,
-            zoneLocations ?? ZoneLocationsWith().Object,
+            new ZoneLobbyResolver(
+                zoneLocations ?? ZoneLocationsWith(),
+                new CharacterUnlockedLocationRepository(db)),
             maps ?? MapsWith(null).Object,
             Options.Create(options ?? new DeathPenaltyOptions()),
             NullLogger<RespawnHubCommandHandler>.Instance);
@@ -40,15 +43,16 @@ public class RespawnHubCommandHandlerTests : IDisposable
 
     // ── A2: safe respawn location ──────────────────────────────────────────────
 
-    private static Mock<IZoneLocationRepository> ZoneLocationsWith(params ZoneLocationEntry[] locations)
-    {
-        var mock = new Mock<IZoneLocationRepository>();
-        mock.Setup(repo => repo.GetByZoneIdAsync(It.IsAny<string>())).ReturnsAsync([.. locations]);
-        return mock;
-    }
+    private static IZoneLocationRepository ZoneLocationsWith(params ZoneLocationEntry[] locations) =>
+        new FakeZoneLocationRepository(locations);
 
-    private static ZoneLocationEntry Location(string slug, string displayName, bool safeRespawn = false) =>
-        new(slug, displayName, "locations", "zone-1", 10, null, null, IsSafeRespawn: safeRespawn);
+    private static ZoneLocationEntry Location(
+        string slug,
+        string displayName,
+        bool safeRespawn = false,
+        bool hidden = false) =>
+        new(slug, displayName, "locations", "zone-1", 10, null, null,
+            IsHidden: hidden, IsSafeRespawn: safeRespawn);
 
     private static Mock<IMapGraphRepository> MapsWith(MapGraph? zoneMap)
     {
@@ -87,6 +91,21 @@ public class RespawnHubCommandHandlerTests : IDisposable
         return character;
     }
 
+    /// <summary>Records that the character has opened a hidden location, the way discovery does in play.</summary>
+    /// <param name="db">Context to write to.</param>
+    /// <param name="characterId">Character receiving the unlock.</param>
+    /// <param name="locationSlug">Hidden location they may now see.</param>
+    private static async Task UnlockAsync(ApplicationDbContext db, Guid characterId, string locationSlug)
+    {
+        db.CharacterUnlockedLocations.Add(new CharacterUnlockedLocation
+        {
+            CharacterId = characterId,
+            LocationSlug = locationSlug,
+            UnlockSource = "test",
+        });
+        await db.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task Handle_Moves_The_Character_To_The_Zones_Safe_Location()
     {
@@ -94,7 +113,7 @@ public class RespawnHubCommandHandlerTests : IDisposable
         var character = await SeedDeadCharacterAsync(db);
         var zoneLocations = ZoneLocationsWith(Location("market", "The Market"), Location("inn", "The Grey Cup", safeRespawn: true));
 
-        var result = await MakeHandler(db, zoneLocations.Object)
+        var result = await MakeHandler(db, zoneLocations)
             .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -122,7 +141,7 @@ public class RespawnHubCommandHandlerTests : IDisposable
             Location("inn", "The Grey Cup", safeRespawn: true));
         var maps = MapsWith(ZoneMap("zone-1", ("market", "The Market"), ("inn", "The Grey Cup")));
 
-        var result = await MakeHandler(db, zoneLocations.Object, maps: maps.Object)
+        var result = await MakeHandler(db, zoneLocations, maps: maps.Object)
             .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -142,7 +161,7 @@ public class RespawnHubCommandHandlerTests : IDisposable
         var character = await SeedDeadCharacterAsync(db);
         var zoneLocations = ZoneLocationsWith(Location("market", "The Market"));
 
-        var result = await MakeHandler(db, zoneLocations.Object)
+        var result = await MakeHandler(db, zoneLocations)
             .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
 
         result.Success.Should().BeTrue("a degraded respawn still has to leave the player playable");
@@ -152,13 +171,58 @@ public class RespawnHubCommandHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Handle_Moves_To_A_Hidden_Safe_Location_The_Character_Unlocked()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedDeadCharacterAsync(db);
+        await UnlockAsync(db, character.Id, "strangled-oak");
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market"),
+            Location("strangled-oak", "The Strangled Oak", safeRespawn: true, hidden: true));
+
+        var result = await MakeHandler(db, zoneLocations)
+            .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LocationSlug.Should().Be(
+            "strangled-oak", "the zone's safe location is hidden, and this character has opened it");
+        result.LocationDisplayName.Should().Be("The Strangled Oak");
+        result.UsedFallbackRespawn.Should().BeFalse("the lobby is real; it was merely invisible to the plain lookup");
+        result.Warning.Should().BeNull();
+
+        var storedSlug = await db.Characters.AsNoTracking()
+            .Where(c => c.Id == character.Id).Select(c => c.CurrentZoneLocationSlug).SingleAsync();
+        storedSlug.Should().Be("strangled-oak");
+    }
+
+    [Fact]
+    public async Task Handle_Falls_Back_When_The_Safe_Location_Is_Hidden_And_Not_Unlocked()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedDeadCharacterAsync(db);
+        // No unlock row: the lobby is authored but closed to this character.
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market"),
+            Location("strangled-oak", "The Strangled Oak", safeRespawn: true, hidden: true));
+
+        var result = await MakeHandler(db, zoneLocations)
+            .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue("a degraded respawn still has to leave the player playable");
+        result.LocationSlug.Should().Be("market", "the locked lobby is not somewhere this character may wake");
+        result.UsedFallbackRespawn.Should().BeTrue();
+        result.Warning.Should().Contain(
+            "not yet open to you", "the zone has a safe haven — saying it has none would blame the content");
+    }
+
+    [Fact]
     public async Task Handle_Leaves_The_Character_In_Place_When_The_Zone_Has_No_Locations()
     {
         await using var db = _dbFactory.CreateContext();
         var character = await SeedDeadCharacterAsync(db);
         var zoneLocations = ZoneLocationsWith();
 
-        var result = await MakeHandler(db, zoneLocations.Object)
+        var result = await MakeHandler(db, zoneLocations)
             .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -178,7 +242,7 @@ public class RespawnHubCommandHandlerTests : IDisposable
         var character = await SeedDeadCharacterAsync(db);
         var options = new DeathPenaltyOptions { DeathSicknessMinutes = 5, DeathSicknessDamagePenaltyPercent = 25 };
 
-        var result = await MakeHandler(db, ZoneLocationsWith(Location("inn", "The Grey Cup", safeRespawn: true)).Object, options)
+        var result = await MakeHandler(db, ZoneLocationsWith(Location("inn", "The Grey Cup", safeRespawn: true)), options)
             .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
 
         result.SicknessExpiresAt.Should().NotBeNull();
@@ -199,7 +263,7 @@ public class RespawnHubCommandHandlerTests : IDisposable
         await db.SaveChangesAsync();
         var options = new DeathPenaltyOptions { DeathSicknessMinutes = 0 };
 
-        var result = await MakeHandler(db, ZoneLocationsWith(Location("inn", "Inn", safeRespawn: true)).Object, options)
+        var result = await MakeHandler(db, ZoneLocationsWith(Location("inn", "Inn", safeRespawn: true)), options)
             .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
 
         result.SicknessExpiresAt.Should().BeNull();

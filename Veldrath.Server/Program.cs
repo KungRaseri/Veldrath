@@ -168,6 +168,10 @@ try
     builder.Services.AddScoped<ICombatSessionStore, EfCoreCombatSessionStore>();
     builder.Services.AddScoped<Veldrath.Server.Features.Zones.IZoneInstanceService,
         Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>();
+    // The zone's lobby rule lives in one place so the reconnect and the respawn cannot resolve a hidden safe
+    // location differently.
+    builder.Services.AddScoped<Veldrath.Server.Features.Zones.IZoneLobbyResolver,
+        Veldrath.Server.Features.Zones.ZoneLobbyResolver>();
 
     // AFK is ephemeral by design: in-memory for the process lifetime, cleared on any action or reconnect.
     builder.Services.AddSingleton<IAfkTracker, AfkTracker>();
