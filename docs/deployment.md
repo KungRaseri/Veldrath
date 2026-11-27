@@ -169,6 +169,99 @@ XFF_DEPTH=1
 Set `ORIGIN` and `BETTER_AUTH_URL` to the public HTTPS origin. The .NET server
 also trusts forwarded headers through `UseForwardedHeaders`.
 
+## Firewall and published ports
+
+This is the answer to "what may be reachable from the internet". Two layers decide it, and only
+the second one is under this repository's control.
+
+**Ports open at the edge.** Public traffic reaches Veldrath on `80/tcp` and `443/tcp` only,
+terminated by Coolify's Traefik on the front host. Traefik routes by host name to the container
+that owns the domain — `veldrath.com` and `api.veldrath.com` included — over the Docker network,
+so no application port is opened to the internet. Measured on 2026-11-27 from
+[check-host.net](https://check-host.net) nodes, which are outside the LAN:
+
+| Port | From the internet | Why |
+|---|---|---|
+| `80/tcp` | open | redirect to HTTPS |
+| `443/tcp` | open | Traefik TLS for every Veldrath host |
+| `22/tcp` | timed out | SSH is LAN and tailnet only |
+| `3306`, `5432`, `6379`, `4222`, `25565`, `7777`, `8080`, `8081`, `9000`–`9003` | timed out | nothing publishes them |
+
+Both hosts run `ufw` with `Default: deny (incoming)`. The front allows `80`/`443` plus Tailscale's
+`41641/udp`; the host that runs the Veldrath resources allows SSH from the LAN and the tailnet and
+nothing else, and `ss -lntp` there shows no listener on any port in the table above.
+
+**Port publications.** `ufw`'s default-deny does **not** cover a published container port: Docker
+installs its own `DOCKER`/`FORWARD` rules that accept the traffic before `ufw`'s INPUT chain sees
+it. Measured on the same host: `ufw` reports `default deny incoming`, and `docker-proxy` still
+listens on `0.0.0.0:8080` for an unrelated stack. The control that actually decides exposure is
+therefore the publication itself — a production stack publishes **nothing**, and Traefik reaches
+the container by name.
+
+### What each production path publishes
+
+| Path | Publishes | Reached by |
+|---|---|---|
+| Coolify Dockerfile resource — the real deployment | nothing | Traefik over the Docker network, to the container port (`8080` server, `8081` web) |
+| [`docker-compose.coolify.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.coolify.yml) | nothing (`expose` only) | its own Traefik labels |
+| [`docker-compose.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.yml) + [`docker-compose.prod.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.prod.yml) | nothing | the reverse proxy on the Docker network |
+| [`docker-compose.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.yml) alone (development) | `5433`, `8081`, `9000`, `9001`, `9002`, `9003` | the developer, on their own machine |
+
+Coolify builds each resource from a Dockerfile and never reads a compose file, so the overlay
+cannot change what production exposes. It is still held to "nothing", because it is the documented
+way to run a production-like stack on a host, and a `docker compose up` there publishes exactly
+what the file says.
+
+**`ports: !reset []`, not `ports: []`.** Compose merges `ports` lists across `-f` files. An empty
+list in an overlay contributes nothing — it does not clear the base file's mapping — so the old
+`docker-compose.prod.yml` rendered `5433`, `8081` and `9000`–`9003` while its comments claimed host
+port exposure was removed. `!reset` is the only value that drops an inherited list; every service
+that publishes in the base file needs `ports: !reset []` in the overlay.
+[`ci-prod-ports.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/ci-prod-ports.yml)
+fails the pull request that misses one.
+
+Verify the merge without deploying:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml config | grep -c published:
+# 0
+
+node scripts/check-prod-ports.mjs
+# ok: 7 services in docker-compose.yml + docker-compose.prod.yml, plus 1 extra stack(s); 0 host ports published
+```
+
+### Allowlist
+
+A port that genuinely must stay published goes in two places: the table below with a one-line
+justification, and the `ALLOWLIST` map in
+[`scripts/check-prod-ports.mjs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/check-prod-ports.mjs).
+It is empty today, and it should stay that way: a dashboard or a database belongs on a Traefik
+route, not on a host port.
+
+| Published port | Service | Justification |
+|---|---|---|
+| _(none)_ | | |
+
+### Check after a change
+
+On the host:
+
+```bash
+sudo ss -lntp | grep -E '0\.0\.0\.0:(3306|5432|5433|6379|4222|7777|8080|8081|9000|9001|9002|9003|25565)\b'
+# no output expected; sshd and the proxy's own 80/443 are the only 0.0.0.0 listeners that belong
+```
+
+From outside the LAN — a VPS, or a laptop on a phone hotspot, never a shell on the host itself:
+
+```bash
+nmap -Pn -p- --max-rate 200 veldrath.com api.veldrath.com
+# expected: 80/tcp and 443/tcp open, everything else filtered
+```
+
+`--max-rate 200` finishes a full-range scan in a few minutes without looking like a flood. A port
+that answers from the LAN but not from the internet is still worth removing: the LAN is not a trust
+boundary, and every device on it — including a compromised one — can reach the port.
+
 ## Local deployment
 
 - Local development: [`docker-compose.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.yml) with
