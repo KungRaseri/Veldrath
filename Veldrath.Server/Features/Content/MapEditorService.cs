@@ -57,6 +57,9 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
 
         var summaries = await db.Maps
             .AsNoTracking()
+            // The same rule as `MapCaller.CanSee`, spelled out because EF cannot translate an instance method
+            // over the queryable. `GetTargetsAsync` and `GetAsync` call the helper; this one cannot, so the two
+            // must be kept identical by hand.
             .Where(map => seesEveryDraft || map.IsActive || map.CreatedByAccountId == accountId)
             .OrderBy(map => map.Id)
             .Select(map => new MapSummaryDto(
@@ -98,14 +101,23 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     /// <summary>
     /// Lists the references a node may point at, so the editor can offer pickers instead of free text.
     /// </summary>
+    /// <param name="caller">Who is asking, so a stranger's draft is not in the response at all.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Maps, zone owners, locations and region owners, each ordered by id.</returns>
-    public async Task<MapTargetsDto> GetTargetsAsync(CancellationToken cancellationToken = default)
+    public async Task<MapTargetsDto> GetTargetsAsync(
+        MapCaller caller,
+        CancellationToken cancellationToken = default)
     {
-        var maps = await db.Maps
+        var allMaps = await db.Maps
             .AsNoTracking()
-            .Select(map => new { map.Id, map.MapType, map.OwnerId, map.Name })
+            .Select(map => new { map.Id, map.MapType, map.OwnerId, map.Name, map.IsActive, map.CreatedByAccountId })
             .ToListAsync(cancellationToken);
+
+        // A draft is visible to its author and to reviewers, exactly as `GetAsync` decides it, so the picker
+        // cannot hand out an id — or a label — that the detail read would hide.
+        var maps = allMaps
+            .Where(map => caller.CanSee(map.IsActive, map.CreatedByAccountId))
+            .ToList();
 
         var zones = maps
             .Where(map => map.MapType is MapType.Zone or MapType.Interior)
@@ -127,10 +139,16 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
             .Select(location => new MapTargetOptionDto(location.Slug, location.DisplayName ?? location.Slug))
             .ToListAsync(cancellationToken);
 
-        // Every node of every map: an exit's destination is a picker, and the whole set is small enough
-        // (a few hundred rows) that a round trip per target map would be the slower design.
+        // Every node of a visible map: an exit's destination is a picker, and the whole set is small enough
+        // (a few hundred rows) that a round trip per target map would be the slower design. A node inherits
+        // its map's visibility, so a draft's nodes must not leak through the picker either.
+        var visibleMapIds = maps
+            .Select(map => map.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var nodes = await db.MapNodes
             .AsNoTracking()
+            .Where(node => visibleMapIds.Contains(node.MapId))
             .OrderBy(node => node.MapId)
             .ThenBy(node => node.SortOrder)
             .Select(node => new MapNodeOptionDto(node.Id, node.MapId, node.DisplayName, node.IsEntryPoint))
@@ -164,7 +182,7 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
 
         // A draft belongs to its author until a reviewer approves it. Reading someone else's unfinished map
         // is not part of the public portal, and a 404 says less than a 403.
-        if (!map.IsActive && !caller.SeesEveryDraft && !caller.MayEdit(map.CreatedByAccountId)) return null;
+        if (!caller.CanSee(map)) return null;
 
         return ToDto(map) with { CanEdit = caller.MayEdit(map.CreatedByAccountId) };
     }

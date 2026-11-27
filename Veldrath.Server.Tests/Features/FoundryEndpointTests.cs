@@ -49,6 +49,28 @@ public class FoundryEndpointTests(WebAppFactory factory)
         return (await response.Content.ReadFromJsonAsync<FoundrySubmissionDto>())!;
     }
 
+    /// <summary>Approves a submission, which is what publishes it — and only published work takes votes.</summary>
+    private static async Task ApproveAsync(HttpClient curator, Guid submissionId)
+    {
+        var response = await curator.PostAsJsonAsync(
+            $"/api/foundry/submissions/{submissionId}/review",
+            new { Approved = true, Notes = "Approved by the review test." });
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Creates a submission and approves it, so a stranger can see it. A pending row is hidden from everyone but
+    /// its author and the reviewers, and a hidden row refuses votes, so the vote tests must start from published
+    /// work.
+    /// </summary>
+    private async Task<FoundrySubmissionDto> CreateApprovedItemAsync(
+        HttpClient author, HttpClient curator, string title, string slug)
+    {
+        var submission = await CreateSubmissionAsync(author, "Item", title, PromotableItem(slug));
+        await ApproveAsync(curator, submission.Id);
+        return submission;
+    }
+
     // Create
     [Fact]
     public async Task CreateSubmission_Should_Return_201_With_Submission_Details()
@@ -389,11 +411,17 @@ public class FoundryEndpointTests(WebAppFactory factory)
         submitterClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteUp_Sub"));
 
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndVoteUp_Curator"));
+
         using var voterClient = factory.CreateClient();
         voterClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteUp_Voter"));
 
-        var submission = await CreateSubmissionAsync(submitterClient, "Item", "FndVoteUp_Item");
+        // Published work, because a pending row is hidden from this voter and a hidden row refuses votes.
+        var submission = await CreateApprovedItemAsync(
+            submitterClient, curatorClient, "FndVoteUp_Item", "fnd-vote-up-item");
 
         var response = await voterClient.PostAsJsonAsync(
             $"/api/foundry/submissions/{submission.Id}/vote", new { Value = 1 });
@@ -410,11 +438,16 @@ public class FoundryEndpointTests(WebAppFactory factory)
         submitterClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteDn_Sub"));
 
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndVoteDn_Curator"));
+
         using var voterClient = factory.CreateClient();
         voterClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteDn_Voter"));
 
-        var submission = await CreateSubmissionAsync(submitterClient, "Spell", "FndVoteDn_Spell");
+        var submission = await CreateApprovedItemAsync(
+            submitterClient, curatorClient, "FndVoteDn_Item", "fnd-vote-dn-item");
 
         var response = await voterClient.PostAsJsonAsync(
             $"/api/foundry/submissions/{submission.Id}/vote", new { Value = -1 });
@@ -466,11 +499,16 @@ public class FoundryEndpointTests(WebAppFactory factory)
         submitterClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteChg_Sub"));
 
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndVoteChg_Curator"));
+
         using var voterClient = factory.CreateClient();
         voterClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteChg_Voter"));
 
-        var submission = await CreateSubmissionAsync(submitterClient, "Quest", "FndVoteChg_Quest");
+        var submission = await CreateApprovedItemAsync(
+            submitterClient, curatorClient, "FndVoteChg_Item", "fnd-vote-chg-item");
 
         // First vote: +1
         await voterClient.PostAsJsonAsync(
@@ -483,6 +521,102 @@ public class FoundryEndpointTests(WebAppFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var dto = await response.Content.ReadFromJsonAsync<FoundrySubmissionSummaryDto>();
         dto!.VoteScore.Should().Be(-1);
+    }
+
+    [Fact]
+    public async Task VoteAsync_RefusesAVoteOnAHiddenSubmission()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteHide_Author"));
+
+        using var stranger = factory.CreateClient();
+        stranger.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteHide_Stranger"));
+
+        var created = await CreateSubmissionAsync(author, "Item", "FndVoteHide_Item");
+
+        var response = await stranger.PostAsJsonAsync(
+            $"/api/foundry/submissions/{created.Id}/vote", new { Value = 1 });
+
+        // A row the caller cannot read is a row they cannot vote on, and it answers exactly as a missing row does:
+        // the same message, so a vote cannot be used to probe which submission ids exist.
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("Submission not found.");
+
+        var detail = await author.GetFromJsonAsync<FoundrySubmissionDto>(
+            $"/api/foundry/submissions/{created.Id}");
+        detail!.VoteScore.Should().Be(0, "a refused vote must not be recorded");
+    }
+
+    [Fact]
+    public async Task VoteAsync_RefusesAHiddenSubmission_ForTheAuthor()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteOwn_Author"));
+
+        using var stranger = factory.CreateClient();
+        stranger.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVoteOwn_Stranger"));
+
+        var created = await CreateSubmissionAsync(author, "Item", "FndVoteOwn_Item");
+
+        var vote = await stranger.PostAsJsonAsync(
+            $"/api/foundry/submissions/{created.Id}/vote", new { Value = 1 });
+        vote.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await vote.Content.ReadAsStringAsync()).Should().Contain("Submission not found.");
+
+        // The guard keys on what the caller may see, not on the row's status: the author still reads the same
+        // pending submission the stranger was refused.
+        var detail = await author.GetAsync($"/api/foundry/submissions/{created.Id}");
+        detail.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task VoteAsync_StillAcceptsAVoteOnAnApprovedSubmission()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVotePub_Author"));
+
+        using var curator = factory.CreateClient();
+        curator.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndVotePub_Curator"));
+
+        using var voter = factory.CreateClient();
+        voter.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndVotePub_Voter"));
+
+        var created = await CreateApprovedItemAsync(
+            author, curator, "FndVotePub_Item", "fnd-vote-pub-item");
+
+        var response = await voter.PostAsJsonAsync(
+            $"/api/foundry/submissions/{created.Id}/vote", new { Value = 1 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var dto = await response.Content.ReadFromJsonAsync<FoundrySubmissionSummaryDto>();
+        dto!.VoteScore.Should().Be(1, "the visibility guard must not refuse a vote on published work");
+    }
+
+    [Fact]
+    public async Task GetAsync_OfAHiddenSubmission_Is404()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndGetHidden_Author"));
+
+        using var stranger = factory.CreateClient();
+        stranger.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndGetHidden_Stranger"));
+
+        var created = await CreateSubmissionAsync(author, "Item", "FndGetHidden_Item");
+
+        var response = await stranger.GetAsync($"/api/foundry/submissions/{created.Id}");
+
+        // 404 rather than 403, and no trace of the row in the body.
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync()).Should().NotContain("FndGetHidden_Item");
     }
 
     // Review

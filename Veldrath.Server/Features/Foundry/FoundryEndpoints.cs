@@ -111,10 +111,9 @@ public static class FoundryEndpoints
 
         // Hidden rows 404 rather than 403: a rejected submission that exists is not something a stranger needs
         // to learn about, and a 403 would confirm the id.
-        var visible = dto.SubmitterId == callerId.Value
-            || dto.Status.Equals(nameof(FoundrySubmissionStatus.Approved), StringComparison.OrdinalIgnoreCase)
-            || IsReviewer(user);
-        return visible ? Results.Ok(dto) : Results.NotFound();
+        return FoundryVisibility.CanSee(callerId.Value, IsReviewer(user), dto)
+            ? Results.Ok(dto)
+            : Results.NotFound();
     }
 
     // POST /api/foundry/submissions/{id}/vote
@@ -128,7 +127,7 @@ public static class FoundryEndpoints
         var voterId = GetAccountId(user);
         if (voterId is null) return Results.Unauthorized();
 
-        var (dto, error) = await service.VoteAsync(id, voterId.Value, request.Value, ct);
+        var (dto, error) = await service.VoteAsync(id, voterId.Value, IsReviewer(user), request.Value, ct);
         return dto is not null
             ? Results.Ok(dto)
             : Results.BadRequest(new { error });

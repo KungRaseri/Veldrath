@@ -67,8 +67,9 @@ public static class MapEditorEndpoints
 
     private static async Task<IResult> GetTargetsAsync(
         [FromServices] MapEditorService editor,
+        ClaimsPrincipal user,
         CancellationToken cancellationToken) =>
-        Results.Ok(await editor.GetTargetsAsync(cancellationToken));
+        Results.Ok(await editor.GetTargetsAsync(Caller(user), cancellationToken));
 
     private static async Task<IResult> GetMapAsync(
         string mapId,
