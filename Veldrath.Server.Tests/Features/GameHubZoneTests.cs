@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Models;
 using Veldrath.Contracts.Map;
 using Veldrath.Server.Data;
@@ -14,6 +15,7 @@ using Veldrath.Server.Features.Map;
 using Veldrath.Server.Features.Quest;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
+using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -805,18 +807,21 @@ public class GameHubZoneTests : IDisposable
         var (character, session, run, shardMate, _) =
             await SeedRespawnOutOfARunAsync(db, "the-droveway", ZoneInstanceState.Empty, "hardcore");
 
-        var mediator = new Mock<ISender>();
-        mediator.Returns(new RespawnHubResult
-        {
-            Success = true,
-            CurrentHealth = 25,
-            CurrentMana = 10,
-            LocationSlug = "drove-road",
-            LocationDisplayName = "The Drove Road",
-        });
+        // The room they fell in belongs to the run; the shared anchor is a different room, so the wake has to move
+        // them and the snapshot has to describe where the move left them.
+        character.CurrentZoneLocationSlug = "drove-hollow";
+        character.CurrentNodeId = "zone:the-droveway:location:drove-hollow";
+        await db.SaveChangesAsync();
+
+        var locations = DrovewayLocations();
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("the-droveway", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(DrovewayMap());
+        var mediator = RealHandlerSender(RealRespawnHandler(db, locations, mapRepo, new FakeCombatSessionStore()));
 
         var (hub, clients, groups, ctx, _, _) =
-            HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn");
+            HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn",
+                locations: locations, mapRepo: mapRepo);
         ctx.EnterZoneState(
             character.Id, character.Name, zoneId: "the-droveway", zoneGroup: run.ZoneGroup,
             currentMapId: "zone:the-droveway");
@@ -846,13 +851,19 @@ public class GameHubZoneTests : IDisposable
             Id = "the-droveway",
             ZoneType = "Wilderness",
             CurrentMapId = "zone:the-droveway",
-            CurrentNodeId = "zone:the-droveway:location:road",
+            CurrentNodeId = "zone:the-droveway:location:drove-road",
             Occupants = new[]
             {
                 new { CharacterId = shardMate.Id, CharacterName = shardMate.Name },
                 new { CharacterId = character.Id, CharacterName = character.Name },
             },
-        }, "the snapshot names the players in the shard the character just joined");
+        }, "the snapshot names the players in the shard the character just joined, at the node they were put on");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be(
+            "zone:the-droveway:location:drove-road",
+            "a gone run cannot take them, so the shared anchor is where they woke");
+        stored.CurrentZoneLocationSlug.Should().Be("drove-road");
 
         db.PlayerSessions.Local.Single(row => row.Id == session.Id).ZoneInstanceId
             .Should().BeNull("the run is gone, so nothing points at it");
@@ -869,8 +880,19 @@ public class GameHubZoneTests : IDisposable
         var (character, _, run, shardMate, otherShard) =
             await SeedRespawnOutOfARunAsync(db, "crestfall", ZoneInstanceState.Purging, "hardcore");
 
+        // The outcome the real handler produces for a run it cannot keep: the zone's shared safe location, and no
+        // retained run. This test is the transport half — the scope transition — so the destination is stated here
+        // rather than resolved.
         var mediator = new Mock<ISender>();
-        mediator.Returns(new RespawnHubResult { Success = true, CurrentHealth = 25, CurrentMana = 10 });
+        mediator.Returns(new RespawnHubResult
+        {
+            Success = true,
+            CurrentHealth = 25,
+            CurrentMana = 10,
+            LocationSlug = "town-square",
+            LocationDisplayName = "Crestfall Square",
+            RetainedZoneInstanceId = null,
+        });
 
         var (hub, clients, groups, ctx, _, _) =
             HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn");
@@ -885,6 +907,15 @@ public class GameHubZoneTests : IDisposable
             "zone:crestfall", "a town has one shared scope for every difficulty, so the wake joins it unsuffixed");
         groups.AddedGroups.Should().NotContain("zone:crestfall_hardcore");
 
+        var respawned = clients.Caller.SentMessages.Single(m => m.Method == "CharacterRespawned").Args[0];
+        respawned.Should().BeEquivalentTo(new
+        {
+            CurrentHealth = 25,
+            CurrentMana = 10,
+            LocationSlug = "town-square",
+            LocationDisplayName = "Crestfall Square",
+        }, "the caller is told the shared anchor it woke at, not a run it no longer has");
+
         var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
         entered.Should().BeEquivalentTo(new
         {
@@ -897,33 +928,151 @@ public class GameHubZoneTests : IDisposable
         }, "both difficulties stand in the same town group, so both are in the roster");
     }
 
+    /// <summary>
+    /// The zone map a run respawn is decided on: the entry, the shared safe location the zone's ordinary respawn
+    /// uses, the instanced room the character fell in, and the run's own safe lobby.
+    /// </summary>
+    /// <returns>The graph the handler and the hub read for the zone.</returns>
+    private static MapGraph DrovewayMap() => new(
+        "zone:the-droveway", MapType.Zone, "the-droveway", "The Droveway", string.Empty,
+        "zone:the-droveway:entry",
+        [
+            new MapNodeEntry(
+                "zone:the-droveway:entry", "zone:the-droveway", MapNodeType.EntryPoint, null, "Arrival",
+                string.Empty, null, null, null, true, false, null, null, false, null, null, null, 0),
+            new MapNodeEntry(
+                "zone:the-droveway:location:drove-road", "zone:the-droveway", MapNodeType.Location,
+                "drove-road", "The Drove Road", string.Empty, null, null, null, false, false, null, null,
+                false, null, null, null, 10),
+            new MapNodeEntry(
+                "zone:the-droveway:location:drove-hollow", "zone:the-droveway", MapNodeType.Location,
+                "drove-hollow", "The Drove Hollow", string.Empty, null, null, null, false, false, null, null,
+                false, null, null, null, 20),
+            new MapNodeEntry(
+                "zone:the-droveway:location:drove-lobby", "zone:the-droveway", MapNodeType.Location,
+                "drove-lobby", "The Drove Lobby", string.Empty, null, null, null, false, false, null, null,
+                false, null, null, null, 30),
+        ],
+        []);
+
+    /// <summary>
+    /// The catalog around the run's anchors: the zone's shared safe location first, the instanced room the character
+    /// fell in, and the run's own instanced safe lobby.
+    /// </summary>
+    /// <remarks>
+    /// The shared anchor is authored first on purpose. The old handler took the first visible safe location, so the
+    /// order is what makes a wrong destination observable rather than a coincidence of authoring.
+    /// </remarks>
+    /// <returns>The catalog the handler and the hub are built with.</returns>
+    private static RealmEngine.Shared.Abstractions.IZoneLocationRepository DrovewayLocations() =>
+        new FakeZoneLocationRepository([
+            new ZoneLocationEntry(
+                "drove-road", "The Drove Road", "locations", "the-droveway", 10, null, null, IsSafeRespawn: true),
+            new ZoneLocationEntry(
+                "drove-hollow", "The Drove Hollow", "dungeons", "the-droveway", 30, null, null, IsInstanced: true),
+            new ZoneLocationEntry(
+                "drove-lobby", "The Drove Lobby", "dungeons", "the-droveway", 30, null, null,
+                IsInstanced: true, IsSafeRespawn: true),
+        ]);
+
+    /// <summary>Builds the real respawn handler over the test's own context, catalog and map.</summary>
+    /// <param name="db">Context the handler reads and writes.</param>
+    /// <param name="locations">Zone-location catalog the lobby is resolved from.</param>
+    /// <param name="mapRepo">Map graphs that place the catalog's locations on nodes.</param>
+    /// <param name="sessions">Combat-session store the handler clears.</param>
+    /// <returns>The handler the hub dispatches to.</returns>
+    private static RespawnHubCommandHandler RealRespawnHandler(
+        ApplicationDbContext db,
+        RealmEngine.Shared.Abstractions.IZoneLocationRepository locations,
+        Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository> mapRepo,
+        FakeCombatSessionStore sessions) =>
+        new(
+            new CharacterRepository(db),
+            sessions,
+            new ZoneLobbyResolver(locations, new CharacterUnlockedLocationRepository(db)),
+            mapRepo.Object,
+            ZoneInstances(db, locations),
+            Options.Create(new DeathPenaltyOptions()),
+            NullLogger<RespawnHubCommandHandler>.Instance);
+
+    /// <summary>
+    /// Wraps a real handler in the harness's mediator adapter: dispatch is stubbed, the outcome is not.
+    /// </summary>
+    /// <param name="handler">Handler the command is forwarded to.</param>
+    /// <returns>The sender the hub is built with.</returns>
+    private static Mock<ISender> RealHandlerSender(RespawnHubCommandHandler handler)
+    {
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(s => s.Send(It.IsAny<IRequest<RespawnHubResult>>(), It.IsAny<CancellationToken>()))
+            .Returns((IRequest<RespawnHubResult> request, CancellationToken ct) =>
+                handler.Handle((RespawnHubCommand)request, ct));
+        return sender;
+    }
+
     [Fact]
-    public async Task Respawn_Inside_A_Run_That_Is_Still_Open_Keeps_Its_Group_And_Stays_Silent()
+    public async Task Respawn_Inside_A_Run_That_Is_Still_Open_Keeps_Its_Group_And_Wakes_At_Its_Lobby()
     {
         await using var db = _factory.CreateContext();
         var (character, session, run, _, _) =
-            await SeedRespawnOutOfARunAsync(db, "the-droveway", ZoneInstanceState.Open, "hardcore");
+            await SeedRespawnOutOfARunAsync(db, "the-droveway", ZoneInstanceState.Open, "normal");
 
-        var mediator = new Mock<ISender>();
-        mediator.Returns(new RespawnHubResult { Success = true, CurrentHealth = 25, CurrentMana = 10 });
+        // Dead in an instanced room of that run: the saved position is neither of the two anchors, so a wake that
+        // lands on either one is a move the handler made rather than a position it kept.
+        character.Attributes = """{"CurrentHealth":0,"MaxHealth":100,"CurrentMana":0,"MaxMana":40}""";
+        character.CurrentZoneLocationSlug = "drove-hollow";
+        character.CurrentNodeId = "zone:the-droveway:location:drove-hollow";
+        await db.SaveChangesAsync();
+
+        var locations = DrovewayLocations();
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(map => map.GetMapForZoneAsync("the-droveway", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(DrovewayMap());
+        var mediator = RealHandlerSender(RealRespawnHandler(db, locations, mapRepo, new FakeCombatSessionStore()));
 
         var (hub, clients, groups, ctx, _, _) =
-            HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn");
+            HubHarness.Create(db, character.AccountId, mediator: mediator, connectionId: "conn-respawn",
+                locations: locations, mapRepo: mapRepo);
         ctx.EnterZoneState(
             character.Id, character.Name, zoneId: "the-droveway", zoneGroup: run.ZoneGroup,
             currentMapId: "zone:the-droveway");
         ctx.Items["CurrentZoneInstanceId"] = run.Id;
-        ctx.Items["DifficultyMode"] = "hardcore";
+        ctx.Items["DifficultyMode"] = "normal";
 
         await hub.Respawn();
 
+        // The character keeps the run, so the wake is inside it: the run's own lobby, not the shared anchor the
+        // zone's ordinary respawn would take.
+        var respawned = clients.Caller.SentMessages.Single(m => m.Method == "CharacterRespawned").Args[0];
+        respawned.Should().BeEquivalentTo(new
+        {
+            CharacterId = character.Id,
+            CurrentHealth = 25,
+            CurrentMana = 40,
+            LocationSlug = "drove-lobby",
+            LocationDisplayName = "The Drove Lobby",
+        });
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentMapId.Should().Be("zone:the-droveway");
+        stored.CurrentNodeId.Should().Be(
+            "zone:the-droveway:location:drove-lobby",
+            "a resumed client wakes from the node, so the lobby has to be written as the node too");
+        stored.CurrentZoneLocationSlug.Should().Be("drove-lobby");
+
+        // Nothing about the scope moved: no group change, no arrival announcement, no zone snapshot, no explanation
+        // to read, because nothing degraded.
         groups.AddedGroups.Should().BeEmpty("a run that can still receive the character is not a scope change");
         groups.RemovedGroups.Should().BeEmpty();
+        clients.EveryMessage.Should().NotContain(message =>
+            message.Method == "PlayerLeft" || message.Method == "PlayerEntered");
+        clients.Caller.SentMessages.Should().NotContain(message =>
+            message.Method == "ZoneEntered" || message.Method == "SystemMessage");
+
         ctx.Items["CurrentZoneGroupName"].Should().Be(run.ZoneGroup);
         ctx.Items["CurrentZoneInstanceId"].Should().Be(run.Id);
-        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "ZoneEntered");
-        clients.Caller.SentMessages.Should().NotContain(m => m.Method == "SystemMessage");
-        db.PlayerSessions.Local.Single(row => row.Id == session.Id).ZoneInstanceId.Should().Be(run.Id);
+        (await db.PlayerSessions.AsNoTracking().SingleAsync(row => row.Id == session.Id)).ZoneInstanceId
+            .Should().Be(run.Id, "the character never left the run it died in");
     }
 
     // ── TravelToNode: walking out of a run ───────────────────────────────────

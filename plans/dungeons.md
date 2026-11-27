@@ -498,10 +498,22 @@ which already logs and adopts the winner.
   location without saying whose loot it means. The pickup path answers "you are not standing where that item
   was dropped" for another run as well as another zone — the client must not learn that a run it is not in
   exists.
-- **Respawn falls back deliberately.** A death inside a run revives in that run's lobby because the session's
-  group still points there. If the run was purged while the character was dead, the hub clears the pointer,
-  moves the connection back to the shared zone group and says so — waking up in a group nobody else can join
-  would be worse than the fallback.
+- **Respawn keeps the run and chooses the wake separately.** Retaining the group was never the whole answer:
+  a character who died inside a run that is still open keeps that exact run, and the hub leaves the group
+  alone on the strength of one server-side read of it — but *where they wake* is a second decision, made by the
+  respawn handler before it heals, and taking the session's group as proof of the destination woke them at the
+  zone's shared anchor instead. A run lobby is an authored location that is active, visible to the character
+  (or unlocked by them) and flagged **both** `IsInstanced` and `IsSafeRespawn`, and the zone map has to place
+  it on a `Location` node; runs in one zone reuse that content node, not an identity of their own. A shared
+  anchor is the same thing without `IsInstanced`, which is why the shared resolver — ordinary respawn and
+  reconnect — now excludes instanced rows from its lobby, its hidden candidate and its entrance fallback.
+  Degradation never crosses scopes: inside a run the only fallback is the room the character fell in, and only
+  while the saved map and node still name that room; a run lobby that is locked or unplaced is content debt the
+  handler logs and the player is told about once ("This run has no safe lobby you can use; you respawn where
+  you fell."). If the run was purged, emptied or is in another zone it cannot take them, so they wake at the
+  first mapped shared anchor and the hub clears the pointer, moves the connection to the shared group and says
+  so; a zone with no mapped shared anchor refuses the respawn ("No valid respawn location is available.")
+  instead of healing into a position nothing recorded.
 
 ### F3 — progress, reset and unlocks (shipped)
 

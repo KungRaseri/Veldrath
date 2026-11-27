@@ -23,9 +23,16 @@ public class ZoneLobbyResolverTests : IDisposable
         string displayName,
         bool safeRespawn = false,
         bool hidden = false,
+        bool instanced = false,
         string zoneId = "ashlen-wood") =>
-        new(slug, displayName, "locations", zoneId, 10, null, null,
-            IsHidden: hidden, IsSafeRespawn: safeRespawn);
+        new(slug, displayName, instanced ? "dungeons" : "locations", zoneId, 10, null, null,
+            IsHidden: hidden, IsSafeRespawn: safeRespawn, IsInstanced: instanced);
+
+    /// <summary>The slugs a zone map places on location nodes, as the handler passes them to the scoped overload.</summary>
+    /// <param name="slugs">Slugs the map places.</param>
+    /// <returns>The set, compared case-insensitively like the node refs it came from.</returns>
+    private static IReadOnlySet<string> Placed(params string[] slugs) =>
+        slugs.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     private static async Task<Character> SeedCharacterAsync(ApplicationDbContext db)
     {
@@ -154,5 +161,180 @@ public class ZoneLobbyResolverTests : IDisposable
 
         resolution.Status.Should().Be(ZoneLobbyStatus.NoLocations);
         resolution.Fallback.Should().BeNull();
+    }
+
+    // ── Scope: a shared anchor is not a run's lobby ────────────────────────────
+
+    [Fact]
+    public async Task Resolve_Skips_An_Instanced_Safe_Location_For_The_Shared_Scope()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true),
+                Location("trailhead", "The Trailhead", safeRespawn: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var resolution = await resolver.ResolveAsync("ashlen-wood", character.Id);
+
+        resolution.Status.Should().Be(ZoneLobbyStatus.Resolved);
+        resolution.Lobby!.Slug.Should().Be(
+            "trailhead",
+            "a run's lobby is instanced; an ordinary respawn or a reconnect must never place a character in one");
+    }
+
+    [Fact]
+    public async Task Resolve_Reports_NoLocations_When_Only_Instanced_Rows_Are_Authored()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true),
+                Location("crypt", "The Crypt", instanced: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var resolution = await resolver.ResolveAsync("ashlen-wood", character.Id);
+
+        resolution.Status.Should().Be(ZoneLobbyStatus.NoLocations);
+        resolution.Fallback.Should().BeNull(
+            "the entrance fallback is shared too, so an instanced row is not one either");
+    }
+
+    [Fact]
+    public async Task Resolve_Scoped_Run_Returns_The_Instanced_Safe_Lobby()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("town-square", "Town Square", safeRespawn: true),
+                Location("crypt", "The Crypt", instanced: true),
+                Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var resolution = await resolver.ResolveAsync(
+            "ashlen-wood", character.Id, instanced: true,
+            Placed("town-square", "crypt", "vault-of-echoes"), preferredFallbackSlug: "crypt");
+
+        resolution.Status.Should().Be(ZoneLobbyStatus.Resolved);
+        resolution.Lobby!.Slug.Should().Be("vault-of-echoes", "both flags make it a run lobby");
+        resolution.Fallback.Should().BeNull("a resolved lobby needs no fallback");
+    }
+
+    [Fact]
+    public async Task Resolve_Scoped_Run_Skips_A_Lobby_The_Map_Does_Not_Place()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("crypt", "The Crypt", instanced: true),
+                Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var resolution = await resolver.ResolveAsync(
+            "ashlen-wood", character.Id, instanced: true, Placed("crypt"));
+
+        resolution.Status.Should().Be(ZoneLobbyStatus.NoSafeLocation);
+        resolution.Lobby.Should().BeNull("the zone map never places that room, so a client could not resume onto it");
+    }
+
+    [Fact]
+    public async Task Resolve_Scoped_Run_Reports_A_Locked_Lobby_And_Keeps_The_Preferred_Room()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        // No unlock row: the run authored a lobby this character has not opened.
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("crypt", "The Crypt", instanced: true),
+                Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, hidden: true, instanced: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var resolution = await resolver.ResolveAsync(
+            "ashlen-wood", character.Id, instanced: true,
+            Placed("crypt", "vault-of-echoes"), preferredFallbackSlug: "crypt");
+
+        resolution.Status.Should().Be(ZoneLobbyStatus.NotUnlocked);
+        resolution.Lobby.Should().BeNull();
+        resolution.LockedLobby!.Slug.Should().Be("vault-of-echoes");
+        resolution.Fallback!.Slug.Should().Be(
+            "crypt", "inside a run the only degradation is the room the character fell in");
+    }
+
+    [Fact]
+    public async Task Resolve_Scoped_Run_Only_Falls_Back_To_The_Preferred_Room()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("antechamber", "The Antechamber", instanced: true),
+                Location("crypt", "The Crypt", instanced: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var resolution = await resolver.ResolveAsync(
+            "ashlen-wood", character.Id, instanced: true,
+            Placed("antechamber", "crypt"), preferredFallbackSlug: "crypt");
+
+        resolution.Status.Should().Be(ZoneLobbyStatus.NoSafeLocation);
+        resolution.Fallback!.Slug.Should().Be(
+            "crypt",
+            "the scoped path does not take whichever room sorts first; it takes the room the character is in");
+    }
+
+    [Fact]
+    public async Task Resolve_Scoped_Run_Never_Falls_Back_To_A_Shared_Anchor()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("town-square", "Town Square", safeRespawn: true),
+                Location("crypt", "The Crypt", instanced: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var withPreferred = await resolver.ResolveAsync(
+            "ashlen-wood", character.Id, instanced: true,
+            Placed("town-square", "crypt"), preferredFallbackSlug: "crypt");
+        var withoutPreferred = await resolver.ResolveAsync(
+            "ashlen-wood", character.Id, instanced: true,
+            Placed("town-square", "crypt"));
+
+        withPreferred.Fallback!.Slug.Should().Be("crypt", "a run keeps the character inside itself");
+        withoutPreferred.Fallback.Should().BeNull(
+            "the shared anchor belongs to the other scope, so it is not this scope's fallback");
+    }
+
+    [Fact]
+    public async Task Resolve_Scoped_Public_Takes_The_Ordinal_First_Mapped_Anchor()
+    {
+        await using var db = _factory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        // Authored zulu-first on purpose: the scoped choice must not depend on catalog order.
+        var resolver = new ZoneLobbyResolver(
+            new FakeZoneLocationRepository([
+                Location("zulu-square", "Zulu Square", safeRespawn: true),
+                Location("alpha-square", "Alpha Square", safeRespawn: true),
+                Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true),
+            ]),
+            new CharacterUnlockedLocationRepository(db));
+
+        var resolution = await resolver.ResolveAsync(
+            "ashlen-wood", character.Id, instanced: false,
+            Placed("zulu-square", "alpha-square", "vault-of-echoes"));
+
+        resolution.Status.Should().Be(ZoneLobbyStatus.Resolved);
+        resolution.Lobby!.Slug.Should().Be(
+            "alpha-square", "sibling anchors are broken by ordinal slug, so two content rows cannot decide a tie");
     }
 }

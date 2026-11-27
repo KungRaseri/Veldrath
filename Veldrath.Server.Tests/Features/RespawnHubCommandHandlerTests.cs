@@ -28,7 +28,8 @@ public class RespawnHubCommandHandlerTests : IDisposable
         ApplicationDbContext db,
         IZoneLocationRepository? zoneLocations = null,
         DeathPenaltyOptions? options = null,
-        IMapGraphRepository? maps = null) =>
+        IMapGraphRepository? maps = null,
+        IZoneInstanceService? zoneInstances = null) =>
         new(
             new CharacterRepository(db),
             _sessions,
@@ -36,8 +37,23 @@ public class RespawnHubCommandHandlerTests : IDisposable
                 zoneLocations ?? ZoneLocationsWith(),
                 new CharacterUnlockedLocationRepository(db)),
             maps ?? MapsWith(null).Object,
+            zoneInstances ?? ZoneInstances(db, zoneLocations ?? ZoneLocationsWith()),
             Options.Create(options ?? new DeathPenaltyOptions()),
             NullLogger<RespawnHubCommandHandler>.Instance);
+
+    /// <summary>Builds the real run service over the test's context and catalog, the way the server resolves it.</summary>
+    /// <param name="db">Context the run rows live in.</param>
+    /// <param name="locations">Zone-location catalog the service reads a room from.</param>
+    /// <returns>The service the handler reads runs with.</returns>
+    private static IZoneInstanceService ZoneInstances(
+        ApplicationDbContext db,
+        IZoneLocationRepository locations) =>
+        new EfCoreZoneInstanceService(
+            db,
+            new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
+            locations,
+            NullLogger<EfCoreZoneInstanceService>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();
 
@@ -50,9 +66,10 @@ public class RespawnHubCommandHandlerTests : IDisposable
         string slug,
         string displayName,
         bool safeRespawn = false,
-        bool hidden = false) =>
-        new(slug, displayName, "locations", "zone-1", 10, null, null,
-            IsHidden: hidden, IsSafeRespawn: safeRespawn);
+        bool hidden = false,
+        bool instanced = false) =>
+        new(slug, displayName, instanced ? "dungeons" : "locations", "zone-1", 10, null, null,
+            IsHidden: hidden, IsSafeRespawn: safeRespawn, IsInstanced: instanced);
 
     private static Mock<IMapGraphRepository> MapsWith(MapGraph? zoneMap)
     {
@@ -269,6 +286,292 @@ public class RespawnHubCommandHandlerTests : IDisposable
         result.SicknessExpiresAt.Should().BeNull();
         var stored = await db.Characters.AsNoTracking().SingleAsync(c => c.Id == character.Id);
         stored.Attributes.Should().NotContain(DeathPenalties.SicknessUntilKey, "a disabled sickness must not linger");
+    }
+
+    // ── Runs: the run a death happened inside ─────────────────────────────────
+
+    /// <summary>
+    /// Seeds a dead character standing in an instanced room with a run behind it, which is the state every
+    /// run-scoped respawn starts from.
+    /// </summary>
+    /// <param name="db">Context to write to.</param>
+    /// <param name="state">State of the run the character is inside.</param>
+    /// <param name="runZoneId">Zone the run belongs to, so a test can point it at another zone.</param>
+    /// <param name="roomSlug">Instanced room the character fell in.</param>
+    /// <returns>The character and the run.</returns>
+    private static async Task<(Character Character, ZoneInstance Run)> SeedDeadInRunAsync(
+        ApplicationDbContext db,
+        ZoneInstanceState state,
+        string runZoneId = "zone-1",
+        string roomSlug = "crypt")
+    {
+        await EnsureZoneAsync(db, "zone-1");
+        await EnsureZoneAsync(db, runZoneId);
+
+        var character = await SeedDeadCharacterAsync(db);
+        character.CurrentZoneLocationSlug = roomSlug;
+        character.CurrentMapId = "zone:zone-1";
+        character.CurrentNodeId = $"zone:zone-1:location:{roomSlug}";
+        await db.SaveChangesAsync();
+
+        var run = new ZoneInstance
+        {
+            ZoneId = runZoneId,
+            CreatedByCharacterId = character.Id,
+            ZoneGroup = $"zone:{runZoneId}#i1:{Guid.NewGuid():D}",
+            State = state,
+        };
+        db.ZoneInstances.Add(run);
+        await db.SaveChangesAsync();
+
+        return (character, run);
+    }
+
+    /// <summary>
+    /// Seeds a zone row so a run can point at it: <see cref="ZoneInstance.ZoneId"/> is a real foreign key, unlike the
+    /// catalog's loose zone references.
+    /// </summary>
+    /// <param name="db">Context to write to.</param>
+    /// <param name="zoneId">Zone id to create when it is not already seeded.</param>
+    private static async Task EnsureZoneAsync(ApplicationDbContext db, string zoneId)
+    {
+        if (await db.Zones.AnyAsync(zone => zone.Id == zoneId))
+            return;
+
+        db.Zones.Add(new Zone
+        {
+            Id = zoneId,
+            Name = zoneId,
+            RegionId = "varenmark",
+            Type = ZoneType.Dungeon,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>The map a run respawn is decided on: the shared anchor, the instanced room, and the run's lobby.</summary>
+    /// <returns>The graph the handler reads.</returns>
+    private static MapGraph RunMap() => ZoneMap(
+        "zone-1", ("market", "The Market"), ("crypt", "The Crypt"), ("vault-of-echoes", "The Vault of Echoes"));
+
+    [Fact]
+    public async Task Handle_Keeps_A_Still_Open_Run_And_Wakes_At_Its_Instanced_Lobby()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, ZoneInstanceState.Open);
+
+        // Both flags present: the shared anchor is safe but not instanced, the run's lobby is both.
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market", safeRespawn: true),
+            Location("crypt", "The Crypt", instanced: true),
+            Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(RunMap()).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LocationSlug.Should().Be(
+            "vault-of-echoes", "the character kept the run, so the wake belongs inside it, not at the shared anchor");
+        result.LocationDisplayName.Should().Be("The Vault of Echoes");
+        result.UsedFallbackRespawn.Should().BeFalse("the run authored a lobby");
+        result.RetainedZoneInstanceId.Should().Be(run.Id, "the hub leaves the group alone when the run is retained");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentMapId.Should().Be("zone:zone-1");
+        stored.CurrentNodeId.Should().Be("zone:zone-1:location:vault-of-echoes");
+        stored.CurrentZoneLocationSlug.Should().Be("vault-of-echoes");
+    }
+
+    [Fact]
+    public async Task Handle_Wakes_At_The_Runs_Lobby_When_The_Character_Has_Unlocked_It()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, ZoneInstanceState.Open);
+        await UnlockAsync(db, character.Id, "vault-of-echoes");
+
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market", safeRespawn: true),
+            Location("crypt", "The Crypt", instanced: true),
+            Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, hidden: true, instanced: true));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(RunMap()).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.LocationSlug.Should().Be(
+            "vault-of-echoes", "an unlock makes the run's hidden lobby a destination, exactly as it does in a zone");
+        result.UsedFallbackRespawn.Should().BeFalse();
+        result.RetainedZoneInstanceId.Should().Be(run.Id);
+    }
+
+    [Fact]
+    public async Task Handle_Stays_Where_They_Fell_When_The_Runs_Lobby_Is_Locked()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, ZoneInstanceState.Open);
+        // No unlock row: the run authored a lobby and this character cannot use it.
+
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market", safeRespawn: true),
+            Location("crypt", "The Crypt", instanced: true),
+            Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, hidden: true, instanced: true));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(RunMap()).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue("the run is still theirs; only the lobby is closed to them");
+        result.LocationSlug.Should().BeNull("a locked run lobby must never send them to the shared zone's anchor");
+        result.UsedFallbackRespawn.Should().BeTrue();
+        result.Warning.Should().Be(
+            "This run has no safe lobby you can use; you respawn where you fell.",
+            "the degradation is said once, and it explains why they did not move");
+        result.RetainedZoneInstanceId.Should().Be(run.Id);
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be("zone:zone-1:location:crypt", "staying put keeps the saved position");
+        stored.CurrentZoneLocationSlug.Should().Be("crypt");
+    }
+
+    [Fact]
+    public async Task Handle_Stays_Where_They_Fell_When_The_Runs_Lobby_Has_No_Map_Node()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, ZoneInstanceState.Open);
+
+        // The lobby is authored but the zone map never places it: a character placed there would resume nowhere.
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market", safeRespawn: true),
+            Location("crypt", "The Crypt", instanced: true),
+            Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true));
+        var mapWithoutLobby = ZoneMap("zone-1", ("market", "The Market"), ("crypt", "The Crypt"));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(mapWithoutLobby).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LocationSlug.Should().BeNull("an unplaced lobby is not a destination");
+        result.UsedFallbackRespawn.Should().BeTrue();
+        result.Warning.Should().Contain("no safe lobby you can use");
+        result.RetainedZoneInstanceId.Should().Be(run.Id);
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be("zone:zone-1:location:crypt");
+    }
+
+    [Fact]
+    public async Task Handle_Stays_Where_They_Fell_When_The_Run_Authors_No_Lobby()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, ZoneInstanceState.Open);
+
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market", safeRespawn: true),
+            Location("crypt", "The Crypt", instanced: true));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(RunMap()).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LocationSlug.Should().BeNull("a run with no lobby heals in place rather than in the shared zone");
+        result.RetainedZoneInstanceId.Should().Be(run.Id);
+        result.Warning.Should().Contain("no safe lobby you can use");
+    }
+
+    [Fact]
+    public async Task Handle_Refuses_The_Respawn_When_The_Run_Offers_No_Destination()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, ZoneInstanceState.Open);
+
+        // The only instanced room is the one they fell in, and their saved node no longer names it: there is no
+        // lobby to move to and no coherent position to keep.
+        character.CurrentNodeId = "zone:zone-1:entry";
+        await db.SaveChangesAsync();
+        _sessions.Set(
+            character.Id,
+            new ActiveCombatSession("zone", "crypt", Guid.NewGuid(), false, 0, DateTimeOffset.UtcNow));
+
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market", safeRespawn: true),
+            Location("crypt", "The Crypt", instanced: true));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(RunMap()).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("No valid respawn location is available.");
+
+        // Nothing durable was written: no heal, no move, no combat-session cleanup.
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.Attributes.Should().Contain("\"CurrentHealth\":0", "a refused respawn must not heal the character");
+        stored.CurrentNodeId.Should().Be("zone:zone-1:entry");
+        stored.CurrentZoneLocationSlug.Should().Be("crypt");
+        _sessions.IsInCombat(character.Id).Should().BeTrue("the refused respawn left the death state untouched");
+    }
+
+    [Theory]
+    [InlineData(ZoneInstanceState.Empty, "zone-1")]
+    [InlineData(ZoneInstanceState.Purging, "zone-1")]
+    [InlineData(ZoneInstanceState.Open, "zone-2")]
+    public async Task Handle_Wakes_At_The_Mapped_Shared_Anchor_When_The_Run_Is_Unavailable(
+        ZoneInstanceState state, string runZoneId)
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, state, runZoneId);
+
+        var zoneLocations = ZoneLocationsWith(
+            Location("market", "The Market", safeRespawn: true),
+            Location("crypt", "The Crypt", instanced: true),
+            Location("vault-of-echoes", "The Vault of Echoes", safeRespawn: true, instanced: true));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(RunMap()).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LocationSlug.Should().Be(
+            "market", "an unavailable run cannot take them, so only a shared anchor will do");
+        result.RetainedZoneInstanceId.Should().BeNull("the hub has to move the connection to the shared scope");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.CurrentNodeId.Should().Be("zone:zone-1:location:market");
+        stored.CurrentZoneLocationSlug.Should().Be("market");
+    }
+
+    [Fact]
+    public async Task Handle_Refuses_The_Respawn_When_A_Closed_Run_Has_No_Mapped_Shared_Anchor()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var (character, run) = await SeedDeadInRunAsync(db, ZoneInstanceState.Empty);
+
+        // A shared safe location exists in the catalog, but the zone map never places it, so there is nowhere a
+        // client could resume.
+        var zoneLocations = ZoneLocationsWith(Location("market", "The Market", safeRespawn: true));
+        var mapWithoutMarket = ZoneMap("zone-1", ("crypt", "The Crypt"));
+
+        var result = await MakeHandler(db, zoneLocations, maps: MapsWith(mapWithoutMarket).Object)
+            .Handle(new RespawnHubCommand(character.Id, run.Id), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("No valid respawn location is available.");
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(row => row.Id == character.Id);
+        stored.Attributes.Should().Contain("\"CurrentHealth\":0");
+        stored.CurrentNodeId.Should().Be("zone:zone-1:location:crypt");
+    }
+
+    [Fact]
+    public async Task Handle_Does_Not_Read_A_Run_For_An_Ordinary_Respawn()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedDeadCharacterAsync(db);
+
+        // Strict: any call at all fails the test, which is the point — a death outside a run has no run to read.
+        var runs = new Mock<IZoneInstanceService>(MockBehavior.Strict);
+
+        var result = await MakeHandler(db, ZoneLocationsWith(Location("market", "The Market")), zoneInstances: runs.Object)
+            .Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.RetainedZoneInstanceId.Should().BeNull("there was no run to keep");
+        runs.VerifyNoOtherCalls();
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

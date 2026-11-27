@@ -3318,6 +3318,12 @@ public class GameHub : Hub
     /// Respawns the active character after death in normal mode.
     /// Restores a portion of HP and full mana; broadcasts <c>CharacterRespawned</c> to the caller.
     /// </summary>
+    /// <remarks>
+    /// The run the connection points at is handed to the command, which reads that one row and decides whether the
+    /// character keeps it and where inside it they wake. This method acts on that single decision — the group is left
+    /// alone when the run was kept, and moved to the shared scope when it was not — so a run that changes state
+    /// mid-respawn cannot leave the character healed in one place and reachable in another.
+    /// </remarks>
     public async Task Respawn()
     {
         if (!TryGetCharacterId(out var characterId))
@@ -3326,9 +3332,14 @@ public class GameHub : Hub
             return;
         }
 
+        var suppliedInstanceId =
+            Context.Items.TryGetValue("CurrentZoneInstanceId", out var rawInstance) && rawInstance is Guid run
+                ? run
+                : (Guid?)null;
+
         try
         {
-            var result = await _mediator.Send(new RespawnHubCommand(characterId));
+            var result = await _mediator.Send(new RespawnHubCommand(characterId, suppliedInstanceId));
 
             if (!result.Success)
             {
@@ -3336,9 +3347,11 @@ public class GameHub : Hub
                 return;
             }
 
-            // A run that was purged while the character was dead cannot receive them: they wake in the shared
-            // zone and are told why, rather than being left in a group nobody else can join.
-            await LeaveExpiredInstanceAsync(characterId);
+            // A run the command did not retain cannot receive the character: they wake in the shared zone and are
+            // told why, rather than being left in a group nobody else can join. The command's read already answered
+            // the run-state question, so this moves the scope without asking it again.
+            if (suppliedInstanceId is not null && result.RetainedZoneInstanceId != suppliedInstanceId)
+                await LeaveRunScopeAsync(characterId);
 
             await Clients.Caller.SendAsync("CharacterRespawned", new
             {
@@ -3681,8 +3694,8 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Clears the character's run when it no longer exists or is being purged, so a resurrection lands in the
-    /// shared zone instead of a group nothing else will ever join.
+    /// Clears the character's run when it cannot take them — purged, emptied, or no longer theirs — so a resurrection
+    /// lands in the shared zone instead of a group nothing else will ever join.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -3699,21 +3712,15 @@ public class GameHub : Hub
     /// them. The pair used here is the pair <see cref="ZoneGroupName.ForSharedZone"/> composes names from and
     /// <see cref="ReadOwnScopeAsync(string, ZoneType?)"/> reads rosters with, so the group and the snapshot agree.
     /// </para>
+    /// <para>
+    /// Whether the run can take the character was already decided: the respawn command read that one row and reported
+    /// whether it retained it, so this method does not ask again. A second read here could only disagree with the read
+    /// the heal was based on.
+    /// </para>
     /// </remarks>
-    /// <param name="characterId">Character being resurrected.</param>
-    private async Task LeaveExpiredInstanceAsync(Guid characterId)
+    /// <param name="characterId">Character whose scope is being moved.</param>
+    private async Task LeaveRunScopeAsync(Guid characterId)
     {
-        if (_zoneInstances is null ||
-            Context.Items.TryGetValue("CurrentZoneInstanceId", out var value) is false ||
-            value is not Guid instanceId)
-        {
-            return;
-        }
-
-        var run = await _zoneInstances.GetAsync(instanceId);
-        if (run is { State: Veldrath.Server.Data.Entities.ZoneInstanceState.Open })
-            return;
-
         var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone)
                      && zone is string id
                      && !string.IsNullOrWhiteSpace(id)
@@ -3728,9 +3735,9 @@ public class GameHub : Hub
             null,
             zoneId);
 
-        // This method only gets past the run check with a run the connection is pointing at, so the wake always
-        // changes the scope, and the snapshot is owed whenever there is a zone to describe. The character row is
-        // where the respawn handler recorded the node they woke on, so the snapshot describes where they now stand.
+        // The run being left is the one the connection is pointing at, so the wake always changes the scope, and the
+        // snapshot is owed whenever there is a zone to describe. The character row is where the respawn handler
+        // recorded the node they woke on, so the snapshot describes where they now stand.
         if (zoneEntity is not null)
         {
             var character = await _characterRepo.GetByIdAsync(characterId);
@@ -3798,7 +3805,7 @@ public class GameHub : Hub
     /// <remarks>
     /// This is the one <c>ZoneEntered</c> payload, so every path that moves a connection — the <see cref="EnterZone"/>
     /// arrival, a walk that crossed a border or changed scope (<see cref="SyncArrivedZoneAsync"/>), and the respawn
-    /// that woke out of a run which no longer exists (<see cref="LeaveExpiredInstanceAsync"/>) — describes the zone
+    /// that woke out of a run which no longer exists (<see cref="LeaveRunScopeAsync"/>) — describes the zone
     /// the same way. The occupant list is <see cref="ReadOwnScopeAsync(string, ZoneType?)"/>, which names the players
     /// in the scope the connection actually joined: the run's members inside a run, and the caller's own difficulty
     /// shard otherwise. The zone's whole population would name a party mid-delve and the characters in the other
