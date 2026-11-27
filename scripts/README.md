@@ -289,6 +289,32 @@ triggers on both `main` and `development`, and at least one declares neither `pa
 
 ---
 
+## `check-prod-ports.mjs`
+
+The gate behind [`ci-prod-ports.yml`](../.github/workflows/ci-prod-ports.yml): a production stack
+publishes **no host port**, and a pull request that publishes one — or inherits one from
+`docker-compose.yml` because an overlay only said `ports: []` — fails. The bug it exists for:
+`docker-compose.prod.yml` used `ports: []` on `server`, `web` and `postgres` and no `ports` key on
+`seq`, `prometheus` and `grafana`, and the merged render still published `5433`, `8081` and
+`9000`–`9003`. Compose merges `ports` lists across `-f` files; only `ports: !reset []` drops an
+inherited list. The human half — the internet-reachable set and the post-change checks — is
+`docs/deployment.md`, "Firewall and published ports".
+
+```bash
+node scripts/check-prod-ports.mjs                       # the gate: base + prod overlay + coolify stack
+node scripts/check-prod-ports.mjs --render /tmp/prod.json  # check a real `config --format json`
+node --test scripts/tests/prod-ports.test.mjs           # offline fixtures + a Compose parity test
+```
+
+It parses the compose files instead of running `docker compose config`, because the Forgejo job
+image ships the docker CLI but no compose plugin and the runner mounts only
+`/var/run/docker.sock`. `--render` is how the static merge is parity-tested: the last test renders
+the checked-in overlay and a `ports: []` mutation with Compose and asserts both name the same six
+ports. `ALLOWLIST` (empty) is the only way a publication passes, and every entry needs a one-line
+justification in the deployment doc.
+
+---
+
 ## Available Scripts
 
 ### `build-game-package.ps1`
