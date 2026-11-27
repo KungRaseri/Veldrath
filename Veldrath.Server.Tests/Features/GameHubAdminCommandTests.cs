@@ -44,6 +44,25 @@ public class GameHubAdminCommandTests : IDisposable
         return manager;
     }
 
+    /// <summary>Records which account snapshots a hub moderation writer evicted after a successful update.</summary>
+    private sealed class RecordingAccountAccessReader : IAccountAccessReader
+    {
+        public List<Guid> Evicted { get; } = [];
+
+        public Task<AccountAccessSnapshot?> EnsureAccountAsync(
+            Guid accountId,
+            string? username,
+            string? email,
+            bool emailVerified,
+            CancellationToken ct = default) => Task.FromResult<AccountAccessSnapshot?>(null);
+
+        public Task EvictAsync(Guid accountId, CancellationToken ct = default)
+        {
+            Evicted.Add(accountId);
+            return Task.CompletedTask;
+        }
+    }
+
     // ── /announce ────────────────────────────────────────────────────────────
 
     [Fact]
@@ -986,5 +1005,116 @@ public class GameHubAdminCommandTests : IDisposable
         await hub.SendChatMessage(new ChatMessageHubRequest("/event invasion"));
 
         SystemText(clients).Should().Be("Game events are not yet implemented. This command is a stub.");
+    }
+
+    // ── Moderation writers evict the account snapshot they changed ────────────
+
+    [Fact]
+    public async Task Warn_At_The_Threshold_Evicts_The_AutoBanned_Accounts_Snapshot()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var targetAccount = await HubHarness.SeedAccountAsync(db);
+        var target = await HubHarness.SeedCharacterAsync(db, targetAccount.Id);
+        await HubHarness.SeedSessionAsync(db, target, "conn-target");
+
+        var managed = Account(warnCount: 2);
+        managed.Id = targetAccount.Id;
+        var accounts = new RecordingAccountAccessReader();
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id,
+            userManager: HubHarness.NewUserManager(managed),
+            moderation: new ModerationOptions { AutoBanWarnThreshold = 3 },
+            accounts: accounts,
+            permissions: Permissions.WarnPlayers);
+        ctx.EnterZoneState(Guid.NewGuid());
+
+        await hub.SendChatMessage(new ChatMessageHubRequest($"/warn {target.Id} spamming"));
+
+        managed.IsBanned.Should().BeTrue();
+        accounts.Evicted.Should().ContainSingle()
+            .Which.Should().Be(targetAccount.Id, "the next hub call for the banned account must re-read its state");
+        clients.Connection("conn-target").SentMessages.Should().Contain(m => m.Method == "OnKicked");
+    }
+
+    [Fact]
+    public async Task Ban_Evicts_The_Banned_Accounts_Snapshot()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var targetAccount = await HubHarness.SeedAccountAsync(db);
+        var target = await HubHarness.SeedCharacterAsync(db, targetAccount.Id);
+        await HubHarness.SeedSessionAsync(db, target, "conn-target");
+
+        var managed = Account();
+        managed.Id = targetAccount.Id;
+        var accounts = new RecordingAccountAccessReader();
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id,
+            userManager: HubHarness.NewUserManager(managed),
+            accounts: accounts,
+            permissions: Permissions.BanPlayers);
+        ctx.EnterZoneState(Guid.NewGuid());
+
+        await hub.SendChatMessage(new ChatMessageHubRequest($"/ban {target.Id} exploiting"));
+
+        managed.IsBanned.Should().BeTrue();
+        accounts.Evicted.Should().ContainSingle().Which.Should().Be(targetAccount.Id);
+    }
+
+    [Fact]
+    public async Task Suspend_Evicts_The_Suspended_Accounts_Snapshot()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var targetAccount = await HubHarness.SeedAccountAsync(db);
+        var target = await HubHarness.SeedCharacterAsync(db, targetAccount.Id);
+        await HubHarness.SeedSessionAsync(db, target, "conn-target");
+
+        var managed = Account();
+        managed.Id = targetAccount.Id;
+        var accounts = new RecordingAccountAccessReader();
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id,
+            userManager: HubHarness.NewUserManager(managed),
+            accounts: accounts,
+            permissions: Permissions.SuspendPlayers);
+        ctx.EnterZoneState(Guid.NewGuid());
+
+        await hub.SendChatMessage(new ChatMessageHubRequest($"/suspend {target.Id} 6 griefing"));
+
+        managed.IsBanned.Should().BeTrue();
+        accounts.Evicted.Should().ContainSingle().Which.Should().Be(targetAccount.Id);
+    }
+
+    [Fact]
+    public async Task Ban_That_Identity_Rejects_Is_Reported_And_Not_Evicted()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var targetAccount = await HubHarness.SeedAccountAsync(db);
+        var target = await HubHarness.SeedCharacterAsync(db, targetAccount.Id);
+        await HubHarness.SeedSessionAsync(db, target, "conn-target");
+
+        var managed = Account();
+        managed.Id = targetAccount.Id;
+        var userManager = HubHarness.NewUserManager(managed);
+        userManager.Setup(m => m.UpdateAsync(It.IsAny<PlayerAccount>()))
+                   .ReturnsAsync(Microsoft.AspNetCore.Identity.IdentityResult.Failed(
+                       new Microsoft.AspNetCore.Identity.IdentityError { Code = "ConcurrencyFailure" }));
+        var accounts = new RecordingAccountAccessReader();
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id,
+            userManager: userManager,
+            accounts: accounts,
+            permissions: Permissions.BanPlayers);
+        ctx.EnterZoneState(Guid.NewGuid());
+
+        await hub.SendChatMessage(new ChatMessageHubRequest($"/ban {target.Id} exploiting"));
+
+        SystemText(clients).Should().Be("The ban could not be recorded.");
+        accounts.Evicted.Should().BeEmpty("nothing was persisted, so there is no stale snapshot to drop");
+        clients.Connection("conn-target").SentMessages.Should()
+            .NotContain(m => m.Method == "OnKicked", "a failed ban must not claim the player was kicked");
     }
 }

@@ -22,7 +22,48 @@ public sealed record AccountAccessSnapshot(
     bool IsBanned,
     DateTimeOffset? BannedUntil,
     IReadOnlyList<string> Roles,
-    IReadOnlyList<string> Permissions);
+    IReadOnlyList<string> Permissions)
+{
+    /// <summary>
+    /// Evaluates the one ban rule this server uses: an account is banned while the flag is set and the expiry is
+    /// absent (permanent) or still in the future. A temporary ban stops applying the moment its expiry passes.
+    /// </summary>
+    /// <param name="now">Current UTC time.</param>
+    /// <returns><see langword="true"/> when the account must be refused right now.</returns>
+    public bool IsActivelyBanned(DateTimeOffset now) =>
+        IsBanned && (BannedUntil is null || BannedUntil > now);
+}
+
+/// <summary>
+/// Reads the account access snapshot moderation guards need, and evicts it after a moderation write.
+/// </summary>
+/// <remarks>
+/// The snapshot is the server's per-process view of an account's ban state, shared with role and permission
+/// resolution. A guard must treat a failed or missing read as a refusal, and a moderation writer must evict the
+/// account after its update succeeds so the next request in this process sees the new state immediately.
+/// </remarks>
+public interface IAccountAccessReader
+{
+    /// <summary>Ensures the account exists and resolves its current access snapshot.</summary>
+    /// <param name="accountId">Account identifier from the JWT <c>sub</c> claim.</param>
+    /// <param name="username">Preferred username from the JWT, or <see langword="null"/> when the caller has none.</param>
+    /// <param name="email">Optional email address supplied by the identity provider.</param>
+    /// <param name="emailVerified">Whether the identity provider has verified the email address.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The snapshot, or <see langword="null"/> when it could not be resolved.</returns>
+    Task<AccountAccessSnapshot?> EnsureAccountAsync(
+        Guid accountId,
+        string? username,
+        string? email,
+        bool emailVerified,
+        CancellationToken ct = default);
+
+    /// <summary>Drops one account's cached snapshot so the next read observes its current moderation state.</summary>
+    /// <param name="accountId">Account whose state just changed.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once no in-flight fill can reinsert the pre-change snapshot.</returns>
+    Task EvictAsync(Guid accountId, CancellationToken ct = default);
+}
 
 /// <summary>
 /// Provisions ASP.NET Core Identity accounts for identities that are owned by an
@@ -40,7 +81,7 @@ public sealed class AccountProvisioningService(
     RoleManager<IdentityRole<Guid>> roleManager,
     ApplicationDbContext db,
     IConfiguration configuration,
-    ILogger<AccountProvisioningService> logger)
+    ILogger<AccountProvisioningService> logger) : IAccountAccessReader
 {
     // Identity is configured with RequireUniqueEmail, so every account needs an address.
     // External identities without an email claim receive a deterministic placeholder that
@@ -74,6 +115,36 @@ public sealed class AccountProvisioningService(
     /// </summary>
     /// <param name="accountId">Account whose roles or permissions just changed.</param>
     public static void Invalidate(Guid accountId) => Cache.TryRemove(accountId, out _);
+
+    /// <summary>
+    /// Drops one account's cached snapshot and waits out any fill already in flight for it.
+    /// </summary>
+    /// <remarks>
+    /// Moderation writes need this rather than <see cref="Invalidate"/>: a fill that started before the ban was
+    /// committed could otherwise finish afterwards and reinsert the pre-ban snapshot. Taking the same per-account
+    /// gate the fill holds means the eviction happens either after that fill (removing its stale result) or before
+    /// it begins (so the fill reads the committed state).
+    /// </remarks>
+    /// <param name="accountId">Account whose moderation state just changed.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the cached snapshot is gone and no fill can restore the old one.</returns>
+    public static async Task EvictAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var gate = ProvisionLocks.GetOrAdd(accountId, _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(ct);
+        try
+        {
+            Cache.TryRemove(accountId, out _);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    Task IAccountAccessReader.EvictAsync(Guid accountId, CancellationToken ct) =>
+        EvictAsync(accountId, ct);
 
     /// <summary>
     /// Ensures an account exists for <paramref name="accountId"/> and resolves its access.

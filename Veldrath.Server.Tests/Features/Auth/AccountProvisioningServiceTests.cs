@@ -56,6 +56,7 @@ public class AccountProvisioningServiceTests : IDisposable
             // The default 60s snapshot cache, which these tests clear between cases.
             new ConfigurationBuilder().Build(),
             Mock.Of<ILogger<AccountProvisioningService>>()));
+        services.AddSingleton<IAccountAccessReader>(sp => sp.GetRequiredService<AccountProvisioningService>());
 
         _provider = services.BuildServiceProvider();
         _userManager = _provider.GetRequiredService<UserManager<PlayerAccount>>();
@@ -224,21 +225,30 @@ public class AccountProvisioningServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Enrichment_Skips_Database_When_Token_Already_Carries_Roles()
+    public async Task Enrichment_ChecksTheSnapshotEvenWhenTheTokenAlreadyCarriesRoles()
     {
+        // A token that already carries RBAC claims is still a live bearer credential, so the ban check cannot be
+        // skipped: it must observe a ban committed after the token was minted.
+        var accountId = Guid.NewGuid();
+        await _service.EnsureAccountAsync(accountId, "pre_enriched", "pre@example.com", emailVerified: false);
+        var user = (await _userManager.FindByIdAsync(accountId.ToString()))!;
+        user.IsBanned = true;
+        user.BanReason = "banned after minting";
+        (await _userManager.UpdateAsync(user)).Succeeded.Should().BeTrue();
+        AccountProvisioningService.ClearCache();
+
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
             [
-                new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, accountId.ToString()),
                 new Claim(ClaimTypes.Role, Roles.Admin),
             ], "Bearer"));
-
-        // An empty service provider proves no provisioning lookup happens on this path.
-        var context = BuildTokenContext(principal, new ServiceCollection().BuildServiceProvider());
+        var context = BuildTokenContext(principal, _provider);
 
         await JwtClaimsEnrichment.EnrichAsync(context);
 
-        context.Result?.Failure.Should().BeNull();
-        ((ClaimsIdentity)principal.Identity!).HasClaim(ClaimTypes.Role, Roles.Admin).Should().BeTrue();
+        context.Result?.Failure.Should().NotBeNull("a pre-enriched token for a banned account must be refused");
+        ((ClaimsIdentity)principal.Identity!).HasClaim(ClaimTypes.Role, Roles.Admin).Should().BeTrue(
+            "the token's own claims are left as they were");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

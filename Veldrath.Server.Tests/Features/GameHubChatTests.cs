@@ -1,6 +1,7 @@
 using Veldrath.Contracts.Chat;
 using Veldrath.Contracts.Connection;
 using Veldrath.Server.Features.Auth;
+using Veldrath.Server.Features.Party;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Settings;
@@ -935,5 +936,129 @@ public class GameHubChatTests : IDisposable
         echo.CharacterId.Should().Be(Guid.Empty);
         echo.Sender.Should().Be($"To {target.Name}");
         echo.Message.Should().Be("psst");
+    }
+
+    // ── Account mute is enforced by every direct sender ──────────────────────
+
+    /// <summary>Builds a persisted account state: muted until <paramref name="until"/>, or clean when not muted.</summary>
+    private static Veldrath.Server.Data.Entities.PlayerAccount MuteState(
+        bool muted, DateTimeOffset? until)
+    {
+        var account = new Veldrath.Server.Data.Entities.PlayerAccount
+        {
+            UserName = "muted",
+            NormalizedUserName = "MUTED",
+        };
+
+        if (!muted)
+            return account;
+
+        account.IsMuted = true;
+        account.MuteReason = "spam";
+        account.MutedUntil = until;
+        return account;
+    }
+
+    [Theory]
+    [InlineData(true, "You are muted. Reason: spam")]
+    [InlineData(false, "You are muted until ")]
+    public async Task SendZoneMessage_RefusesAnActivelyMutedAccount(bool permanent, string expected)
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db,
+            account.Id,
+            userManager: HubHarness.NewUserManager(
+                MuteState(true, permanent ? null : DateTimeOffset.UtcNow.AddHours(1))));
+        ctx.EnterZoneState(Guid.NewGuid(), "Bran");
+
+        await hub.SendZoneMessage(new SendZoneChatMessageHubRequest("hi"));
+
+        clients.GroupNamed("zone:crestfall").SentMessages.Should().BeEmpty("a muted account reaches no zone");
+        clients.Caller.SentMessages.Should().ContainSingle().Which.Method.Should().Be("SystemMessage");
+        clients.Caller.SentMessages.Single().Args[0].Should().BeOfType<string>()
+            .Which.Should().StartWith(expected);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SendPartyMessage_RefusesAnActivelyMutedAccount(bool permanent)
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var mediator = new Mock<ISender>();
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db,
+            account.Id,
+            mediator: mediator,
+            userManager: HubHarness.NewUserManager(
+                MuteState(true, permanent ? null : DateTimeOffset.UtcNow.AddHours(1))));
+        ctx.EnterZoneState(Guid.NewGuid(), "Bran");
+
+        await hub.SendPartyMessage(new SendZoneChatMessageHubRequest("hi"));
+
+        mediator.Verify(
+            sender => sender.Send(It.IsAny<GetPartyHubQuery>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "the mute gate runs before the party lookup");
+        clients.EveryMessage.Should().ContainSingle("only the caller learns about the mute")
+            .Which.Method.Should().Be("SystemMessage");
+    }
+
+    [Theory]
+    [InlineData("zone", false)]
+    [InlineData("zone", true)]
+    [InlineData("party", false)]
+    [InlineData("party", true)]
+    [InlineData("global", false)]
+    [InlineData("global", true)]
+    [InlineData("whisper", false)]
+    [InlineData("whisper", true)]
+    [InlineData("chat", false)]
+    [InlineData("chat", true)]
+    public async Task ChatSenders_AllowUnmutedAndExpiredMutes(string sender, bool expiredMute)
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var state = expiredMute
+            ? MuteState(true, DateTimeOffset.UtcNow.AddMinutes(-1))
+            : MuteState(false, null);
+
+        var partyId = Guid.NewGuid();
+        var mediator = new Mock<ISender>().Returns(new PartyCommandResult
+        {
+            Success = true,
+            Party = new PartySnapshot(
+                partyId, Guid.NewGuid(), "contribution",
+                [new PartyMemberView(Guid.NewGuid(), "Bran", 1, 10, 10, true)]),
+        });
+
+        var targetAccount = await HubHarness.SeedAccountAsync(db);
+        var target = await HubHarness.SeedCharacterAsync(db, targetAccount.Id);
+        await HubHarness.SeedSessionAsync(db, target, "conn-target");
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(
+            db, account.Id, mediator: mediator, userManager: HubHarness.NewUserManager(state));
+        ctx.EnterZoneState(Guid.NewGuid(), "Bran");
+
+        await (sender switch
+        {
+            "zone" => hub.SendZoneMessage(new SendZoneChatMessageHubRequest("hi")),
+            "party" => hub.SendPartyMessage(new SendZoneChatMessageHubRequest("hi")),
+            "global" => hub.SendGlobalMessage(new SendGlobalChatMessageHubRequest("hi")),
+            "whisper" => hub.SendWhisper(new SendWhisperHubRequest(target.Name, "hi")),
+            _ => hub.SendChatMessage(new ChatMessageHubRequest("hi")),
+        });
+
+        var muteMessages = clients.Caller.SentMessages
+            .Where(message => message.Method == "SystemMessage")
+            .Select(message => message.Args.FirstOrDefault() as string)
+            .Where(text => text is not null && text.StartsWith("You are muted"));
+        muteMessages.Should().BeEmpty("an expired or absent mute must not be reported as active");
+        clients.EveryMessage.Should()
+            .Contain(message => message.Method == "ReceiveChatMessage",
+                $"{sender} delivers to its destination when the account is not muted");
     }
 }

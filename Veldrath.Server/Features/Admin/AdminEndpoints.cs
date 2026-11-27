@@ -410,7 +410,8 @@ public static class AdminEndpoints
         ClaimsPrincipal actor,
         [FromServices] UserManager<PlayerAccount> userManager,
         [FromServices] ApplicationDbContext db,
-        [FromServices] IHubContext<GameHub> hub)
+        [FromServices] IHubContext<GameHub> hub,
+        [FromServices] Auth.IAccountAccessReader accounts)
     {
         if (request.DurationMinutes.HasValue && (request.DurationMinutes.Value < 1 || request.DurationMinutes.Value > 525600))
             return Results.BadRequest(new { error = "DurationMinutes must be between 1 and 525600 (1 year)." });
@@ -423,7 +424,13 @@ public static class AdminEndpoints
         user.BannedUntil = request.DurationMinutes.HasValue
             ? DateTimeOffset.UtcNow.AddMinutes(request.DurationMinutes.Value)
             : null;
-        await userManager.UpdateAsync(user);
+        var updated = await userManager.UpdateAsync(user);
+        if (!updated.Succeeded)
+            return Results.BadRequest(new AdminActionResponse(false, string.Join("; ", updated.Errors.Select(e => e.Description))));
+
+        // The cached snapshot is dropped only after Identity reports success, so the next bearer request in this
+        // process sees the ban instead of the pre-ban snapshot.
+        await accounts.EvictAsync(user.Id);
 
         var msg = request.DurationMinutes.HasValue
             ? $"You have been banned for {request.DurationMinutes} minutes. Reason: {request.Reason}"
@@ -439,7 +446,8 @@ public static class AdminEndpoints
         [FromBody] UnbanPlayerRequest request,
         ClaimsPrincipal actor,
         [FromServices] UserManager<PlayerAccount> userManager,
-        [FromServices] ApplicationDbContext db)
+        [FromServices] ApplicationDbContext db,
+        [FromServices] Auth.IAccountAccessReader accounts)
     {
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
@@ -447,7 +455,13 @@ public static class AdminEndpoints
         user.IsBanned = false;
         user.BannedUntil = null;
         user.BanReason = null;
-        await userManager.UpdateAsync(user);
+        var updated = await userManager.UpdateAsync(user);
+        if (!updated.Succeeded)
+            return Results.BadRequest(new AdminActionResponse(false, string.Join("; ", updated.Errors.Select(e => e.Description))));
+
+        // An unban has to restore access on the next request, not when the access cache happens to expire.
+        await accounts.EvictAsync(user.Id);
+
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "unban", null);
 
         return Results.Ok(new AdminActionResponse(true, $"Account {request.AccountId} unbanned."));
@@ -459,7 +473,8 @@ public static class AdminEndpoints
         [FromServices] UserManager<PlayerAccount> userManager,
         [FromServices] ApplicationDbContext db,
         [FromServices] IHubContext<GameHub> hub,
-        [FromServices] IOptions<ModerationOptions> options)
+        [FromServices] IOptions<ModerationOptions> options,
+        [FromServices] Auth.IAccountAccessReader accounts)
     {
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
@@ -480,7 +495,13 @@ public static class AdminEndpoints
         {
             user.IsBanned = true;
             user.BanReason = $"Automatic ban: {user.WarnCount} warnings accumulated.";
-            await userManager.UpdateAsync(user);
+            var banUpdate = await userManager.UpdateAsync(user);
+            if (!banUpdate.Succeeded)
+                return Results.BadRequest(new AdminActionResponse(
+                    false, string.Join("; ", banUpdate.Errors.Select(e => e.Description))));
+
+            // The warning auto-ban has to stop the account's next bearer request and hub call in this process.
+            await accounts.EvictAsync(user.Id);
             autoBanned = true;
         }
 
