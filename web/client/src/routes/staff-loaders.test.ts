@@ -125,7 +125,7 @@ beforeEach(() => {
 
 describe('group layouts', () => {
 	it.each([
-		['admin', adminLayout, 'Admin access requires user management permission.'],
+		['admin', adminLayout, 'Admin access requires user or role management permission.'],
 		['editorial', editorialLayout, 'Editorial management requires content access.'],
 		['moderation', modLayout, 'Moderation access requires the players.view permission.']
 	])('guards the %s group', async (_name, load, message) => {
@@ -135,6 +135,24 @@ describe('group layouts', () => {
 
 		const result = await callLoad(load, staffEvent(adminAccess));
 		expect(result).toEqual({ access: adminAccess });
+	});
+
+	it('admits either half of the admin split, and only those halves', async () => {
+		const usersOnly = { ...playerAccess, permissions: ['admin.users'] };
+		const rolesOnly = { ...playerAccess, permissions: ['admin.roles'] };
+
+		await expect(callLoad(adminLayout, staffEvent(usersOnly))).resolves.toEqual({
+			access: usersOnly
+		});
+		await expect(callLoad(adminLayout, staffEvent(rolesOnly))).resolves.toEqual({
+			access: rolesOnly
+		});
+
+		// A permission from the other staff groups is not an admin permission.
+		const moderator = { ...playerAccess, permissions: ['players.view'] };
+		expect(await thrownMessage(() => callLoad(adminLayout, staffEvent(moderator)))).toBe(
+			'Admin access requires user or role management permission.'
+		);
 	});
 
 	it('lets a holder of the specific permission in without the Admin role', async () => {

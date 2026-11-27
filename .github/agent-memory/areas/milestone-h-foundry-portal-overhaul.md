@@ -371,8 +371,20 @@ unresolved and resolves it), and `editorial-publishing` publishes a lore article
 - **SvelteKit runs `+page.server.ts` and `+layout.server.ts` concurrently**, so a page load used to call the API
   before its layout's guard refused the request — a 403 line in the log and a wasted round trip per blocked
   page. Fixed: the 11 admin/mod page loaders `await parent()` first, and a full authenticated run now logs zero
-  refused `/api/mod…`/`/api/admin…` calls. **Do this in any new gated page load**; the layout remains the only
-  place the permission is decided.
+  refused `/api/mod…`/`/api/admin…` calls. **Do this in any new gated page load**; the layout stays the one place
+  that decides *entry to the group*.
+- **A group that admits two permissions decides neither in the layout.** Since `t_d4240a82` the `(admin)` layout
+  accepts `admin.users` **or** `admin.roles` (`plans/sveltekit-migration.md:317`), because the server split them:
+  account administration and handing out authority are separate grants. Each admin page therefore awaits
+  `parent()` and then requires the permission *its own API call* demands — user list, audit, sessions and status
+  `admin.users`; reports `players.view`; server commands `admin.announce`; the dashboard branches (a role manager
+  gets the link grid and no status call). The account page (`/admin/users/[id]`) is the only one that serves both:
+  it reads `GET /api/admin/users/{id}` for `admin.users` and `GET /api/admin/roles/users/{id}` for `admin.roles`
+  (authority fields only — no email, ban or warning state), and renders the role/permission forms only for the
+  latter. Form actions run without layout data, so each one re-reads the profile through
+  `requireActionPermission(locals, …)` before calling the API: an action for a permission the session lacks must
+  never reach `/api/admin…`. The role page opens an account by username
+  (`GET /api/admin/roles/users/by-username/{name}`) because the account list itself is `admin.users`.
 
 Fifth pass closed E9: **kick is covered end to end.** `staff-actions` puts a player in the world (character via
 `POST /api/characters` with a minted token, then `/play/{id}` waiting for `.map-node-cell button` — the hub's first

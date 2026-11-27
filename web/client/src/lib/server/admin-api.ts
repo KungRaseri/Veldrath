@@ -106,7 +106,7 @@ export interface UserFilters {
 	pageSize?: number;
 }
 
-/** Lists users (admin `manage_users`). */
+/** Lists users (admin `admin.users`). */
 export function listUsers(identity: GameIdentity, filters: UserFilters = {}) {
 	return gameApiFetch<AdminUserList>(identity, '/api/admin/users', {
 		query: {
@@ -120,9 +120,34 @@ export function listUsers(identity: GameIdentity, filters: UserFilters = {}) {
 	});
 }
 
-/** Loads one user (admin `manage_users`). */
+/** Loads one user (admin `admin.users`). */
 export function getUser(identity: GameIdentity, id: string) {
 	return gameApiFetch<PlayerDetail>(identity, `/api/admin/users/${id}`);
+}
+
+/**
+ * The authority slice of an account: what it may do, without the account-administration fields
+ * (email, ban and mute state, warnings) that `PlayerDetail` carries.
+ */
+export interface AccountAuthority {
+	id: string;
+	username: string;
+	roles: string[];
+	userPermissions: string[];
+	effectivePermissions: string[];
+}
+
+/** Reads one account's roles and permissions (admin `admin.roles`, not `admin.users`). */
+export function getUserAuthority(identity: GameIdentity, id: string) {
+	return gameApiFetch<AccountAuthority>(identity, `/api/admin/roles/users/${id}`);
+}
+
+/** Opens an account by username for the role page (admin `admin.roles`). */
+export function getUserAuthorityByUsername(identity: GameIdentity, username: string) {
+	return gameApiFetch<AccountAuthority>(
+		identity,
+		`/api/admin/roles/users/by-username/${encodeURIComponent(username)}`
+	);
 }
 
 /** Assigns a role (admin `admin.roles`). */

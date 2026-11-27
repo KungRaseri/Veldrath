@@ -23,6 +23,8 @@ namespace Veldrath.Server.Features.Admin;
 ///
 /// GET    /api/admin/users                            — list accounts (paginated, filterable)
 /// GET    /api/admin/users/{id}                       — account detail with roles + effective permissions
+/// GET    /api/admin/roles/users/{id}                 — an account's roles and permissions only (admin.roles)
+/// GET    /api/admin/roles/users/by-username/{name}   — the same authority slice, looked up by username (admin.roles)
 /// POST   /api/admin/roles/users/{id}/roles           — assign a role to an account (admin.roles)
 /// DELETE /api/admin/roles/users/{id}/roles/{role}    — revoke a role from an account (admin.roles)
 /// POST   /api/admin/roles/users/{id}/permissions     — grant a per-user permission claim (admin.roles)
@@ -69,6 +71,10 @@ public static class AdminEndpoints
             .WithTags("Roles")
             .RequireAuthorization(Auth.Permissions.ManageRoles);
 
+        roleGroup.MapGet("/users/{id:guid}", GetUserAuthorityAsync);
+        // The role-management page opens an account by username, because the account list itself is
+        // gated on admin.users; without this a role manager has to know a GUID to hand out a role.
+        roleGroup.MapGet("/users/by-username/{username}", GetUserAuthorityByUsernameAsync);
         roleGroup.MapPost("/users/{id:guid}/roles", AssignRoleAsync);
         roleGroup.MapDelete("/users/{id:guid}/roles/{role}", RevokeRoleAsync);
         roleGroup.MapPost("/users/{id:guid}/permissions", GrantPermissionAsync);
@@ -216,6 +222,63 @@ public static class AdminEndpoints
             user.CreatedAt, user.LastSeenAt);
 
         return Results.Ok(dto);
+    }
+
+    /// <summary>
+    /// Reads an account's authority — roles, direct permission grants, and their union — for a caller who may hand
+    /// out authority but may not administer accounts.
+    /// </summary>
+    /// <remarks>
+    /// The role controls live on the account page, so whoever holds <c>admin.roles</c> has to be able to see what an
+    /// account already has; without this read the split would be unusable, because
+    /// <c>GET /api/admin/users/{id}</c> is gated on <c>admin.users</c>. Only the authority fields are returned —
+    /// email, ban/mute state and warnings stay behind <c>admin.users</c>.
+    /// </remarks>
+    private static async Task<IResult> GetUserAuthorityAsync(
+        Guid id,
+        [FromServices] UserManager<PlayerAccount> userManager,
+        [FromServices] RoleManager<IdentityRole<Guid>> roleManager)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user is null) return Results.NotFound();
+
+        return Results.Ok(await BuildAuthorityAsync(user, userManager, roleManager));
+    }
+
+    /// <summary>
+    /// Resolves an account by username and returns the same authority slice as
+    /// <c>GET /api/admin/roles/users/{id}</c>.
+    /// </summary>
+    /// <remarks>
+    /// The role-management page has no account list to pick from — that list is part of account administration —
+    /// so a caller who may hand out authority opens an account by name instead of by GUID. Identity's
+    /// <see cref="UserManager{TUser}.FindByNameAsync"/> compares normalised names, so the lookup is case-insensitive.
+    /// </remarks>
+    private static async Task<IResult> GetUserAuthorityByUsernameAsync(
+        string username,
+        [FromServices] UserManager<PlayerAccount> userManager,
+        [FromServices] RoleManager<IdentityRole<Guid>> roleManager)
+    {
+        var user = await userManager.FindByNameAsync(username);
+        if (user is null) return Results.NotFound();
+
+        return Results.Ok(await BuildAuthorityAsync(user, userManager, roleManager));
+    }
+
+    /// <summary>The authority slice the <c>admin.roles</c> reads share: roles, direct grants, and their union.</summary>
+    private static async Task<AccountAuthorityDto> BuildAuthorityAsync(
+        PlayerAccount user,
+        UserManager<PlayerAccount> userManager,
+        RoleManager<IdentityRole<Guid>> roleManager)
+    {
+        var userPermissions = (await userManager.GetClaimsAsync(user))
+            .Where(c => c.Type == Auth.RolePermissionResolver.PermissionClaimType)
+            .Select(c => c.Value)
+            .ToList();
+        var (roles, effectivePermissions) = await Auth.RolePermissionResolver.ResolveAsync(user, userManager, roleManager);
+
+        return new AccountAuthorityDto(
+            user.Id, user.UserName!, [.. roles], userPermissions, [.. effectivePermissions]);
     }
 
     private static async Task<IResult> AssignRoleAsync(

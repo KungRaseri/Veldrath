@@ -3,43 +3,61 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const links = [
+	/**
+	 * Every link names the permission its target page requires, so a role manager does not land on a
+	 * page whose loader refuses them — the group admits both halves of the staff split now.
+	 */
+	const links: {
+		href: string;
+		title: string;
+		description: string;
+		needs: keyof PageData['can'];
+	}[] = [
 		{
 			href: '/admin/users',
 			title: 'Users',
-			description: 'Search accounts, assign roles and permissions.'
+			description: 'Search accounts, assign roles and permissions.',
+			needs: 'manageUsers'
 		},
 		{
 			href: '/admin/roles',
 			title: 'Roles',
-			description: 'Review seeded roles and their default permissions.'
+			description: 'Review seeded roles and open one account to change its authority.',
+			needs: 'manageRoles'
 		},
 		{
 			href: '/admin/audit',
 			title: 'Audit log',
-			description: 'Every staff action recorded by the server.'
+			description: 'Every staff action recorded by the server.',
+			needs: 'manageUsers'
 		},
 		{
 			href: '/admin/sessions',
 			title: 'Active sessions',
-			description: 'Characters currently connected.'
+			description: 'Characters currently connected.',
+			needs: 'manageUsers'
 		},
 		{
 			href: '/admin/reports',
 			title: 'Reports',
-			description: 'Player-submitted behaviour reports.'
+			description: 'Player-submitted behaviour reports.',
+			needs: 'viewPlayers'
 		},
 		{
 			href: '/admin/status',
 			title: 'Server status',
-			description: 'Population, health checks, and zones.'
+			description: 'Population, health checks, and zones.',
+			needs: 'manageUsers'
 		},
 		{
 			href: '/admin/server',
 			title: 'Server commands',
-			description: 'Broadcast an in-game announcement.'
+			description: 'Broadcast an in-game announcement.',
+			needs: 'sendAnnouncements'
 		}
 	];
+
+	const visible = $derived(links.filter((link) => data.can[link.needs]));
 </script>
 
 <svelte:head>
@@ -74,7 +92,7 @@
 	{/if}
 
 	<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-		{#each links as link (link.href)}
+		{#each visible as link (link.href)}
 			<a class="flex flex-col gap-1 card p-4" href={link.href}>
 				<h2 class="h3">{link.title}</h2>
 				<p class="text-sm text-surface-600-400">{link.description}</p>

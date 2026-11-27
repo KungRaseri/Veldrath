@@ -58,6 +58,22 @@ public record PlayerDetailDto(
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastSeenAt);
 
+/// <summary>
+/// The authority slice of an account: what it may do, without the account-administration fields
+/// (email, ban and mute state, warnings) that <see cref="PlayerDetailDto"/> carries.
+/// </summary>
+/// <param name="Id">Account unique identifier.</param>
+/// <param name="Username">Display username.</param>
+/// <param name="Roles">Roles currently assigned to this account.</param>
+/// <param name="UserPermissions">Per-user permission grants (not inherited from a role).</param>
+/// <param name="EffectivePermissions">Union of all role and per-user permission grants.</param>
+public record AccountAuthorityDto(
+    Guid Id,
+    string Username,
+    IReadOnlyList<string> Roles,
+    IReadOnlyList<string> UserPermissions,
+    IReadOnlyList<string> EffectivePermissions);
+
 // ── Role / Permission Requests ───────────────────────────────────────────────
 
 /// <summary>Assigns a role to a player account.</summary>

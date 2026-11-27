@@ -51,10 +51,14 @@ const status = {
 };
 
 describe('admin dashboard', () => {
+	/** Both halves of the staff split happen to be held here, so every link renders. */
+	const can = { manageUsers: true, manageRoles: true, viewPlayers: true, sendAnnouncements: true };
+
 	it('shows the status cards and every management link', () => {
 		render(
 			AdminDashboard,
 			page({
+				can,
 				status: { connectedPlayers: 12, registeredAccounts: 340, totalCharacters: 410 }
 			})
 		);
@@ -67,8 +71,22 @@ describe('admin dashboard', () => {
 		expect(screen.getByRole('heading', { level: 2, name: 'Server commands' })).toBeTruthy();
 	});
 
+	it('offers a role manager only the pages it may open', () => {
+		render(
+			AdminDashboard,
+			page({
+				can: { ...can, manageUsers: false, viewPlayers: false, sendAnnouncements: false }
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 2, name: 'Roles' })).toBeTruthy();
+		expect(screen.queryByRole('heading', { level: 2, name: 'Users' })).toBeNull();
+		expect(screen.queryByRole('heading', { level: 2, name: 'Active sessions' })).toBeNull();
+		expect(screen.queryByRole('heading', { level: 2, name: 'Server commands' })).toBeNull();
+	});
+
 	it('survives a load error and hides the status cards', () => {
-		render(AdminDashboard, page({ error: 'Status endpoint unreachable' }));
+		render(AdminDashboard, page({ can, error: 'Status endpoint unreachable' }));
 
 		expect(screen.getByText('Status endpoint unreachable')).toBeTruthy();
 		expect(screen.queryByText('Connected players')).toBeNull();
@@ -221,8 +239,19 @@ describe('admin user detail', () => {
 		userPermissions: ['game.broadcast']
 	};
 
+	const identity = {
+		id: player.id,
+		username: player.username,
+		roles: player.roles,
+		effectivePermissions: player.effectivePermissions,
+		userPermissions: player.userPermissions
+	};
+
 	const base = {
-		player,
+		account: player,
+		authority: identity,
+		canManageUsers: true,
+		canManageRoles: true,
 		allRoles: ['Admin', 'Moderator'],
 		allPermissions: ['players.view', 'content.manage', 'game.broadcast']
 	};
@@ -241,16 +270,49 @@ describe('admin user detail', () => {
 		expect(screen.getByRole('button', { name: 'Lift ban' })).toBeTruthy();
 	});
 
+	it('hides the role and permission controls from an admin.users-only operator', () => {
+		render(AdminUserDetail, page({ ...base, canManageRoles: false }));
+
+		expect(screen.queryByRole('button', { name: 'Revoke Admin' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Assign' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Grant' })).toBeNull();
+		expect(screen.getByText(/Changing roles requires the/)).toBeTruthy();
+		expect(screen.getByText(/Granting permissions requires the/)).toBeTruthy();
+		// The account half is still theirs.
+		expect(screen.getByRole('button', { name: 'Ban account' })).toBeTruthy();
+	});
+
+	it('shows an admin.roles-only operator the authority and no account controls', () => {
+		render(
+			AdminUserDetail,
+			page({
+				...base,
+				account: null,
+				canManageUsers: false
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'kaleth' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Revoke Admin' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Assign' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Grant' })).toBeTruthy();
+		// Nothing that reads or changes account state, and nothing behind admin.users.
+		expect(screen.queryByText(/@example\.com/)).toBeNull();
+		expect(screen.queryByText(/warnings/)).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Issue warning' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Ban account' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Kick sessions' })).toBeNull();
+	});
+
 	it('renders an action error and the no-roles / no-permissions / no-email fallbacks', () => {
 		render(
 			AdminUserDetail,
 			page(
 				{
-					player: {
-						...player,
-						email: null,
-						isBanned: false,
-						isMuted: false,
+					...base,
+					account: { ...player, email: null, isBanned: false, isMuted: false },
+					authority: {
+						...identity,
 						roles: [],
 						effectivePermissions: [],
 						userPermissions: []
@@ -391,26 +453,42 @@ describe('admin reports', () => {
 });
 
 describe('admin roles', () => {
+	const catalogue = {
+		roles: [
+			{
+				name: 'Admin',
+				description: 'Full access',
+				permissions: ['players.view', 'admin.roles']
+			},
+			{ name: 'Curator', description: 'Content review', permissions: ['content.review'] }
+		],
+		allPermissions: ['players.view', 'admin.roles', 'content.review']
+	};
+
 	it('renders each seeded role with its permissions', () => {
-		render(
-			AdminRoles,
-			page({
-				roles: [
-					{
-						name: 'Admin',
-						description: 'Full access',
-						permissions: ['players.view', 'admin.roles']
-					},
-					{ name: 'Curator', description: 'Content review', permissions: ['content.review'] }
-				]
-			})
-		);
+		render(AdminRoles, page({ ...catalogue, canManageRoles: true, canManageUsers: true }));
 
 		expect(screen.getByRole('heading', { level: 1, name: 'Role management' })).toBeTruthy();
 		expect(screen.getByRole('heading', { level: 2, name: 'Admin' })).toBeTruthy();
 		expect(screen.getByText('Full access')).toBeTruthy();
 		expect(screen.getByText('admin.roles')).toBeTruthy();
 		expect(screen.getByText('content.review')).toBeTruthy();
+	});
+
+	it('offers the account lookup to a role manager without account administration', () => {
+		render(AdminRoles, page({ ...catalogue, canManageRoles: true, canManageUsers: false }));
+
+		expect(screen.getByRole('button', { name: 'Open account' })).toBeTruthy();
+		// The user list is admin.users, so a role manager is not pointed at it.
+		expect(screen.queryByRole('link', { name: 'User management' })).toBeNull();
+	});
+
+	it('keeps the catalogue read-only for an admin.users-only operator', () => {
+		render(AdminRoles, page({ ...catalogue, canManageRoles: false, canManageUsers: true }));
+
+		expect(screen.getByRole('link', { name: 'User management' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Open account' })).toBeNull();
+		expect(screen.queryByText("Manage a player's roles")).toBeNull();
 	});
 });
 
