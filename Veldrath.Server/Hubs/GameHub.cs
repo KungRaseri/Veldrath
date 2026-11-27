@@ -1034,7 +1034,7 @@ public class GameHub : Hub
         // its scope — the group its other members are in — so re-composing the shared name here would put the
         // character next to their party in the map and nowhere near them in chat, enemies or loot.
         var difficultyMode = CurrentDifficultyMode();
-        var zoneGroup = resumedRun?.ZoneGroup ?? ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
+        var zoneGroup = resumedRun?.ZoneGroup ?? ZoneGroupName.ForSharedZone(zone.Type, zoneId, difficultyMode).Value;
         Context.Items["CurrentZoneGroupName"] = zoneGroup;
         Context.Items["CurrentZoneInstanceId"] = resumedRun?.Id;
 
@@ -3607,35 +3607,6 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Builds the SignalR group a connection joins for a zone's shared scope, which wilderness shards by difficulty
-    /// and every other zone type does not.
-    /// </summary>
-    /// <param name="zoneType">
-    /// Type of the zone being entered, or <see langword="null"/> when the catalog has no row for it. A zone whose type
-    /// is unknown declares no difficulty split either, so its scope is the bare zone.
-    /// </param>
-    /// <param name="zoneId">Zone slug.</param>
-    /// <param name="difficultyMode">The character's difficulty mode.</param>
-    /// <returns>The shared scope name as SignalR sees it.</returns>
-    private static string ComputeZoneGroup(ZoneType? zoneType, string zoneId, string difficultyMode) =>
-        ZoneGroupName.ForZone(zoneId, SharedScopeDifficulty(zoneType, difficultyMode)).Value;
-
-    /// <summary>
-    /// The difficulty dimension a zone's shared scope carries, or <see langword="null"/> when the scope covers the
-    /// whole zone. Wilderness shards its shared scope by difficulty; every other zone type has one shared room for
-    /// all of them. The same pair feeds the group name and the occupant read — <see cref="ZoneGroupName.ForZone"/>
-    /// composes the name from it and <see cref="IPlayerSessionRepository.GetOnSharedZoneAsync"/> reads the roster
-    /// from it — so a caller always sees the players standing beside it in its own group.
-    /// </summary>
-    /// <param name="zoneType">
-    /// Type of the zone whose shared scope is being addressed, or <see langword="null"/> when the catalog has no row.
-    /// </param>
-    /// <param name="difficultyMode">The character's difficulty mode.</param>
-    /// <returns>The difficulty suffix for the scope, or <see langword="null"/> for a zone-wide scope.</returns>
-    private static string? SharedScopeDifficulty(ZoneType? zoneType, string difficultyMode) =>
-        zoneType == ZoneType.Wilderness ? difficultyMode : null;
-
-    /// <summary>
     /// The selected character's difficulty mode, defaulting to <c>normal</c> the way the scope name does when the
     /// caller never recorded one.
     /// </summary>
@@ -3695,7 +3666,7 @@ public class GameHub : Hub
 
         return await _playerSessionRepo.GetOnSharedZoneAsync(
             zoneId,
-            SharedScopeDifficulty(zoneType, CurrentDifficultyMode()));
+            ZoneGroupName.SharedScopeDifficulty(zoneType, CurrentDifficultyMode()));
     }
 
     private bool TryGetCurrentZoneGroup([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? groupName)
@@ -3725,7 +3696,7 @@ public class GameHub : Hub
     /// The group joined is the character's own shard, not the bare zone. In a wilderness zone the shared scope is
     /// <c>zone:{zoneId}_{difficulty}</c>, so composing it without the difficulty puts the character in a group nobody
     /// else is in — their <c>PlayerEntered</c> never reaches their shard, and the shard's chat and roster never reach
-    /// them. The pair used here is the pair <see cref="ComputeZoneGroup"/> composes names from and
+    /// them. The pair used here is the pair <see cref="ZoneGroupName.ForSharedZone"/> composes names from and
     /// <see cref="ReadOwnScopeAsync(string, ZoneType?)"/> reads rosters with, so the group and the snapshot agree.
     /// </para>
     /// </remarks>
@@ -3751,7 +3722,9 @@ public class GameHub : Hub
         var zoneEntity = zoneId is null ? null : await _zoneRepo.GetByIdAsync(zoneId);
 
         await ApplyArrivalGroupAsync(
-            zoneId is null ? null : ComputeZoneGroup(zoneEntity?.Type, zoneId, CurrentDifficultyMode()),
+            zoneId is null
+                ? null
+                : ZoneGroupName.ForSharedZone(zoneEntity?.Type, zoneId, CurrentDifficultyMode()).Value,
             null,
             zoneId);
 

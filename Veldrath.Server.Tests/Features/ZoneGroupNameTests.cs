@@ -1,3 +1,4 @@
+using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Features.Zones;
 
 namespace Veldrath.Server.Tests.Features;
@@ -14,6 +15,26 @@ public class ZoneGroupNameTests
     {
         ZoneGroupName.ForZone("crestfall").Value.Should().Be("zone:crestfall");
         ZoneGroupName.ForZone("dark-forest", "hardcore").Value.Should().Be("zone:dark-forest_hardcore");
+    }
+
+    /// <summary>
+    /// The shared scope is selected from the zone's catalog type in one place: wilderness carries the character's
+    /// difficulty, every other type — and a zone the catalog cannot describe — is zone-wide.
+    /// </summary>
+    [Theory]
+    [InlineData(ZoneType.Wilderness, "hardcore", "hardcore", "zone:the-droveway_hardcore")]
+    [InlineData(ZoneType.Town, "hardcore", null, "zone:the-droveway")]
+    [InlineData(ZoneType.Dungeon, "hardcore", null, "zone:the-droveway")]
+    [InlineData(null, "hardcore", null, "zone:the-droveway")]
+    public void ForSharedZone_ShardsOnlyWildernessByDifficulty(
+        ZoneType? zoneType,
+        string difficultyMode,
+        string? expectedDifficulty,
+        string expectedGroup)
+    {
+        ZoneGroupName.SharedScopeDifficulty(zoneType, difficultyMode).Should().Be(expectedDifficulty);
+
+        ZoneGroupName.ForSharedZone(zoneType, "the-droveway", difficultyMode).Value.Should().Be(expectedGroup);
     }
 
     [Fact]
