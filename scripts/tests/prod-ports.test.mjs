@@ -14,7 +14,7 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
@@ -27,6 +27,19 @@ const script = join(repoRoot, 'scripts/check-prod-ports.mjs');
 
 const SERVICES = ['discord', 'grafana', 'postgres', 'prometheus', 'seq', 'server', 'web'];
 
+/** Fixture directories are removed when this process exits. */
+const tempDirs = [];
+process.on('exit', () => {
+	for (const dir of tempDirs) rmSync(dir, { recursive: true, force: true });
+});
+
+/** A temporary directory that is cleaned up on exit. */
+function tempDir(prefix) {
+	const dir = mkdtempSync(join(tmpdir(), prefix));
+	tempDirs.push(dir);
+	return dir;
+}
+
 /** Runs the CLI and returns its status plus output. */
 function run(args, options = {}) {
 	const result = spawnSync(process.execPath, [script, ...args], {
@@ -38,7 +51,7 @@ function run(args, options = {}) {
 
 /** Writes a fixture pair into a fresh directory and returns its paths. */
 function fixture(services, overlayServices) {
-	const dir = mkdtempSync(join(tmpdir(), 'prod-ports-'));
+	const dir = tempDir('prod-ports-');
 	const base = join(dir, 'base.yml');
 	const overlay = join(dir, 'overlay.yml');
 	writeFileSync(base, services);
@@ -67,6 +80,13 @@ function overlayWith(servicePorts) {
 		return lines.join('\n');
 	});
 	return `services:\n${blocks.join('\n')}\n`;
+}
+
+/** A rendered `config --format json` services map with every expected service present. */
+function renderedServices(overrides = {}) {
+	const services = {};
+	for (const service of SERVICES) services[service] = overrides[service] ?? { expose: [] };
+	return services;
 }
 
 function check(files) {
@@ -180,23 +200,34 @@ test('the allowlist is the only way a publication passes, and it is per service'
 });
 
 test('the render mode agrees with the static mode on a rendered config', () => {
-	const dir = mkdtempSync(join(tmpdir(), 'prod-ports-render-'));
+	const dir = tempDir('prod-ports-render-');
 	const clean = join(dir, 'clean.json');
-	writeFileSync(clean, JSON.stringify({ services: { server: { expose: ['8080'] } } }));
+	writeFileSync(clean, JSON.stringify({ services: renderedServices() }));
 	assert.equal(run(['--render', clean]).status, 0);
 
 	const dirty = join(dir, 'dirty.json');
 	writeFileSync(
 		dirty,
 		JSON.stringify({
-			services: {
+			services: renderedServices({
 				postgres: { ports: [{ mode: 'ingress', target: 5432, published: '5433' }] }
-			}
+			})
 		})
 	);
 	const result = run(['--render', dirty]);
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /postgres: publishes host port 5433/);
+});
+
+test('the render mode fails when a rendered config lost a service', () => {
+	const dir = tempDir('prod-ports-render-missing-');
+	const services = renderedServices();
+	delete services.web;
+	const missing = join(dir, 'missing.json');
+	writeFileSync(missing, JSON.stringify({ services }));
+	const result = run(['--render', missing]);
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /web: service is missing from .*missing\.json/);
 });
 
 test('parity: Docker Compose renders the same publications the static merge computes', () => {
@@ -206,7 +237,7 @@ test('parity: Docker Compose renders the same publications the static merge comp
 		return;
 	}
 
-	const dir = mkdtempSync(join(tmpdir(), 'prod-ports-parity-'));
+	const dir = tempDir('prod-ports-parity-');
 	const render = (overlayPath, out) => {
 		const result = spawnSync(
 			'docker',

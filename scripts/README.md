@@ -310,7 +310,8 @@ It parses the compose files instead of running `docker compose config`, because 
 image ships the docker CLI but no compose plugin and the runner mounts only
 `/var/run/docker.sock`. `--render` is how the static merge is parity-tested: the last test renders
 the checked-in overlay and a `ports: []` mutation with Compose and asserts both name the same six
-ports. `ALLOWLIST` (empty) is the only way a publication passes, and every entry needs a one-line
+ports. Both modes fail on a missing expected service as well as on a publication outside
+`ALLOWLIST` (empty), which is the only way a publication passes, and every entry needs a one-line
 justification in the deployment doc.
 
 ---

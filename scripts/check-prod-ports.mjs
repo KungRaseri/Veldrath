@@ -29,7 +29,9 @@
  *
  *   node scripts/check-prod-ports.mjs --render <file>
  *       Checks a config rendered by `docker compose ... config --format json`, i.e. Compose's
- *       own verdict. This is how static mode is parity-tested against the real thing
+ *       own verdict. It applies the same two rules as static mode: a publication outside
+ *       ALLOWLIST fails, and so does a rendered config that lost one of EXPECTED_SERVICES.
+ *       This is how static mode is parity-tested against the real thing
  *       (scripts/tests/prod-ports.test.mjs) and how a human double-checks the gate locally:
  *
  *         docker compose -f docker-compose.yml -f docker-compose.prod.yml \
@@ -434,7 +436,8 @@ function renderFindings(path) {
 		die(`cannot parse the rendered config ${path}: ${error.message}`);
 	}
 	const merged = new Map();
-	for (const [name, service] of Object.entries(render.services ?? {})) {
+	const services = render.services ?? {};
+	for (const [name, service] of Object.entries(services)) {
 		merged.set(name, {
 			networkMode: service.network_mode ?? null,
 			publications: (service.ports ?? []).map((port) => ({
@@ -447,8 +450,19 @@ function renderFindings(path) {
 			}))
 		});
 	}
+	const findings = [];
+	for (const service of EXPECTED_SERVICES) {
+		if (!(service in services)) {
+			findings.push({
+				service,
+				published: '-',
+				reason: `service is missing from ${label(path)}`
+			});
+		}
+	}
+	findings.push(...findingsFor(merged, ALLOWLIST, label(path)));
 	return {
-		findings: findingsFor(merged, ALLOWLIST, label(path)),
+		findings,
 		summary: `${merged.size} services in ${label(path)}`
 	};
 }

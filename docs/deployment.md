@@ -174,10 +174,10 @@ also trusts forwarded headers through `UseForwardedHeaders`.
 This is the answer to "what may be reachable from the internet". Two layers decide it, and only
 the second one is under this repository's control.
 
-**Ports open at the edge.** Public traffic reaches Veldrath on `80/tcp` and `443/tcp` only,
-terminated by Coolify's Traefik on the front host. Traefik routes by host name to the container
-that owns the domain — `veldrath.com` and `api.veldrath.com` included — over the Docker network,
-so no application port is opened to the internet. Measured on 2026-11-27 from
+**Ports open at the edge.** Public traffic reaches Veldrath on `80/tcp` and `443/tcp` only.
+`kung-lab-hub` (`192.168.50.130`) terminates TLS, and its Traefik routes by host name — over the
+Docker network and on to `kung-lab-2` (`192.168.50.100`) for the Veldrath containers — so no
+application port is opened to the internet. Measured on 2026-11-27 from
 [check-host.net](https://check-host.net) nodes, which are outside the LAN:
 
 | Port | From the internet | Why |
@@ -185,16 +185,26 @@ so no application port is opened to the internet. Measured on 2026-11-27 from
 | `80/tcp` | open | redirect to HTTPS |
 | `443/tcp` | open | Traefik TLS for every Veldrath host |
 | `22/tcp` | timed out | SSH is LAN and tailnet only |
-| `3306`, `5432`, `6379`, `4222`, `25565`, `7777`, `8080`, `8081`, `9000`–`9003` | timed out | nothing publishes them |
+| `3306`, `5432`, `6379`, `4222`, `25565`, `7777` | timed out | no production service publishes them |
+| `5433`, `8081`, `9000`–`9003` | timed out | the development compose mappings, cleared by the production overlay |
+| `8080` | timed out | `coolify-proxy` publishes it on both Coolify hosts, but the edge forwards only `80`/`443`; it belongs to Coolify, not Veldrath |
 
-Both hosts run `ufw` with `Default: deny (incoming)`. The front allows `80`/`443` plus Tailscale's
-`41641/udp`; the host that runs the Veldrath resources allows SSH from the LAN and the tailnet and
-nothing else, and `ss -lntp` there shows no listener on any port in the table above.
+Both hosts run `ufw` with `Default: deny (incoming)`. `kung-lab-hub` allows `80`/`443` from
+anywhere, Tailscale's `41641/udp`, and all inbound from `192.168.50.0/24`, `100.64.0.0/10` and
+`10.0.0.0/8`, with SSH `22` only from the LAN and the tailnet. `kung-lab-2`, where the Veldrath
+resources run, allows SSH from the LAN and the tailnet and nothing else.
+
+`ss -lntp` on `kung-lab-2` shows no listener on any of the retired Veldrath ports (`5433`, `8081`,
+`9000`–`9003`) and none on `3306`, `5432`, `6379`, `4222`, `25565` or `7777`. Among the ports in
+the table, the only `0.0.0.0` listeners on either host are `22` (sshd) and `80`/`443`/`8080`
+(`coolify-proxy`, Coolify's own Traefik); `veldrath-server` is `8080/tcp` container-only. Each
+host runs other stacks that publish their own ports — none of those is a Veldrath port, and none
+is forwarded at the edge.
 
 **Port publications.** `ufw`'s default-deny does **not** cover a published container port: Docker
 installs its own `DOCKER`/`FORWARD` rules that accept the traffic before `ufw`'s INPUT chain sees
-it. Measured on the same host: `ufw` reports `default deny incoming`, and `docker-proxy` still
-listens on `0.0.0.0:8080` for an unrelated stack. The control that actually decides exposure is
+it. Measured on `kung-lab-2`: `ufw` reports `default deny incoming`, and `docker-proxy` still
+listens on `0.0.0.0:8080` for `coolify-proxy`. The control that actually decides exposure is
 therefore the publication itself — a production stack publishes **nothing**, and Traefik reaches
 the container by name.
 
@@ -244,12 +254,21 @@ route, not on a host port.
 
 ### Check after a change
 
-On the host:
+On `kung-lab-2`, where the Veldrath resources run:
 
 ```bash
-sudo ss -lntp | grep -E '0\.0\.0\.0:(3306|5432|5433|6379|4222|7777|8080|8081|9000|9001|9002|9003|25565)\b'
-# no output expected; sshd and the proxy's own 80/443 are the only 0.0.0.0 listeners that belong
+sudo ss -lntp | grep -E '0\.0\.0\.0:(3306|5432|5433|6379|4222|7777|8081|9000|9001|9002|9003|25565)\b'
+# no output expected. 8080 is not in the list on purpose: coolify-proxy owns 0.0.0.0:8080 on
+# this host. Check the Veldrath container's own mapping directly instead:
+
+docker ps --format '{{.Names}}\t{{.Ports}}' | grep veldrath
+# veldrath-server  8080/tcp        — container port only, no 0.0.0.0 mapping
 ```
+
+On `kung-lab-hub`, the edge host, run the same `ss` command: among the ports in the table, the
+only `0.0.0.0` listeners there are `22` (sshd) and `80`/`443`/`8080` (`coolify-proxy`). Both hosts
+also carry other stacks on their own ports; the grep is deliberately scoped to the ports Veldrath
+ever published, so those never produce a false alarm.
 
 From outside the LAN — a VPS, or a laptop on a phone hotspot, never a shell on the host itself:
 
