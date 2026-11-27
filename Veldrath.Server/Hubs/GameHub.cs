@@ -3474,6 +3474,32 @@ public class GameHub : Hub
     // ── Chat ─────────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Refuses the caller's chat send when the account is inside an active mute, and tells the caller why.
+    /// </summary>
+    /// <remarks>
+    /// This is the one mute gate behind every direct sender — zone, party, global, whisper and the
+    /// slash-command entry point — so a channel cannot be added without it by accident. It runs after the
+    /// caller's character/zone prerequisites and before routing, party or target lookup, so a muted account
+    /// never reaches a recipient. Only the caller is told; nothing is broadcast and no other player learns
+    /// that the sender is muted.
+    /// </remarks>
+    /// <returns><see langword="true"/> when the caller is muted and the send must stop.</returns>
+    private async Task<bool> RefuseIfMutedAsync()
+    {
+        // The persisted account mute is the authority: a permanent mute has no expiry, and a temporary one
+        // stops blocking as soon as its UTC expiry passes.
+        var account = await _userManager.FindByIdAsync(GetAccountId().ToString());
+        if (account is null || !account.IsMuted ||
+            (account.MutedUntil is not null && account.MutedUntil <= DateTimeOffset.UtcNow))
+            return false;
+
+        var until = account.MutedUntil.HasValue ? $" until {account.MutedUntil:u}" : string.Empty;
+        await Clients.Caller.SendAsync("SystemMessage",
+            $"You are muted{until}. Reason: {account.MuteReason ?? "No reason given."}");
+        return true;
+    }
+
+    /// <summary>
     /// Broadcasts a chat message to all players currently in the caller's zone.
     /// </summary>
     /// <param name="request">The message payload.</param>
@@ -3484,6 +3510,9 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendZoneMessage");
             return;
         }
+
+        if (await RefuseIfMutedAsync())
+            return;
 
         if (string.IsNullOrWhiteSpace(request.Message))
             return;
@@ -3513,6 +3542,9 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendPartyMessage");
             return;
         }
+
+        if (await RefuseIfMutedAsync())
+            return;
 
         if (string.IsNullOrWhiteSpace(request.Message))
             return;
@@ -3548,15 +3580,8 @@ public class GameHub : Hub
         }
 
         // Mute check — blocked callers cannot broadcast globally.
-        var globalMuteAccount = await _userManager.FindByIdAsync(GetAccountId().ToString());
-        if (globalMuteAccount is not null && globalMuteAccount.IsMuted &&
-            (globalMuteAccount.MutedUntil is null || globalMuteAccount.MutedUntil > DateTimeOffset.UtcNow))
-        {
-            var until = globalMuteAccount.MutedUntil.HasValue ? $" until {globalMuteAccount.MutedUntil:u}" : string.Empty;
-            await Clients.Caller.SendAsync("SystemMessage",
-                $"You are muted{until}. Reason: {globalMuteAccount.MuteReason ?? "No reason given."}");
+        if (await RefuseIfMutedAsync())
             return;
-        }
 
         if (string.IsNullOrWhiteSpace(request.Message))
             return;
@@ -3585,15 +3610,8 @@ public class GameHub : Hub
         }
 
         // Mute check — blocked callers cannot send whispers.
-        var whisperMuteAccount = await _userManager.FindByIdAsync(GetAccountId().ToString());
-        if (whisperMuteAccount is not null && whisperMuteAccount.IsMuted &&
-            (whisperMuteAccount.MutedUntil is null || whisperMuteAccount.MutedUntil > DateTimeOffset.UtcNow))
-        {
-            var until = whisperMuteAccount.MutedUntil.HasValue ? $" until {whisperMuteAccount.MutedUntil:u}" : string.Empty;
-            await Clients.Caller.SendAsync("SystemMessage",
-                $"You are muted{until}. Reason: {whisperMuteAccount.MuteReason ?? "No reason given."}");
+        if (await RefuseIfMutedAsync())
             return;
-        }
 
         if (string.IsNullOrWhiteSpace(request.Message) || string.IsNullOrWhiteSpace(request.TargetCharacterName))
             return;
@@ -3985,16 +4003,8 @@ public class GameHub : Hub
         }
 
         // Mute check — reject silently if still within the mute window.
-        var accountId = GetAccountId();
-        var account = await _userManager.FindByIdAsync(accountId.ToString());
-        if (account is not null && account.IsMuted &&
-            (account.MutedUntil is null || account.MutedUntil > DateTimeOffset.UtcNow))
-        {
-            var until = account.MutedUntil.HasValue ? $" until {account.MutedUntil:u}" : string.Empty;
-            await Clients.Caller.SendAsync("SystemMessage",
-                $"You are muted{until}. Reason: {account.MuteReason ?? "No reason given."}");
+        if (await RefuseIfMutedAsync())
             return;
-        }
 
         var maxLen = _modOptions.Value.MaxChatMessageLength;
         var text = request.Message?.Trim() ?? string.Empty;
