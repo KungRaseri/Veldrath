@@ -435,8 +435,11 @@ The desktop client and its test project were retired, so the old `[AvaloniaFact]
 - Value stamped at Release publish time via MSBuild target
 
 #### Rate Limiting by Policy
-- 5 named policies in `Program.cs`: `foundry-writes`, `admin-actions`, `auth-attempts` (per-IP), `jwt-renewal` (per-IP), `hub-commands`
-- Uses ASP.NET Core rate limiting with fixed-window and partitioned (per-IP) policies
+- 3 named policies in `Program.cs`: `foundry-writes`, `admin-actions`, `hub-commands`
+- ASP.NET Core rate limiting, fixed window, **partitioned per caller**: the authenticated account subject, or the client address (`X-Forwarded-For`, then the connection address) for a request with no usable subject — see `Infrastructure/RateLimitPartitionKey`
+- Each policy is one bucket *per caller per policy*, so one account cannot spend another's permits; the policy name is only the reporting unit in `RateLimitObservation`
+- Defaults per account per minute: `foundry-writes` 20, `admin-actions` 40, `hub-commands` 30 (capacity assumptions, not measured rates — no production traffic to size against on 2026-11-27)
+- `hub-commands` meters SignalR connection establishment (negotiate + transport upgrade), not hub invocations; invocations are counted by `RateLimitObservationFilter` and are not limited
 
 #### Migration Repair Strategy
 - `RepairStaleMigrationsAsync` in `Program.cs` handles squashed migrations gracefully: drops dev DB, throws in production
