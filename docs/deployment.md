@@ -169,6 +169,146 @@ XFF_DEPTH=1
 Set `ORIGIN` and `BETTER_AUTH_URL` to the public HTTPS origin. The .NET server
 also trusts forwarded headers through `UseForwardedHeaders`.
 
+## Firewall and published ports
+
+This is the answer to "what may be reachable from the internet". Two layers decide it, and only
+the second one is under this repository's control.
+
+**Ports open at the edge.** Only `80/tcp` and `443/tcp` accept connections from the internet, and
+only `443` serves Veldrath — plain HTTP answers `503 Service Unavailable`. `kung-lab-hub`
+(`192.168.50.130`) terminates TLS at its own `coolify-proxy` and routes by host name: a router
+forwards to a container on that host over its Docker network, or — for the Veldrath hosts — over the
+LAN to `https://192.168.50.100:443`, where `kung-lab-2`'s `coolify-proxy` terminates TLS again and
+reaches the Veldrath containers (the server and the web app) over *that* host's Docker network by
+container name. No
+application port is opened to the internet. Measured on 2026-11-27 from
+[check-host.net](https://check-host.net) nodes, which are outside the LAN:
+
+| Port | From the internet | Why |
+|---|---|---|
+| `80/tcp` | open | accepts connections but serves nothing for these hosts — answers `503 Service Unavailable`; use `https://` |
+| `443/tcp` | open | Traefik TLS for every Veldrath host |
+| `22/tcp` | timed out | SSH is LAN and tailnet only |
+| `3306`, `5432`, `6379`, `4222`, `25565`, `7777` | timed out | no production service publishes them |
+| `5433`, `8081`, `9000`–`9003` | timed out | the development compose mappings, cleared by the production overlay |
+| `8080` | timed out | `coolify-proxy` publishes it on both Coolify hosts, but the edge forwards only `80`/`443`; it belongs to Coolify, not Veldrath |
+
+`http://veldrath.com/` and `http://api.veldrath.com/` answer `503 Service Unavailable` — Coolify's
+error page, no `Location` header — measured with `curl -I` on 2026-11-27 locally and from two
+check-host.net nodes. There is no HTTP-to-HTTPS redirect for these hosts, and the gap is the edge
+router, not the application. In `kung-lab-hub`'s `/traefik/dynamic/multi-server-routing.yml` the
+`veldrath` router lists both entry points but also declares `tls: certResolver: letsencrypt`, and a
+Traefik router that declares a TLS section is only served on a TLS entry point: the plain-HTTP
+request skips it and falls through to Coolify's `catchall-http` router (priority `-1000`), whose
+`error-pages` middleware serves the 503 page. The hub's access log names `catchall-http@file` for
+the request, and a throwaway Traefik 3.7 container reproduces it — the same router with `tls:`
+answers `503` over plain HTTP, without `tls:` it answers `200`. Veldrath's own stack on
+`kung-lab-2` does redirect (`curl -I -H 'Host: veldrath.com' http://192.168.50.100/` → `302`), so
+reaching it directly over plain HTTP is not the problem; the edge router is. Nothing is served over
+`80`; a redirect for the Veldrath hosts is a separate change.
+
+Both hosts run `ufw` with `Default: deny (incoming)`. `kung-lab-hub` allows `80`/`443` from
+anywhere, Tailscale's `41641/udp`, and all inbound from `192.168.50.0/24`, `100.64.0.0/10` and
+`10.0.0.0/8`, with SSH `22` only from the LAN and the tailnet. `kung-lab-2`, where the Veldrath
+resources run, allows SSH from the LAN and the tailnet and nothing else on its INPUT chain. Its
+`ufw status` also prints `ALLOW FWD` rules — one `80`/`443` pair per Coolify resource, 12 rules for
+six resources on `kung-lab-2` and 32 on the hub today — for the containers of each host's own
+`coolify-proxy`. Those are Docker's forwarding path, not an additional reachable port.
+
+`ss -lntp` on `kung-lab-2` shows no listener on any of the retired Veldrath ports (`5433`, `8081`,
+`9000`–`9003`) and none on `3306`, `5432`, `6379`, `4222`, `25565` or `7777`. Among the ports in
+the table, the only `0.0.0.0` listeners on either host are `22` (sshd) and `80`/`443`/`8080`
+(`coolify-proxy`, Coolify's own Traefik); `veldrath-server` is `8080/tcp` container-only. Each
+host runs other stacks that publish their own ports — none of those is a Veldrath port, and none
+is forwarded at the edge.
+
+**Port publications.** `ufw`'s default-deny does **not** cover a published container port: Docker
+installs its own `DOCKER`/`FORWARD` rules that accept the traffic before `ufw`'s INPUT chain sees
+it. Measured on `kung-lab-2`: `ufw` reports `default deny incoming`, and `docker-proxy` still
+listens on `0.0.0.0:8080` for `coolify-proxy`. The control that actually decides exposure is
+therefore the publication itself — a production stack publishes **nothing**, and Traefik reaches
+the container by name.
+
+### What each production path publishes
+
+| Path | Publishes | Reached by |
+|---|---|---|
+| Coolify Dockerfile resource — the real deployment | nothing | Traefik over the Docker network, to the container port (`8080` server, `8081` web) |
+| [`docker-compose.coolify.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.coolify.yml) | nothing (`expose` only) | its own Traefik labels |
+| [`docker-compose.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.yml) + [`docker-compose.prod.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.prod.yml) | nothing | the reverse proxy on the Docker network |
+| [`docker-compose.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.yml) alone (development) | `5433`, `8081`, `9000`, `9001`, `9002`, `9003` | the developer, on their own machine |
+
+Coolify builds each resource from a Dockerfile and never reads a compose file, so the overlay
+cannot change what production exposes. It is still held to "nothing", because it is the documented
+way to run a production-like stack on a host, and a `docker compose up` there publishes exactly
+what the file says.
+
+**`ports: !reset []`, not `ports: []`.** Compose merges `ports` lists across `-f` files. An empty
+list in an overlay contributes nothing — it does not clear the base file's mapping — so the old
+`docker-compose.prod.yml` rendered `5433`, `8081` and `9000`–`9003` while its comments claimed host
+port exposure was removed. `!reset` is the only value that drops an inherited list; every service
+that publishes in the base file needs `ports: !reset []` in the overlay.
+[`ci-prod-ports.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/ci-prod-ports.yml)
+fails the pull request that misses one.
+
+Verify the merge without deploying:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml config | grep -c published:
+# 0
+
+node scripts/check-prod-ports.mjs
+# ok: 7 services in docker-compose.yml + docker-compose.prod.yml, plus 1 extra stack(s); 0 host ports published
+```
+
+### Allowlist
+
+A port that genuinely must stay published goes in two places: the table below with a one-line
+justification, and the `ALLOWLIST` map in
+[`scripts/check-prod-ports.mjs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/check-prod-ports.mjs).
+It is empty today, and it should stay that way: a dashboard or a database belongs on a Traefik
+route, not on a host port.
+
+| Published port | Service | Justification |
+|---|---|---|
+| _(none)_ | | |
+
+### Check after a change
+
+On `kung-lab-2`, where the Veldrath resources run:
+
+```bash
+sudo ss -lntp | grep -E '0\.0\.0\.0:(3306|5432|5433|6379|4222|7777|8081|9000|9001|9002|9003|25565)\b'
+# no output expected. 8080 is not in the list on purpose: coolify-proxy owns 0.0.0.0:8080 on
+# this host. Check the Veldrath container's own mapping directly instead:
+
+docker ps --format '{{.Names}}\t{{.Ports}}' | grep veldrath
+# veldrath-server  8080/tcp        — container port only, no 0.0.0.0 mapping
+```
+
+On `kung-lab-hub`, the edge host, run the same `ss` command: among the ports in the table, the
+only `0.0.0.0` listeners there are `22` (sshd) and `80`/`443`/`8080` (`coolify-proxy`). Both hosts
+also carry other stacks on their own ports; the grep is deliberately scoped to the ports Veldrath
+ever published, so those never produce a false alarm.
+
+From outside the LAN — a VPS, or a laptop on a phone hotspot, never a shell on the host itself:
+
+```bash
+nmap -Pn -p- --max-rate 200 veldrath.com api.veldrath.com
+# expected: 80/tcp and 443/tcp open, everything else filtered
+```
+
+Then confirm the two open ports behave as documented:
+
+```bash
+curl -sS -o /dev/null -w 'https %{http_code}\n' https://veldrath.com/    # 200
+curl -sS -o /dev/null -w 'http  %{http_code}\n' http://veldrath.com/     # 503, no Location — use https://
+```
+
+`--max-rate 200` finishes a full-range scan in a few minutes without looking like a flood. A port
+that answers from the LAN but not from the internet is still worth removing: the LAN is not a trust
+boundary, and every device on it — including a compromised one — can reach the port.
+
 ## Local deployment
 
 - Local development: [`docker-compose.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.yml) with

@@ -1,0 +1,81 @@
+name: CI - Prod published ports
+
+# Forgejo-native. See docs/ci-forgejo.md before editing: every action must resolve from
+# DEFAULT_ACTIONS_URL (the copies on this instance) and must not need the GitHub API.
+#
+# This is the gate for docs/deployment.md, "Firewall and published ports". A production stack
+# publishes no host port, and a `ports:` entry that comes back silently is exactly how
+# `docker-compose.prod.yml` shipped 5433, 8081 and 9000-9003 while claiming to remove host port
+# exposure: `ports: []` in an overlay does not clear the base file's list, only `ports: !reset []`
+# does. The checker applies Compose's documented merge and fails on any publication outside the
+# reviewed allowlist.
+#
+# It does not run `docker compose config`. The runner's job image ships the docker CLI but no
+# compose plugin, and the runner config's `valid_volumes` permits only /var/run/docker.sock, so
+# the host's plugin directory cannot be mounted either. scripts/check-prod-ports.mjs therefore
+# computes the merge itself, and its parity with the real renderer is proven by
+# scripts/tests/prod-ports.test.mjs, which renders the same files with Docker Compose wherever
+# compose is installed (and asserts both agree on the six ports the old overlay published).
+# Run it by hand the same way this job does:
+#
+#   node scripts/check-prod-ports.mjs
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml config | grep -c published:
+#   node scripts/check-prod-ports.mjs --render <(docker compose ... config --format json)   # bash
+
+concurrency:
+  group: ci-prod-ports-${{ github.ref }}
+  # Cancel only a superseded pull-request head: a run cancelled by this group is recorded as a
+  # *failing* status — `failure`, description "Has been cancelled" (measured on Forgejo
+  # 15.0.11) — so cancelling a base-branch run leaves the merged commit red with a verdict that
+  # never happened. See docs/ci-forgejo.md, "Branch protection".
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docker-compose.yml'
+      - 'docker-compose.prod.yml'
+      - 'docker-compose.coolify.yml'
+      - 'scripts/check-prod-ports.mjs'
+      - 'scripts/tests/prod-ports.test.mjs'
+      - '.github/workflows/ci-prod-ports.yml'
+  pull_request:
+    # `development` only, deliberately: the sole pull request into `main` is the release PR
+    # (`development` → `main`), whose head commit is a `development` commit that already
+    # carries this workflow's `push` run at that commit. The merge gate lints main separately.
+    # docs/ci-forgejo.md, "What runs where".
+    branches: [ development ]
+    paths:
+      - 'docker-compose.yml'
+      - 'docker-compose.prod.yml'
+      - 'docker-compose.coolify.yml'
+      - 'scripts/check-prod-ports.mjs'
+      - 'scripts/tests/prod-ports.test.mjs'
+      - '.github/workflows/ci-prod-ports.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: No production host port is published
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 1
+        submodules: false
+
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22
+
+    # The negative controls matter more than the pass: an overlay that says `ports: []` must fail,
+    # and only `ports: !reset []` may pass.
+    - name: Test the publication checker
+      run: node --test scripts/tests/prod-ports.test.mjs
+
+    - name: Check the production compose files
+      run: node scripts/check-prod-ports.mjs

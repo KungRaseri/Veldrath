@@ -1,20 +1,29 @@
-# docker-compose.prod.yml — Production overrides for veldrath.com on Hetzner
+# docker-compose.prod.yml — Production overrides for the Coolify host (kung-lab-2)
 #
 # Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
 # This file:
 #   - Uses an external reverse proxy (Coolify Traefik) for TLS and routing
-#   - Switches server/web/discord to pre-built GHCR images
-#   - Removes host port exposure; services are reached on the Docker network
+#   - Switches server/web/discord to pre-built images
+#   - Publishes NO host port: every service is reached on the Docker network
 #   - Wires production environment variables for email and public URLs
 #   - Sets restart policies for all services
+#
+# `ports: !reset []` is required, not decoration. Compose merges `ports` lists across
+# files: an empty list in an overlay does NOT clear the base file's publication, it
+# merely contributes nothing, so `ports: []` here still rendered 5433, 8081, 9000,
+# 9001, 9002 and 9003 on the host. `!reset` is the only way to drop them. A service
+# added to the base file with a publication needs its own `!reset` here;
+# `scripts/check-prod-ports.mjs` fails CI if one is missed. See docs/deployment.md,
+# "Firewall and published ports".
 
 services:
   server:
     # Use the pre-built image from GHCR; CI pushes this on every merge to main.
     image: ghcr.io/kungraseri/veldrath-server:latest
-    # Reached by the external proxy on the Docker network.
-    ports: []
+    # Reached by the external proxy on the Docker network. `!reset` is what actually
+    # drops the base file's 9000:8080 publication — `ports: []` does not.
+    ports: !reset []
     expose:
       - "8080"
     environment:
@@ -37,7 +46,8 @@ services:
 
   web:
     image: ghcr.io/kungraseri/veldrath-web:latest
-    ports: []
+    # `!reset` drops the base file's 8081:8081 publication (an empty list does not).
+    ports: !reset []
     expose:
       - "8081"
     environment:
@@ -81,8 +91,9 @@ services:
     restart: unless-stopped
 
   postgres:
-    # Remove direct port exposure in production — only internal services connect.
-    ports: []
+    # Publishes nothing in production: only internal services connect, and the
+    # base file's 5433:5432 mapping is dropped with `!reset` (not `ports: []`).
+    ports: !reset []
     environment:
       # Used by the first-boot auth schema init script.
       - AUTH_DB_USER=${AUTH_DB_USER:-veldrath_auth}
@@ -90,12 +101,18 @@ services:
     restart: unless-stopped
 
   seq:
+    # Inherits a 9001:80 publication from the base file; drop it.
+    ports: !reset []
     restart: unless-stopped
 
   prometheus:
+    # Inherits 9003:9090 from the base file; drop it.
+    ports: !reset []
     restart: unless-stopped
 
   grafana:
+    # Inherits 9002:3000 from the base file; drop it.
+    ports: !reset []
     restart: unless-stopped
 
 # No proxy volumes: TLS and routing are handled by the external platform proxy.
