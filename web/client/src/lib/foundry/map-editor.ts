@@ -166,9 +166,18 @@ export interface MapGraphIssue {
 /** The outcome of a save attempt, mirroring `Veldrath.Contracts.Map.MapGraphSaveResponse`. */
 export interface MapGraphSaveResult {
 	success: boolean;
+	/**
+	 * `conflict` covers both a stale version and a save over a live map: in each case the stored map, not the
+	 * posted graph, is what has to change first.
+	 */
 	status: 'ok' | 'conflict' | 'invalid' | 'not_found';
 	version: number;
 	issues: MapGraphIssue[];
+	/**
+	 * The reason a refusal happened, worded by the server and shown to the author **verbatim** — a live-map
+	 * refusal names the loop that gets an edit into play (reviewer deactivates → author edits → author submits →
+	 * reviewer approves), which a generic "conflict" would hide.
+	 */
 	message: string | null;
 }
 

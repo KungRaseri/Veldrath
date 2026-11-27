@@ -255,6 +255,43 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
+    public async Task Save_RefusesALiveMapForItsAuthor()
+    {
+        var (authorToken, _) = await factory.CreateAccountTokenAsync("MapLive_Author");
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authorToken);
+
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "live-author-zone", "Live Author Zone"),
+            Json);
+        var draft = (await created.Content.ReadFromJsonAsync<MapGraphDto>(Json))!;
+
+        // Approval is what sets this flag, and it is the one gameplay reads — so the map is live from here on.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+            var row = await db.Maps.SingleAsync(map => map.Id == draft.Id);
+            row.IsActive = true;
+            await db.SaveChangesAsync();
+        }
+
+        var refused = await author.PutAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}",
+            new MapGraphWriteRequest(draft with { Name = "Renamed While Live" }, draft.Version),
+            Json);
+
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await refused.Content.ReadFromJsonAsync<MapGraphSaveResponse>(Json);
+        body!.Success.Should().BeFalse();
+        body.Message.Should().Contain("deactivates", "the client shows this sentence to the author verbatim");
+        body.Message.Should().Contain("approves");
+
+        // The refused write left the graph players walk alone.
+        (await ReadMapAsync(author, draft.Id))!.Name.Should().Be("Live Author Zone");
+    }
+
+    [Fact]
     public async Task Delete_RefusesADraftCreatedByAnotherAccount()
     {
         var (authorToken, _) = await factory.CreateAccountTokenAsync("MapDel_Author");
