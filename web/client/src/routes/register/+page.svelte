@@ -33,11 +33,17 @@
 			});
 
 			if (error) {
+				// Sign-up no longer answers differently for an address that already has an account
+				// (see `autoSignIn` in `#lib/server/auth`), so anything that reaches here is an input
+				// or rate-limit error and is safe to show.
 				errorMessage = error.message ?? 'Registration failed.';
 				return;
 			}
 
-			await goto(resolve('/game'));
+			// A new account is deliberately not signed in at sign-up — issuing a session only to a new
+			// address is exactly the signal that would reveal which addresses already exist — so the
+			// player finishes on the sign-in form, where their own password works either way.
+			await goto(`${resolve('/login')}?registered=1`);
 		} finally {
 			submitting = false;
 		}

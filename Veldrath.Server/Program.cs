@@ -567,8 +567,13 @@ try
     app.MapHub<GameHub>("/hubs/game").RequireRateLimiting("hub-commands");
 
     // Health checks
-    // /health        — overall status (Healthy / Degraded / Unhealthy)
-    // /health/detail — full JSON breakdown of every check
+    // /health        — overall status (Healthy / Degraded / Unhealthy). Public on purpose: the container
+    //                  healthcheck, the e2e stack and any external monitor poll it, and the default writer
+    //                  returns a single status word, nothing about the server's internals.
+    // /health/detail — full JSON breakdown of every check, including each failing check's exception
+    //                  message (component names, and whatever a driver puts in that message). It is an
+    //                  operator surface, so it requires the admin.users permission. Nothing polls it: the
+    //                  compose healthchecks and the e2e stack all wait on /health.
     app.MapHealthChecks("/health", new()
     {
         ResultStatusCodes =
@@ -588,7 +593,7 @@ try
             [HealthStatus.Degraded]  = StatusCodes.Status200OK,
             [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
         }
-    });
+    }).RequireAuthorization(Permissions.ManageUsers);
 
     // Prometheus metrics — expose /metrics for scraping.
     // In production, restrict access to this endpoint at the network/proxy level.

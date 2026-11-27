@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using RealmEngine.Core;
@@ -35,7 +36,7 @@ namespace Veldrath.Server.Tests.Infrastructure;
 /// when multiple concurrent class-fixture initializations call <c>EnsureServer</c>
 /// on the same shared factory.
 /// </remarks>
-public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     // Each factory instance gets a unique database so parallel test classes don't collide.
     private readonly string _dbName = $"realm_test_{Guid.NewGuid():N}";
@@ -44,15 +45,24 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
     // Keep-alive connection: while this is open, the named in-memory database survives.
     private readonly SqliteConnection _keepAlive;
 
+    /// <summary>Creates the shared integration host in the <c>Test</c> environment.</summary>
     public WebAppFactory()
     {
         _keepAlive = new SqliteConnection(ConnStr);
         _keepAlive.Open();
     }
 
+    /// <summary>
+    /// The ASP.NET Core environment the host runs in. The dev-only routes branch on
+    /// <c>IsDevelopment()</c> / <c>IsEnvironment("Test")</c>, so a derived factory that is neither
+    /// is the only honest way to run one request as production — the shared collection fixture
+    /// must stay in <c>Test</c> because every test class in the collection sees the same host.
+    /// </summary>
+    protected virtual string EnvironmentName => "Test";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Test");
+        builder.UseEnvironment(EnvironmentName);
 
         // Provide a non-null connection string so Program.cs doesn't throw when
         // registering health checks. The real Postgres contexts are replaced below.
@@ -101,6 +111,21 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
             // which is inaccessible on Linux CI (runner ≠ root).  In tests, use in-memory ephemeral
             // keys so token generation/validation work without touching the file system.
             services.AddDataProtection().UseEphemeralDataProtectionProvider();
+
+            // The "database" health check is an Npgsql probe built from the production connection
+            // string, so in this SQLite host it can only ever report Unhealthy — no assertion about
+            // /health or /health/detail would mean anything. Replace it with what a reachable
+            // production database reports. The game-engine check is real and stays.
+            services.Configure<HealthCheckServiceOptions>(options =>
+            {
+                var database = options.Registrations.FirstOrDefault(
+                    registration => registration.Name == "database");
+                if (database is not null)
+                    options.Registrations.Remove(database);
+
+                options.Registrations.Add(new HealthCheckRegistration(
+                    "database", new AlwaysHealthyCheck(), failureStatus: null, tags: ["db"]));
+            });
         });
     }
 
@@ -241,6 +266,19 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
 
         foreach (var d in toRemove)
             services.Remove(d);
+    }
+
+    /// <summary>
+    /// Stands in for the Npgsql probe in a host whose database is in-memory SQLite. The database
+    /// really is reachable — it is just not Postgres — so "Healthy" is the honest answer.
+    /// </summary>
+    private sealed class AlwaysHealthyCheck : IHealthCheck
+    {
+        /// <inheritdoc/>
+        public Task<HealthCheckResult> CheckHealthAsync(
+            HealthCheckContext context,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(HealthCheckResult.Healthy("In-memory SQLite test database."));
     }
 }
 

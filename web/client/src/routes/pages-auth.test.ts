@@ -107,6 +107,15 @@ describe('login page', () => {
 		expect(screen.getByText(/Social sign-in failed/)).toBeTruthy();
 	});
 
+	it('acknowledges a completed registration', async () => {
+		// The register form lands here because sign-up no longer issues a session.
+		setPage({ url: new URL('http://localhost/login?registered=1') });
+
+		render(LoginPage);
+
+		expect(screen.getByText('Account ready. Sign in to continue.')).toBeTruthy();
+	});
+
 	it('signs in by email when the identifier contains an @', async () => {
 		const { container } = render(LoginPage);
 
@@ -240,7 +249,7 @@ describe('register page', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 
-	it('creates the account and enters the game', async () => {
+	it('creates the account and sends the player to the sign-in form', async () => {
 		const { container } = render(RegisterPage);
 
 		await fill(container, 'input[type="text"]', 'kaleth');
@@ -257,7 +266,10 @@ describe('register page', () => {
 			name: 'kaleth',
 			username: 'kaleth'
 		});
-		expect(navigatedTo()).toContain('/game');
+		// Sign-up never signs in: a session minted only for a new address would reveal which
+		// addresses already have an account.
+		expect(navigatedTo()).toContain('/login');
+		expect(navigatedTo()).toContain('registered=1');
 	});
 
 	it('shows the registration failure and does not navigate', async () => {

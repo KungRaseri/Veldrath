@@ -85,6 +85,11 @@ export function makeAccount(prefix: string): TestAccount {
 /**
  * Registers through the real form, so Better Auth owns the session exactly as it does for a player.
  *
+ * Sign-up deliberately does not sign the new account in (see `autoSignIn` in `lib/server/auth`):
+ * a session minted only for a new address is the signal email-enumeration protection exists to
+ * remove. The form therefore lands on the sign-in page, and the helper signs in the way a player
+ * would — which is also the path a duplicate address takes, so both end the same way.
+ *
  * @param page Any page in a fresh browser context.
  * @param account The credentials to create.
  */
@@ -95,7 +100,8 @@ export async function register(page: Page, account: TestAccount): Promise<void> 
 	await page.locator('input[autocomplete="new-password"]').nth(0).fill(account.password);
 	await page.locator('input[autocomplete="new-password"]').nth(1).fill(account.password);
 	await page.getByRole('button', { name: /create account/i }).click();
-	await page.waitForURL(/\/(game|characters)/, { timeout: 30_000 });
+	await page.waitForURL(/\/login\?registered=1/, { timeout: 30_000 });
+	await signIn(page, account);
 }
 
 /**

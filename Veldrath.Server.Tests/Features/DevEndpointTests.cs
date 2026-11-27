@@ -294,4 +294,37 @@ public class DevEndpointTests(WebAppFactory factory)
         var characters = await _client.GetFromJsonAsync<CharacterDto[]>("/api/characters");
         characters!.Single(c => c.Id == characterId).CurrentZoneLocationSlug.Should().Be("playground-clearing");
     }
+
+    // ─── Environment gate under Production ───────────────────────────────────
+
+    [Fact]
+    public async Task DevEndpoints_UnderProduction_AreUnreachableEvenForAnAuthenticatedCaller()
+    {
+        // The shared fixture runs in "Test", which the gate admits. Proving the endpoints are
+        // unreachable in production needs a host that is neither Development nor Test.
+        await using var production = new ProductionWebAppFactory();
+        var (token, _) = await production.CreateAccountTokenAsync("DevProd_User");
+
+        using var anonymous = production.CreateClient();
+        (await anonymous.GetAsync("/api/dev/zones")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        using var authenticated = production.CreateClient();
+        authenticated.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var zones = await authenticated.GetAsync("/api/dev/zones");
+        var zone = await authenticated.GetAsync("/api/dev/zones/playground");
+        var locations = await authenticated.GetAsync("/api/dev/zones/playground/locations");
+        var teleport = await authenticated.PostAsJsonAsync("/api/dev/teleport",
+            new { CharacterId = Guid.NewGuid(), ZoneId = "playground" });
+        var experience = await authenticated.PostAsJsonAsync("/api/dev/experience",
+            new { CharacterId = Guid.NewGuid(), Amount = 100 });
+
+        // No role or permission opens them: the environment check is the gate.
+        zones.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        zone.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        locations.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        teleport.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        experience.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await zones.Content.ReadAsStringAsync()).Should().Contain("Dev endpoints are not available.");
+    }
 }
