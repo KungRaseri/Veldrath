@@ -18,8 +18,9 @@ title: "Server Reconnect Polling (session-20)"
 > connection is dead from the hub it is already on: `session.phase` moves through `connecting`, `reconnecting`,
 > `failed` and `disconnected` in
 > [`session.svelte.ts`](../../../web/client/src/lib/game/session.svelte.ts). `Program.cs` still maps
-> `MapHealthChecks("/health")` and `/health/detail` for probes (`Program.cs:536`, `:546`) — not for a client-side
-> loop.
+> `MapHealthChecks("/health")` for probes (`Program.cs:577`) — not for a client-side
+> loop. (`/health/detail` is not a probe: as of the security epic's PR 6 it requires `admin.users` and
+> answers 401 anonymously, `Program.cs:587`.)
 >
 > **The announcements half survives and is current**; its pointers are in the first section below. The
 > `Announcements` table and its index ship in `Veldrath.Server/Migrations/20260416172040_InitialCreate.cs` — there
@@ -29,8 +30,8 @@ title: "Server Reconnect Polling (session-20)"
 
 - `Veldrath.Contracts/Announcements/AnnouncementContracts.cs` — `AnnouncementDto(int Id, string Title, string Body, string Category, bool IsPinned, DateTimeOffset PublishedAt)`
 - `Veldrath.Server/Data/Entities/Announcement.cs` — EF entity with `IsActive`, `ExpiresAt?`, `IsPinned`, `PublishedAt`
-- `Veldrath.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository.GetActiveAsync(CancellationToken)` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)` and orders `IsPinned` first, then `PublishedAt` newest first. **Keep the `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in the LINQ expression. Registered `AddScoped` at `Program.cs:162`.
-- `Veldrath.Server/Features/Announcements/AnnouncementEndpoints.cs` — `MapGroup("/api/announcements").WithTags("Announcements").AllowAnonymous()`, one `GET /` returning `AnnouncementDto[]`; mapped at `Program.cs:515`.
+- `Veldrath.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository.GetActiveAsync(CancellationToken)` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)` and orders `IsPinned` first, then `PublishedAt` newest first. **Keep the `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in the LINQ expression. Registered `AddScoped` at `Program.cs:190`.
+- `Veldrath.Server/Features/Announcements/AnnouncementEndpoints.cs` — `MapGroup("/api/announcements").WithTags("Announcements").AllowAnonymous()`, one `GET /` returning `AnnouncementDto[]`; mapped at `Program.cs:551`.
 - **No client calls it** — only the endpoint's own integration tests do (below). The news panel that read the feed was the desktop menu. The web site reads the editorial feed instead — `/api/editorial/announcements` in [`editorial-api.ts`](../../../web/client/src/lib/server/editorial-api.ts) — and the legacy route is allow-listed by hand as a removal candidate in `web/client/src/lib/parity/rest-routes.test.ts`, with the record in `plans/web-feature-parity-and-coverage.md`.
 - **Test structure still holds** — `Veldrath.Server.Tests/Features/AnnouncementEndpointTests.cs` is the `IAsyncLifetime` pattern: `AnnouncementsFixture` seeds in `InitializeAsync` and is shared through `IClassFixture`, and the tests that need an empty database are a **separate class with their own `WebAppFactory`** (`AnnouncementEmptyEndpointTests`), because per-test seeding under `IClassFixture` makes the "empty list" test fail when it runs after the seeded ones.
 

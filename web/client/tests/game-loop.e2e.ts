@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { apiBase, gameToken } from './support/stack';
+import { apiBase, gameToken, register } from './support/stack';
 
 /**
  * Authenticated game loop against a real Veldrath.Server.
@@ -32,14 +32,10 @@ test.describe('authenticated game loop', () => {
 	);
 
 	test('register → roster → play → travel → inventory', async ({ page, request }) => {
-		// 1. Register through the real form so Better Auth owns the session.
-		await page.goto('/register');
-		await page.locator('input[autocomplete="username"]').fill(account.username);
-		await page.locator('input[autocomplete="email"]').fill(account.email);
-		await page.locator('input[autocomplete="new-password"]').nth(0).fill(account.password);
-		await page.locator('input[autocomplete="new-password"]').nth(1).fill(account.password);
-		await page.getByRole('button', { name: /create account/i }).click();
-		await page.waitForURL(/\/(game|characters)/, { timeout: 20_000 });
+		// 1. Register through the real form and sign in, so Better Auth owns the session.
+		//    Sign-up no longer mints one (enumeration protection), so this goes via the helper
+		//    the other stack specs use instead of assuming the form lands on a game route.
+		await register(page, account);
 
 		// 2. Seed a character through the game API with this session's minted token. Creating a
 		//    character exercises the same account provisioning path as the wizard without

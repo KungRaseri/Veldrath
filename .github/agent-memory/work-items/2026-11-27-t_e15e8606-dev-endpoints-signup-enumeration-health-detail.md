@@ -84,6 +84,21 @@ permission 403, Admin 200 with `"status": "Healthy"` and a `checks` object. The 
 Npgsql "database" check with a healthy stub (`AlwaysHealthyCheck` in `WebAppFactory`), because a SQLite host
 could only ever report `Unhealthy` and no health assertion would mean anything.
 
+## Review follow-up — one caller of the old sign-up contract was left behind
+
+Round 1 found the single path the shim missed: `tests/game-loop.e2e.ts` filled `/register` by hand and then
+waited for `/\/(game|characters)/`, a navigation the new flow can never make — and even had it landed there,
+its `gameToken(page)` call would have 401'd because sign-up no longer mints a session. It now calls the shared
+`register(page, account)` helper, which waits for `/login?registered=1` and signs in. The authenticated-e2e job
+is skipped on a development PR (`ci-web.yml` runs it only for `main`), so CI on the first head could not have
+caught it; the spec was re-run through the real isolated stack instead (below).
+
+The review's other two nits are fixed in place: the `/health/detail` "for probes" sentence and the stale
+`Program.cs` anchors in
+[`areas/server-reconnect-polling-session-20.md`](../areas/server-reconnect-polling-session-20.md) now say
+`/health` for probes at `Program.cs:577` and drop the gated detail route from that sentence; and the card's
+scope list named `auth-client.test.ts` where the tests correctly live in `server/auth.test.ts`.
+
 ## Verification run
 
 - `dotnet build Veldrath.Server.slnx` — 0 warnings, 0 errors
@@ -97,3 +112,5 @@ could only ever report `Unhealthy` and no health assertion would mean anything.
   `GET /health/detail` → `401`, `GET /api/dev/zones` → `401`
 - `tests/layout.e2e.ts` through the real isolated stack — 4/4 passed; three of them run `register()`, so the
   register → `/login?registered=1` → sign-in helper change is exercised end to end
+- `node tests/run-e2e.mjs stack --only tests/game-loop.e2e.ts` against the same stack — 1 passed (23.9s), so
+  the roster → play → travel → inventory journey is signed in by the shared helper and still reaches the hub
