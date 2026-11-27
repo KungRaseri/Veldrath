@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Prometheus;
@@ -86,7 +87,11 @@ try
     builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 524_288);
 
     // SignalR
-    builder.Services.AddSignalR();
+    builder.Services.AddSignalR(options =>
+    {
+        // Invocation attempts are invisible to the HTTP limiter, so an opt-in filter counts them separately.
+        options.AddFilter<RateLimitObservationFilter>();
+    });
 
     // CORS — browser clients (SvelteKit dev server, Docker web, production domain).
     // Resolves the allow-list, logs it, and fails fast in Production when it is localhost-only.
@@ -119,6 +124,13 @@ try
     var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
     var adminActionsLimit = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute", 20);
     var hubCommandsLimit = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute", 120);
+
+    // Measurement is opt-in and never changes enforcement: the three named policies below keep their permits,
+    // windows, assignments and rejection behaviour whether or not anything is observing them.
+    builder.Services.AddSingleton(provider => new RateLimitObservation(
+        builder.Configuration,
+        provider.GetRequiredService<ILogger<RateLimitObservation>>()));
+
     builder.Services.AddRateLimiter(opts =>
     {
         opts.AddFixedWindowLimiter("foundry-writes", o =>
@@ -138,6 +150,16 @@ try
             o.PermitLimit = hubCommandsLimit;
         });
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        // Records which policy and route template rejected a request. A no-op unless RateLimit:Observe is on.
+        opts.OnRejected = (rejected, _) =>
+        {
+            var observation = rejected.HttpContext.RequestServices.GetService<RateLimitObservation>();
+            var policy = RateLimitObservation.PolicyFor(rejected.HttpContext);
+            if (observation is not null && policy is not null)
+                observation.RecordRejection(policy, RateLimitObservation.RouteLabelFor(rejected.HttpContext));
+
+            return ValueTask.CompletedTask;
+        };
     });
 
     builder.Services.AddScoped<AccountService>();
@@ -374,6 +396,8 @@ try
     app.UseCookiePolicy();
     app.UseAuthentication();
     app.UseAuthorization();
+    // Counts eligible HTTP attempts before the limiter decides; forwards the request unchanged either way.
+    app.UseMiddleware<RateLimitObservationMiddleware>();
     app.UseRateLimiter();
 
     // Run any pending EF migrations on startup (creates DB on first run, updates schema on upgrade)
