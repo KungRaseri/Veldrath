@@ -39,10 +39,13 @@ const tokens = vi.hoisted(() => ({
 	mintGameToken: vi.fn()
 }));
 
+const game = vi.hoisted(() => ({ gameApiFetch: vi.fn() }));
+
 const auth = vi.hoisted(() => ({ getAuth: vi.fn() }));
 
 vi.mock('#lib/server/character-api', () => characterApi);
 vi.mock('#lib/server/game-token', () => tokens);
+vi.mock('#lib/server/game-request', () => ({ gameApiFetch: game.gameApiFetch }));
 vi.mock('#lib/server/auth', () => auth);
 
 /** Calls a `RequestHandler`, keeping the route-specific event type out of the test bodies. */
@@ -71,6 +74,7 @@ beforeEach(() => {
 	characterApi.getCreationPreview.mockResolvedValue(ok({ name: 'Kaleth' }));
 	characterApi.finalizeCreationSession.mockResolvedValue(ok({ characterId: 'char-1' }));
 	tokens.mintGameToken.mockResolvedValue('signed.token.value');
+	game.gameApiFetch.mockResolvedValue(ok({ accountId: fakeUser().id }));
 	auth.getAuth.mockReturnValue({ handler: vi.fn(async () => new Response('ok')) });
 });
 
@@ -81,6 +85,10 @@ describe('game token endpoint', () => {
 		expect(response.status).toBe(200);
 		expect(response.headers.get('cache-control')).toBe('no-store');
 		expect(await response.json()).toEqual({ token: 'signed.token.value', expiresIn: 600 });
+		expect(game.gameApiFetch).toHaveBeenCalledWith(
+			expect.objectContaining({ id: fakeUser().id }),
+			'/api/account/profile'
+		);
 		expect(tokens.mintGameToken).toHaveBeenCalledWith(
 			fakeUser().id,
 			'player-one',
@@ -103,6 +111,27 @@ describe('game token endpoint', () => {
 	it('sends an anonymous caller to the login page', async () => {
 		await expect(call(gameToken, makeServerEvent())).rejects.toThrow();
 
+		expect(tokens.mintGameToken).not.toHaveBeenCalled();
+	});
+
+	it('does not return a bearer when game access is denied', async () => {
+		game.gameApiFetch.mockResolvedValue({ status: 401, data: null, error: 'Unauthorized' });
+
+		await expect(call(gameToken, signedIn())).rejects.toMatchObject({
+			status: 403,
+			body: { message: 'Game access is not available for this account.' }
+		});
+		expect(tokens.mintGameToken).not.toHaveBeenCalled();
+	});
+
+	it('does not return a bearer when the game server cannot be reached', async () => {
+		game.gameApiFetch.mockResolvedValue({
+			status: 0,
+			data: null,
+			error: 'Could not reach the game server.'
+		});
+
+		await expect(call(gameToken, signedIn())).rejects.toMatchObject({ status: 503 });
 		expect(tokens.mintGameToken).not.toHaveBeenCalled();
 	});
 });

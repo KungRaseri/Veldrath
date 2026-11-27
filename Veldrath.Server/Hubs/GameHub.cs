@@ -68,6 +68,7 @@ public class GameHub : Hub
     private readonly IRandomSource _random;
     private readonly IZoneLocationRepository? _locations;
     private readonly IZoneLobbyResolver? _lobbies;
+    private readonly IAccountAccessReader? _accounts;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -105,7 +106,8 @@ public class GameHub : Hub
         Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         IRandomSource? randomSource = null,
         IZoneLocationRepository? locations = null,
-        IZoneLobbyResolver? lobbies = null)
+        IZoneLobbyResolver? lobbies = null,
+        IAccountAccessReader? accounts = null)
     {
         _logger = logger;
         _characterRepo = characterRepo;
@@ -126,6 +128,7 @@ public class GameHub : Hub
         _random = randomSource ?? SystemRandomSource.Shared;
         _locations = locations;
         _lobbies = lobbies;
+        _accounts = accounts;
     }
 
     public override async Task OnConnectedAsync()
@@ -4290,13 +4293,24 @@ public class GameHub : Hub
                     }
                     warnAccount.WarnCount++;
                     var threshold = _modOptions.Value.AutoBanWarnThreshold;
+                    var autoBanned = false;
                     if (warnAccount.WarnCount >= threshold)
                     {
                         warnAccount.IsBanned = true;
                         warnAccount.BannedUntil = null;
                         warnAccount.BanReason = $"Auto-banned after {warnAccount.WarnCount} warnings.";
+                        autoBanned = true;
                     }
-                    await _userManager.UpdateAsync(warnAccount);
+                    var warnUpdate = await _userManager.UpdateAsync(warnAccount);
+                    if (!warnUpdate.Succeeded)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "The warning could not be recorded.");
+                        return;
+                    }
+                    // A ban written here has to stop the next hub call in this process, so the cached account
+                    // snapshot is dropped only after Identity reports the update succeeded.
+                    if (autoBanned && _accounts is not null)
+                        await _accounts.EvictAsync(warnAccount.Id, Context.ConnectionAborted);
                     await Clients.Client(warnSession.ConnectionId).SendAsync("OnWarned",
                         new WarnedPayload(warnReason, warnAccount.WarnCount));
                     if (warnAccount.IsBanned)
@@ -4541,7 +4555,17 @@ public class GameHub : Hub
                     banAccount.IsBanned = true;
                     banAccount.BannedUntil = null;
                     banAccount.BanReason = banReason;
-                    await _userManager.UpdateAsync(banAccount);
+                    var banUpdate = await _userManager.UpdateAsync(banAccount);
+                    if (!banUpdate.Succeeded)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "The ban could not be recorded.");
+                        return;
+                    }
+                    // Evict only after the ban is persisted, so the next hub call reads it instead of the cached
+                    // pre-ban snapshot. An in-flight read cannot reinsert the old state: eviction waits on the
+                    // same per-account gate the fill holds.
+                    if (_accounts is not null)
+                        await _accounts.EvictAsync(banAccount.Id, Context.ConnectionAborted);
                     var banSession = await _playerSessionRepo.GetByCharacterIdAsync(banCharId);
                     if (banSession is not null)
                         await Clients.Client(banSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(banReason));
@@ -4569,7 +4593,15 @@ public class GameHub : Hub
                     suspAccount.IsBanned = true;
                     suspAccount.BannedUntil = DateTimeOffset.UtcNow.AddHours(suspHours);
                     suspAccount.BanReason = suspReason;
-                    await _userManager.UpdateAsync(suspAccount);
+                    var suspUpdate = await _userManager.UpdateAsync(suspAccount);
+                    if (!suspUpdate.Succeeded)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "The suspension could not be recorded.");
+                        return;
+                    }
+                    // Same rule as /ban: the next hub call in this process must observe the suspension.
+                    if (_accounts is not null)
+                        await _accounts.EvictAsync(suspAccount.Id, Context.ConnectionAborted);
                     var suspSession = await _playerSessionRepo.GetByCharacterIdAsync(suspCharId);
                     if (suspSession is not null)
                         await Clients.Client(suspSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(suspReason));

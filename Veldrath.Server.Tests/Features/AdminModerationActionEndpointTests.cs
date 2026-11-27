@@ -301,6 +301,56 @@ public class AdminModerationActionEndpointTests(WebAppFactory factory)
         audit[0].Details.Should().BeNull("an unban carries no reason");
     }
 
+    // ── Live-session enforcement: a ban must reach the next bearer request ────
+
+    [Fact]
+    public async Task Ban_RejectsTheNextBearerRequestWithAWarmCache()
+    {
+        // The target has already made an authenticated request, so its access snapshot is cached for this process.
+        var (targetToken, targetId) = await factory.CreateAccountTokenAsync("AdmMod_WarmCacheTarget");
+        using var targetClient = factory.CreateClient();
+        targetClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", targetToken);
+        (await targetClient.GetAsync("/api/account/profile")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await targetClient.GetAsync("/api/account/profile")).StatusCode.Should().Be(HttpStatusCode.OK,
+            "the second call is served from the cached snapshot this test deliberately warms");
+
+        var (admin, _) = await ClientAsync("AdmMod_WarmCacheBanner", "Admin");
+        var ban = await admin.PostAsJsonAsync("/api/admin/players/ban",
+            new BanPlayerRequest(targetId, "ban evasion"));
+        ban.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await targetClient.GetAsync("/api/account/profile")).StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized,
+                "the same bearer must stop working on the next request, not when the snapshot expires");
+
+        var unban = await admin.PostAsJsonAsync("/api/admin/players/unban", new UnbanPlayerRequest(targetId));
+        unban.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await targetClient.GetAsync("/api/account/profile")).StatusCode.Should()
+            .Be(HttpStatusCode.OK, "an unban restores access on the next request");
+    }
+
+    [Fact]
+    public async Task Warning_AutoBan_RejectsTheNextBearerRequest()
+    {
+        var (targetToken, targetId) = await factory.CreateAccountTokenAsync("AdmMod_WarnAutoBanTarget");
+        using var targetClient = factory.CreateClient();
+        targetClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", targetToken);
+        (await targetClient.GetAsync("/api/account/profile")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var (moderator, _) = await ClientAsync("AdmMod_WarnAutoBanModerator", "Moderator");
+        // Moderation:AutoBanWarnThreshold defaults to 3.
+        for (var warning = 1; warning <= 3; warning++)
+        {
+            var response = await moderator.PostAsJsonAsync("/api/admin/players/warn",
+                new WarnPlayerRequest(targetId, $"warning {warning}"));
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        (await targetClient.GetAsync("/api/account/profile")).StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized, "the warning auto-ban must evict the warm snapshot too");
+    }
+
     // ── POST /api/admin/players/mute ──────────────────────────────────────────
 
     [Theory]

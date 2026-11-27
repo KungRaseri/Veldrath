@@ -8,6 +8,7 @@ using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
@@ -270,6 +271,10 @@ internal static class HubHarness
     /// Run service the hub talks to; the real one over <paramref name="db"/> when omitted, so a test can either
     /// observe the run's rows or a mock's invocations.
     /// </param>
+    /// <param name="accounts">
+    /// Account snapshot store the moderation writers evict after a successful ban; omitted means the hub has no
+    /// cache to evict into, which is what the non-moderation tests want.
+    /// </param>
     /// <returns>The hub and the fakes around it.</returns>
     public static (
         GameHub Hub,
@@ -293,6 +298,7 @@ internal static class HubHarness
         IZoneLocationRepository? locations = null,
         IZoneLobbyResolver? lobbies = null,
         Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
+        IAccountAccessReader? accounts = null,
         params string[] permissions)
     {
         var sender = mediator ?? new Mock<ISender>();
@@ -324,7 +330,8 @@ internal static class HubHarness
             locations,
             lobbies ?? new ZoneLobbyResolver(
                 locations ?? new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
-                new CharacterUnlockedLocationRepository(db)));
+                new CharacterUnlockedLocationRepository(db)),
+            accounts);
 
         var clients = new RecordingHubClients();
         var groups = new FakeGroupManager();

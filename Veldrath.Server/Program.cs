@@ -91,6 +91,8 @@ try
     {
         // Invocation attempts are invisible to the HTTP limiter, so an opt-in filter counts them separately.
         options.AddFilter<RateLimitObservationFilter>();
+        // A connection established before a ban keeps working otherwise; this refuses the next invocation.
+        options.AddFilter<BanGuardFilter>();
     });
 
     // CORS — browser clients (SvelteKit dev server, Docker web, production domain).
@@ -165,6 +167,10 @@ try
     builder.Services.AddScoped<AccountService>();
     // Provisions the Identity row (roles/permissions) for a Better Auth account on first token use.
     builder.Services.AddScoped<AccountProvisioningService>();
+    // The moderation guards read the same snapshot through the interface, so both token shapes and the hub filter
+    // consult one per-process view of the account's ban state.
+    builder.Services.AddScoped<IAccountAccessReader>(provider =>
+        provider.GetRequiredService<AccountProvisioningService>());
     builder.Services.AddScoped<FoundryService>();
     builder.Services.AddScoped<FoundryNotificationWriter>();
     // The content write path, shared by the editor's endpoints and Foundry's review gate.
