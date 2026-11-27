@@ -11,6 +11,8 @@
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
     <!-- Integration testing host -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <!-- A real SignalR client, so hub filters and per-account invocation budgets are exercised over the wire -->
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <!-- Mocking for unit-level health check tests -->
     <PackageReference Include="Moq" />
     <PackageReference Include="Newtonsoft.Json" />
