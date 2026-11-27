@@ -175,8 +175,8 @@ export interface MapGraphSaveResult {
 	issues: MapGraphIssue[];
 	/**
 	 * The reason a refusal happened, worded by the server and shown to the author **verbatim** — a live-map
-	 * refusal names the loop that gets an edit into play (reviewer deactivates → author edits → author submits →
-	 * reviewer approves), which a generic "conflict" would hide.
+	 * refusal names the freeze (authors cannot save to live maps until map revisions exist) instead of
+	 * recommending retirement, which most live maps cannot do because other nodes still exit to them.
 	 */
 	message: string | null;
 }
