@@ -67,7 +67,7 @@ public class AdminReportingAndStatusEndpointTests(WebAppFactory factory)
     }
 
     private async Task<Character> SeedSessionAsync(
-        string characterName, string zoneId, string regionId = "varenmark")
+        string characterName, string? zoneId, string regionId = "varenmark")
     {
         var (_, accountId) = await factory.CreateAccountTokenAsync($"sess_{characterName}");
 
@@ -296,12 +296,51 @@ public class AdminReportingAndStatusEndpointTests(WebAppFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    private async Task<string> SeedZoneAsync(string name)
+    {
+        var zoneId = $"statuszone-{Guid.NewGuid():N}";
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Zones.Add(new Zone
+        {
+            Id = zoneId,
+            Name = name,
+            Description = "fixture zone for the admin status tests",
+            RegionId = "varenmark",
+        });
+        await db.SaveChangesAsync();
+        return zoneId;
+    }
+
     // ── GET /api/admin/status ─────────────────────────────────────────────────
     //
-    // The handler's body cannot be exercised here: its GroupBy/OrderByDescending over a projected aggregate is
-    // translated by Npgsql but rejected by the SQLite provider ("could not be translated"), so a request against the
-    // test host returns 500. Only the authorization boundary is assertable on this infrastructure — covering the
-    // snapshot itself needs a Postgres-backed host (see the class notes).
+    // The snapshot body is exercised end to end: the zone-population aggregate used to fail translation on
+    // every provider (a DTO-constructor projection cannot be ordered by), which the authorization-only tests
+    // below could not see. The Npgsql translation path is pinned separately in AdminStatusQueryTests.
+
+    [Fact]
+    public async Task Status_Admin_ReportsOccupiedZonesOrderedByPopulation()
+    {
+        var crowded = await SeedZoneAsync("Status Crowded");
+        var quiet = await SeedZoneAsync("Status Quiet");
+        await SeedSessionAsync("AdmStat_CrowdOne", crowded);
+        await SeedSessionAsync("AdmStat_CrowdTwo", crowded);
+        await SeedSessionAsync("AdmStat_Quiet", quiet);
+        // A character on the region map (no zone) must not create a row of its own.
+        await SeedSessionAsync("AdmStat_OnMap", null);
+        using var client = await AuthedClientAsync("AdmStatus_Admin", "Admin");
+
+        var response = await client.GetAsync("/api/admin/status");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await response.Content.ReadFromJsonAsync<ServerStatusDto>();
+        var ours = status!.ZonePopulations.Where(z => z.ZoneId == crowded || z.ZoneId == quiet).ToList();
+        ours.Should().Equal(
+            new ZonePopulationDto(crowded, "Status Crowded", 2),
+            new ZonePopulationDto(quiet, "Status Quiet", 1));
+        status.ConnectedPlayers.Should().BeGreaterThanOrEqualTo(3);
+        status.ZonePopulations.Should().OnlyContain(z => z.ZoneId != null && z.PlayerCount > 0);
+    }
 
     [Fact]
     public async Task Status_PlainUser_ReturnsForbidden()

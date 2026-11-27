@@ -657,14 +657,7 @@ public static class AdminEndpoints
         [FromServices] ApplicationDbContext db,
         [FromServices] HealthCheckService healthCheckService)
     {
-        var sessions = await db.PlayerSessions
-            .AsNoTracking()
-            .Include(s => s.Zone)
-            .Where(s => s.ZoneId != null)
-            .GroupBy(s => new { s.ZoneId, s.Zone!.Name })
-            .Select(g => new ZonePopulationDto(g.Key.ZoneId!, g.Key.Name, g.Count()))
-            .OrderByDescending(z => z.PlayerCount)
-            .ToListAsync();
+        var zonePopulations = await ZonePopulationQuery(db).ToListAsync();
 
         var total = await db.PlayerSessions.AsNoTracking().CountAsync();
         var registeredAccounts = await db.Users.AsNoTracking().CountAsync();
@@ -678,8 +671,29 @@ public static class AdminEndpoints
                 e.Value.Description ?? e.Value.Exception?.Message))
             .ToList();
 
-        return Results.Ok(new ServerStatusDto(total, sessions, _serverStartedAt, registeredAccounts, totalCharacters, healthChecks));
+        return Results.Ok(new ServerStatusDto(total, zonePopulations, _serverStartedAt, registeredAccounts, totalCharacters, healthChecks));
     }
+
+    /// <summary>
+    /// The zone-population aggregate behind <c>GET /api/admin/status</c>: one row per occupied zone, busiest first.
+    /// </summary>
+    /// <remarks>
+    /// The count is aggregated in SQL and the ordering is applied to the anonymous projection, with the
+    /// <see cref="ZonePopulationDto"/> built last. EF Core cannot translate an ordering over a member of a
+    /// constructor projection — it rejects the whole query instead — so the snapshot answered 500 on every
+    /// request until this shape was used. Kept as its own method so <c>AdminStatusQueryTests</c> can assert that
+    /// the production provider translates it.
+    /// </remarks>
+    /// <param name="db">The application database context.</param>
+    /// <returns>The untranslated zone-population query.</returns>
+    internal static IQueryable<ZonePopulationDto> ZonePopulationQuery(ApplicationDbContext db) =>
+        db.PlayerSessions
+            .AsNoTracking()
+            .Where(s => s.ZoneId != null)
+            .GroupBy(s => new { s.ZoneId, s.Zone!.Name })
+            .Select(g => new { ZoneId = g.Key.ZoneId!, ZoneName = g.Key.Name, PlayerCount = g.Count() })
+            .OrderByDescending(row => row.PlayerCount)
+            .Select(row => new ZonePopulationDto(row.ZoneId, row.ZoneName, row.PlayerCount));
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
