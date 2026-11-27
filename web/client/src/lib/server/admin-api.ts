@@ -125,30 +125,34 @@ export function getUser(identity: GameIdentity, id: string) {
 	return gameApiFetch<PlayerDetail>(identity, `/api/admin/users/${id}`);
 }
 
-/** Assigns a role (admin `manage_users`). */
+/** Assigns a role (admin `admin.roles`). */
 export function assignRole(identity: GameIdentity, id: string, role: string) {
-	return gameApiFetch<null>(identity, `/api/admin/users/${id}/roles`, { json: { role } });
+	return gameApiFetch<null>(identity, `/api/admin/roles/users/${id}/roles`, { json: { role } });
 }
 
-/** Revokes a role (admin `manage_users`). */
+/** Revokes a role (admin `admin.roles`). */
 export function revokeRole(identity: GameIdentity, id: string, role: string) {
-	return gameApiFetch<null>(identity, `/api/admin/users/${id}/roles/${encodeURIComponent(role)}`, {
-		method: 'DELETE'
-	});
+	return gameApiFetch<null>(
+		identity,
+		`/api/admin/roles/users/${id}/roles/${encodeURIComponent(role)}`,
+		{
+			method: 'DELETE'
+		}
+	);
 }
 
-/** Grants a per-user permission (admin `manage_users`). */
+/** Grants a per-user permission (admin `admin.roles`). */
 export function grantPermission(identity: GameIdentity, id: string, permission: string) {
-	return gameApiFetch<null>(identity, `/api/admin/users/${id}/permissions`, {
+	return gameApiFetch<null>(identity, `/api/admin/roles/users/${id}/permissions`, {
 		json: { permission }
 	});
 }
 
-/** Revokes a per-user permission (admin `manage_users`). */
+/** Revokes a per-user permission (admin `admin.roles`). */
 export function revokePermission(identity: GameIdentity, id: string, permission: string) {
 	return gameApiFetch<null>(
 		identity,
-		`/api/admin/users/${id}/permissions/${encodeURIComponent(permission)}`,
+		`/api/admin/roles/users/${id}/permissions/${encodeURIComponent(permission)}`,
 		{ method: 'DELETE' }
 	);
 }

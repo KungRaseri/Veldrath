@@ -1,11 +1,13 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -26,6 +28,38 @@ public class AdminModerationActionEndpointTests(WebAppFactory factory)
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return (client, accountId);
+    }
+
+    /// <summary>
+    /// Builds a client for an account that holds only the supplied <c>permission</c> claims and no role, so the
+    /// moderation tests can show that splitting role mutation onto <c>admin.roles</c> left moderation intact.
+    /// </summary>
+    private async Task<HttpClient> PermissionOnlyClientAsync(string username, params string[] permissions)
+    {
+        var (_, accountId) = await factory.CreateAccountTokenAsync(username);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<PlayerAccount>>();
+            var user = await userManager.FindByNameAsync(username);
+            user.Should().NotBeNull($"the test account {username} should exist");
+
+            foreach (var permission in permissions)
+            {
+                var added = await userManager.AddClaimAsync(
+                    user!,
+                    new Claim(RolePermissionResolver.PermissionClaimType, permission));
+                added.Succeeded.Should().BeTrue(string.Join("; ", added.Errors.Select(e => e.Description)));
+            }
+        }
+
+        // The account's access snapshot may already be cached from an earlier request.
+        AccountProvisioningService.Invalidate(accountId);
+
+        var (token, _) = await factory.CreateAccountTokenAsync(username);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
     }
 
     private async Task<Guid> RegisterTargetAsync(string username) =>
@@ -157,6 +191,27 @@ public class AdminModerationActionEndpointTests(WebAppFactory factory)
             new BanPlayerRequest(Guid.NewGuid(), "not allowed"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task BanPlayer_StillWorks_WithManageUsersOnly()
+    {
+        // An account whose admin permission is admin.users alone (no admin.roles) must still moderate:
+        // gating role mutation behind admin.roles must not narrow anything else.
+        var targetId = await RegisterTargetAsync("AdmMod_BanUsersOnlyTarget");
+        using var client = await PermissionOnlyClientAsync(
+            "AdmMod_UsersOnlyBanner",
+            Permissions.ManageUsers,
+            Permissions.BanPlayers);
+
+        var response = await client.PostAsJsonAsync("/api/admin/players/ban",
+            new BanPlayerRequest(targetId, "still moderated"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var account = await LoadAsync("AdmMod_BanUsersOnlyTarget");
+        account.IsBanned.Should().BeTrue();
+        account.BanReason.Should().Be("still moderated");
+        (await AuditEntriesAsync("ban", targetId)).Should().ContainSingle();
     }
 
     [Fact]

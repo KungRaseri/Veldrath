@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -25,6 +26,7 @@ internal sealed record AdminUserPage(int Total, int Page, int PageSize, List<Pla
 public class AdminUserManagementEndpointTests(WebAppFactory factory)
 {
     private const string AdminUsers = "/api/admin/users";
+    private const string AdminRoles = "/api/admin/roles/users";
 
     private async Task<HttpClient> AdminClientAsync(string username) =>
         await AuthedClientAsync(username, "Admin");
@@ -41,6 +43,47 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
+    }
+
+    /// <summary>
+    /// Builds a client for an account that holds only the supplied <c>permission</c> claims and no role, so a test
+    /// can prove that the ability to administer accounts (<c>admin.users</c>) and the ability to hand out
+    /// authority (<c>admin.roles</c>) are separate grants.
+    /// </summary>
+    private async Task<(HttpClient Client, Guid AccountId)> PermissionOnlyClientAsync(
+        string username,
+        params string[] permissions)
+    {
+        var (_, accountId) = await factory.CreateAccountTokenAsync(username);
+
+        await WithAccountAsync(username, async (userManager, user) =>
+        {
+            foreach (var permission in permissions)
+            {
+                var added = await userManager.AddClaimAsync(
+                    user,
+                    new Claim(RolePermissionResolver.PermissionClaimType, permission));
+                added.Succeeded.Should().BeTrue(string.Join("; ", added.Errors.Select(e => e.Description)));
+            }
+        });
+
+        // The account's access snapshot may already be cached from an earlier request.
+        AccountProvisioningService.Invalidate(accountId);
+
+        var (token, _) = await factory.CreateAccountTokenAsync(username);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return (client, accountId);
+    }
+
+    private async Task<List<string>> PermissionsOfAsync(string username)
+    {
+        var permissions = new List<string>();
+        await WithAccountAsync(username, async (um, user) =>
+            permissions.AddRange((await um.GetClaimsAsync(user))
+                .Where(c => c.Type == RolePermissionResolver.PermissionClaimType)
+                .Select(c => c.Value)));
+        return permissions;
     }
 
     private async Task<Guid> RegisterAsync(string username, params string[] roles) =>
@@ -375,7 +418,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         detail.MutedUntil.Should().BeCloseTo(mutedUntil, TimeSpan.FromSeconds(1));
     }
 
-    // ── POST /api/admin/users/{id}/roles ──────────────────────────────────────
+    // ── POST /api/admin/roles/users/{id}/roles ────────────────────────────────
 
     [Fact]
     public async Task AssignRole_UnknownRole_ReturnsBadRequest()
@@ -383,7 +426,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_AssignBadRole");
         using var client = await AdminClientAsync("AdmUsr_AssignBadRoleAdmin");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/roles",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/roles",
             new AssignRoleRequest("SupremeOverlord"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -397,7 +440,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
     {
         using var client = await AdminClientAsync("AdmUsr_AssignNoAccount");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{Guid.NewGuid()}/roles",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{Guid.NewGuid()}/roles",
             new AssignRoleRequest("Curator"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -409,7 +452,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_AssignNew");
         using var client = await AdminClientAsync("AdmUsr_AssignNewAdmin");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/roles",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/roles",
             new AssignRoleRequest("Curator"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -432,7 +475,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_AssignAgain", "Curator");
         using var client = await AdminClientAsync("AdmUsr_AssignAgainAdmin");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/roles",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/roles",
             new AssignRoleRequest("Curator"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -448,20 +491,68 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
     {
         using var client = await PlainClientAsync("AdmUsr_AssignPlain");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{Guid.NewGuid()}/roles",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{Guid.NewGuid()}/roles",
             new AssignRoleRequest("Admin"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    // ── DELETE /api/admin/users/{id}/roles/{role} ─────────────────────────────
+    [Fact]
+    public async Task AssignRole_IsForbidden_ForAnAccountWithManageUsersOnly()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_UsersOnly", Permissions.ManageUsers);
+        using var ownedClient = client;
+        var targetId = await RegisterAsync("AdmUsr_UsersOnlyTarget");
+
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{targetId}/roles",
+            new AssignRoleRequest("Admin"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "admin.users administers accounts, it does not hand out authority");
+        (await RolesOfAsync("AdmUsr_UsersOnlyTarget")).Should().BeEmpty();
+        (await AuditEntriesAsync("assign_role", targetId)).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AssignRole_IsAllowed_ForAnAccountWithManageRoles()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_RolesOnly", Permissions.ManageRoles);
+        using var ownedClient = client;
+        var targetId = await RegisterAsync("AdmUsr_RolesOnlyTarget");
+
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{targetId}/roles",
+            new AssignRoleRequest("Curator"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await RolesOfAsync("AdmUsr_RolesOnlyTarget")).Should().Contain("Curator");
+    }
+
+    [Fact]
+    public async Task RoleMutation_WritesAuditRow()
+    {
+        var (client, actorId) = await PermissionOnlyClientAsync("AdmUsr_AuditRole", Permissions.ManageRoles);
+        using var ownedClient = client;
+        var targetId = await RegisterAsync("AdmUsr_AuditRoleTarget");
+
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{targetId}/roles",
+            new AssignRoleRequest("GameMaster"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var audit = await AuditEntriesAsync("assign_role", targetId);
+        audit.Should().ContainSingle();
+        audit[0].ActorAccountId.Should().Be(actorId);
+        audit[0].ActorUsername.Should().Be("AdmUsr_AuditRole");
+        audit[0].Details.Should().Be("GameMaster");
+    }
+
+    // ── DELETE /api/admin/roles/users/{id}/roles/{role} ──────────────────────
 
     [Fact]
     public async Task RevokeRole_UnknownAccount_ReturnsNotFound()
     {
         using var client = await AdminClientAsync("AdmUsr_RevokeNoAccount");
 
-        var response = await client.DeleteAsync($"{AdminUsers}/{Guid.NewGuid()}/roles/Curator");
+        var response = await client.DeleteAsync($"{AdminRoles}/{Guid.NewGuid()}/roles/Curator");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -472,7 +563,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_RevokeMissing");
         using var client = await AdminClientAsync("AdmUsr_RevokeMissingAdmin");
 
-        var response = await client.DeleteAsync($"{AdminUsers}/{accountId}/roles/Developer");
+        var response = await client.DeleteAsync($"{AdminRoles}/{accountId}/roles/Developer");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<AdminActionResponse>();
@@ -487,7 +578,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_RevokeReal", "GameMaster");
         using var client = await AdminClientAsync("AdmUsr_RevokeRealAdmin");
 
-        var response = await client.DeleteAsync($"{AdminUsers}/{accountId}/roles/GameMaster");
+        var response = await client.DeleteAsync($"{AdminRoles}/{accountId}/roles/GameMaster");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<AdminActionResponse>();
@@ -503,12 +594,12 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
     public async Task RevokeRole_WithoutToken_ReturnsUnauthorized()
     {
         var response = await factory.CreateClient()
-            .DeleteAsync($"{AdminUsers}/{Guid.NewGuid()}/roles/Curator");
+            .DeleteAsync($"{AdminRoles}/{Guid.NewGuid()}/roles/Curator");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── POST /api/admin/users/{id}/permissions ────────────────────────────────
+    // ── POST /api/admin/roles/users/{id}/permissions ─────────────────────────
 
     [Fact]
     public async Task GrantPermission_UnknownPermission_ReturnsBadRequest()
@@ -516,7 +607,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_GrantBad");
         using var client = await AdminClientAsync("AdmUsr_GrantBadAdmin");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/permissions",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/permissions",
             new GrantPermissionRequest("world.nuke"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -530,7 +621,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
     {
         using var client = await AdminClientAsync("AdmUsr_GrantNoAccount");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{Guid.NewGuid()}/permissions",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{Guid.NewGuid()}/permissions",
             new GrantPermissionRequest("content.view"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -542,7 +633,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_GrantNew");
         using var client = await AdminClientAsync("AdmUsr_GrantNewAdmin");
 
-        var response = await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/permissions",
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/permissions",
             new GrantPermissionRequest("content.review"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -562,10 +653,10 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
     {
         var accountId = await RegisterAsync("AdmUsr_GrantAgain");
         using var client = await AdminClientAsync("AdmUsr_GrantAgainAdmin");
-        await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/permissions",
+        await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/permissions",
             new GrantPermissionRequest("world.give"));
 
-        var second = await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/permissions",
+        var second = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/permissions",
             new GrantPermissionRequest("world.give"));
 
         second.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -575,14 +666,30 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
             "only the first grant is an auditable change");
     }
 
-    // ── DELETE /api/admin/users/{id}/permissions/{permission} ─────────────────
+    [Fact]
+    public async Task GrantPermission_RefusesSelfEscalation()
+    {
+        var (client, accountId) = await PermissionOnlyClientAsync("AdmUsr_SelfEscalation", Permissions.ManageRoles);
+        using var ownedClient = client;
+
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/permissions",
+            new GrantPermissionRequest(Permissions.ManageUsers));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "even admin.roles must not be used to widen the caller's own authority");
+        (await PermissionsOfAsync("AdmUsr_SelfEscalation")).Should().NotContain(Permissions.ManageUsers);
+        (await AuditEntriesAsync("grant_permission", accountId)).Should().BeEmpty(
+            "a refused escalation is not an auditable change");
+    }
+
+    // ── DELETE /api/admin/roles/users/{id}/permissions/{permission} ───────────
 
     [Fact]
     public async Task RevokePermission_UnknownAccount_ReturnsNotFound()
     {
         using var client = await AdminClientAsync("AdmUsr_RevokePermNoAccount");
 
-        var response = await client.DeleteAsync($"{AdminUsers}/{Guid.NewGuid()}/permissions/content.view");
+        var response = await client.DeleteAsync($"{AdminRoles}/{Guid.NewGuid()}/permissions/content.view");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -593,7 +700,7 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         var accountId = await RegisterAsync("AdmUsr_RevokePermMissing");
         using var client = await AdminClientAsync("AdmUsr_RevokePermMissingAdmin");
 
-        var response = await client.DeleteAsync($"{AdminUsers}/{accountId}/permissions/content.view");
+        var response = await client.DeleteAsync($"{AdminRoles}/{accountId}/permissions/content.view");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<AdminActionResponse>();
@@ -606,10 +713,10 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
     {
         var accountId = await RegisterAsync("AdmUsr_RevokePermReal");
         using var client = await AdminClientAsync("AdmUsr_RevokePermRealAdmin");
-        await client.PostAsJsonAsync($"{AdminUsers}/{accountId}/permissions",
+        await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/permissions",
             new GrantPermissionRequest("players.suspend"));
 
-        var response = await client.DeleteAsync($"{AdminUsers}/{accountId}/permissions/players.suspend");
+        var response = await client.DeleteAsync($"{AdminRoles}/{accountId}/permissions/players.suspend");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<AdminActionResponse>();

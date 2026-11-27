@@ -112,13 +112,13 @@ describe('admin writes', () => {
 	it('assigns roles and permissions with POST payloads', () => {
 		assignRole(identity, 'acc-1', 'Moderator');
 		expect(lastCall()).toMatchObject({
-			path: '/api/admin/users/acc-1/roles',
+			path: '/api/admin/roles/users/acc-1/roles',
 			options: { json: { role: 'Moderator' } }
 		});
 
 		grantPermission(identity, 'acc-1', 'players.ban');
 		expect(lastCall()).toMatchObject({
-			path: '/api/admin/users/acc-1/permissions',
+			path: '/api/admin/roles/users/acc-1/permissions',
 			options: { json: { permission: 'players.ban' } }
 		});
 	});
@@ -126,13 +126,13 @@ describe('admin writes', () => {
 	it('revokes roles and permissions with encoded DELETE paths', () => {
 		revokeRole(identity, 'acc-1', 'Game Master');
 		expect(lastCall()).toMatchObject({
-			path: '/api/admin/users/acc-1/roles/Game%20Master',
+			path: '/api/admin/roles/users/acc-1/roles/Game%20Master',
 			options: { method: 'DELETE' }
 		});
 
 		revokePermission(identity, 'acc-1', 'players.ban');
 		expect(lastCall()).toMatchObject({
-			path: '/api/admin/users/acc-1/permissions/players.ban',
+			path: '/api/admin/roles/users/acc-1/permissions/players.ban',
 			options: { method: 'DELETE' }
 		});
 	});
