@@ -123,9 +123,19 @@ try
     builder.Services.Configure<Veldrath.Server.Settings.ModerationOptions>(
         builder.Configuration.GetSection("Moderation"));
 
-    var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
-    var adminActionsLimit = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute", 20);
-    var hubCommandsLimit = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute", 120);
+    // Permits are per caller, not per process. There was no traffic to size them from on 2026-11-27:
+    // production held 4 accounts, 3 characters and 0 player sessions, and answered 0 of 18,778 proxy log
+    // lines with 429. These are therefore stated capacity assumptions, not observations (comment 717 on
+    // t_66e06bcf). The local harness measured what the previous process-wide buckets did: one account spent
+    // the whole `hub-commands` allowance and a second account was rejected on its first request, and
+    // malformed `foundry-writes` requests spent permits too. Each value is roughly three times the
+    // legitimate client burst that harness saw. A hub connection costs two permits (negotiate plus transport
+    // upgrade) and the browser reconnect cycle can spend eight more, so 30 covers connecting and reconnecting;
+    // a foundry submission is deliberate and rare, so its smaller burst is still generous; admin actions are
+    // burstier but still per operator. Revisit against observed rates once a deployment carries real players.
+    var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 20);
+    var adminActionsLimit = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute", 40);
+    var hubCommandsLimit = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute", 30);
 
     // Measurement is opt-in and never changes enforcement: the three named policies below keep their permits,
     // windows, assignments and rejection behaviour whether or not anything is observing them.
@@ -135,22 +145,14 @@ try
 
     builder.Services.AddRateLimiter(opts =>
     {
-        opts.AddFixedWindowLimiter("foundry-writes", o =>
-        {
-            o.Window = TimeSpan.FromMinutes(1);
-            o.PermitLimit = foundryWriteLimit;
-        });
-        opts.AddFixedWindowLimiter("admin-actions", o =>
-        {
-            o.Window = TimeSpan.FromMinutes(1);
-            o.PermitLimit = adminActionsLimit;
-        });
-        // Throttles authenticated SignalR hub commands to prevent spam from modded clients.
-        opts.AddFixedWindowLimiter("hub-commands", o =>
-        {
-            o.Window = TimeSpan.FromMinutes(1);
-            o.PermitLimit = hubCommandsLimit;
-        });
+        // One bucket per caller per policy: the authenticated account subject, or the client address when a
+        // request carries no usable subject (Infrastructure/RateLimitPartitionKey). The policy names and config
+        // keys are unchanged, so the observation middleware and the OnRejected hook keep reporting.
+        opts.AddPolicy("foundry-writes", PolicyPartition(foundryWriteLimit));
+        opts.AddPolicy("admin-actions", PolicyPartition(adminActionsLimit));
+        // Meters SignalR connection establishment (negotiate plus transport upgrade). Command invocations travel
+        // inside the upgraded WebSocket frame and are counted, never limited, by RateLimitObservationFilter.
+        opts.AddPolicy("hub-commands", PolicyPartition(hubCommandsLimit));
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         // Records which policy and route template rejected a request. A no-op unless RateLimit:Observe is on.
         opts.OnRejected = (rejected, _) =>
@@ -611,6 +613,17 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Builds one named policy's partitioner: a fixed-window bucket per caller, keyed by
+// Infrastructure/RateLimitPartitionKey. The window is a burst guard, not a quota, so fixed windows are enough.
+static Func<HttpContext, RateLimitPartition<string>> PolicyPartition(int permitLimit) =>
+    context => RateLimitPartition.GetFixedWindowLimiter(
+        RateLimitPartitionKey.For(context),
+        _ => new FixedWindowRateLimiterOptions
+        {
+            Window = TimeSpan.FromMinutes(1),
+            PermitLimit = permitLimit,
+        });
 
 // Detects migrations in __EFMigrationsHistory that no longer exist in the codebase
 // (e.g., after migrations are squashed or renamed during development).  In that state,

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
@@ -15,7 +16,7 @@ namespace Veldrath.Server.Infrastructure;
 /// <param name="StartedAt">UTC start of the window the counts belong to.</param>
 /// <param name="Window">Length of the window.</param>
 /// <param name="RejectionTotal">Number of requests the limiter rejected with 429 in the window.</param>
-/// <param name="RejectionsByPolicy">Rejections per named rate-limit policy — the effective partition.</param>
+/// <param name="RejectionsByPolicy">Rejections per named rate-limit policy. The policy is the reporting unit; the caller's partition key is never recorded.</param>
 /// <param name="RejectionsByRoute">Rejections per route template, with hub negotiate and transport split.</param>
 /// <param name="RequestTotal">Eligible HTTP requests seen in the window, rejected ones included.</param>
 /// <param name="RequestsByPolicy">Eligible HTTP requests per named rate-limit policy.</param>
@@ -57,10 +58,11 @@ public sealed record RateLimitObservationSnapshot(
 /// </para>
 /// <para>
 /// Two different things are measured, and they must not be conflated. The named policies
-/// (<c>foundry-writes</c>, <c>admin-actions</c>, <c>hub-commands</c>) are HTTP middleware: a policy is one shared
-/// bucket per process, and <c>hub-commands</c> meters negotiate and transport HTTP requests — including a
-/// long-polling or SSE fallback — but not individual SignalR invocations, which travel inside an upgraded
-/// WebSocket frame. Invocation attempts are therefore counted separately, per account and handler name.
+/// (<c>foundry-writes</c>, <c>admin-actions</c>, <c>hub-commands</c>) are HTTP middleware, and each is
+/// partitioned per caller by <see cref="RateLimitPartitionKey"/>, so the permits one account spends are its
+/// own. <c>hub-commands</c> meters negotiate and transport HTTP requests — including a long-polling or SSE
+/// fallback — but not individual SignalR invocations, which travel inside an upgraded WebSocket frame.
+/// Invocation attempts are therefore counted separately, per account and handler name.
 /// </para>
 /// <para>
 /// Counts are aggregated per fixed window and per-account maps are bounded, so a busy window cannot grow memory
@@ -103,7 +105,7 @@ public sealed class RateLimitObservation
 
     /// <summary>Gets the named policy the request's endpoint is limited by, or <see langword="null"/>.</summary>
     /// <param name="context">Request being handled.</param>
-    /// <returns>The policy name, which is also the effective partition.</returns>
+    /// <returns>The policy name.</returns>
     public static string? PolicyFor(HttpContext context) =>
         context.GetEndpoint()?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
 
@@ -310,6 +312,86 @@ public sealed class RateLimitObservation
                 InvocationTotal == 0 ? 0 : (double)peakInvocations / InvocationTotal,
                 OverflowRequests);
         }
+    }
+}
+
+/// <summary>
+/// Builds the rate-limit partition key for one request, so each caller gets its own permit bucket.
+/// </summary>
+/// <remarks>
+/// <para>
+/// An authenticated caller is keyed on its account subject. One account therefore cannot spend another
+/// account's permits, and a proxy hop or a second device does not multiply that account's allowance. A request
+/// without a usable subject falls back to the client address — <c>X-Forwarded-For</c> first, then the
+/// connection's remote address — because one bucket shared by every anonymous caller would let one caller
+/// starve the rest.
+/// </para>
+/// <para>
+/// The forwarded header is read from the right: a proxy appends the address it observed, so the right-most
+/// parseable entry is the hop that actually reached this process, while entries to its left are client-supplied
+/// and can be spoofed.
+/// </para>
+/// <para>
+/// The value is a partition key and is never logged or exported. It is one of <c>account:{guid}</c> or
+/// <c>address:{ip}</c>, both bounded in length, so a request cannot inflate the key.
+/// </para>
+/// </remarks>
+public static class RateLimitPartitionKey
+{
+    /// <summary>Prefix that keeps account buckets from ever colliding with address buckets.</summary>
+    public const string AccountPrefix = "account:";
+
+    /// <summary>Prefix for a caller identified by address rather than by account.</summary>
+    public const string AddressPrefix = "address:";
+
+    /// <summary>Header through which the reverse proxy reports the client address.</summary>
+    public const string ForwardedForHeader = "X-Forwarded-For";
+
+    /// <summary>Gets the partition key for a request.</summary>
+    /// <param name="context">Request being partitioned.</param>
+    /// <returns>The account key when the principal carries a GUID subject, otherwise the address key.</returns>
+    public static string For(HttpContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (RateLimitObservation.ResolveAccountId(context.User) is { } accountId)
+            return string.Concat(AccountPrefix, accountId.ToString("D"));
+
+        var address = ForwardedAddress(context) ?? Normalize(context.Connection.RemoteIpAddress);
+        return string.Concat(AddressPrefix, address?.ToString() ?? "unknown");
+    }
+
+    private static IPAddress? ForwardedAddress(HttpContext context)
+    {
+        var values = context.Request.Headers[ForwardedForHeader];
+        for (var line = values.Count - 1; line >= 0; line--)
+        {
+            var value = values[line];
+            if (string.IsNullOrWhiteSpace(value))
+                continue;
+
+            var entries = value.Split(
+                ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            for (var entry = entries.Length - 1; entry >= 0; entry--)
+            {
+                if (IPAddress.TryParse(entries[entry], out var address))
+                    return Normalize(address);
+            }
+        }
+
+        return null;
+    }
+
+    private static IPAddress? Normalize(IPAddress? address)
+    {
+        if (address is null)
+            return null;
+
+        // Drop any scope id, and fold an IPv4-mapped IPv6 address back to IPv4, so the same caller never gets
+        // two buckets depending on how the address was formatted.
+        return address.IsIPv4MappedToIPv6
+            ? address.MapToIPv4()
+            : new IPAddress(address.GetAddressBytes());
     }
 }
 

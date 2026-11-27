@@ -42,7 +42,7 @@
 ## Veldrath Server Fixes (March 2026)
 - `GameEngineHealthCheck` injects `ISender` (MediatR) so DI-wiring is verified at health check time
 - `FoundryEndpoints.ListAsync` uses `int? page, int? pageSize` (non-nullable value-type query params return 400 in Minimal APIs)
-- `FoundryEndpoints` rate-limit reads from `RateLimit:FoundryWritesPerMinute` config (default 5 prod, 100000 test)
+- `FoundryEndpoints` rate-limit reads from `RateLimit:FoundryWritesPerMinute` config (default 20 per account per minute in production, 100000 in tests); the policy is partitioned per caller, not per process
 - `ApplicationDbContext.OnModelCreating` applies `DateTimeOffsetToStringConverter` to all `DateTimeOffset` properties on SQLite so ORDER BY works in integration tests
 - `ApplicationDbContext.FoundrySubmission.Payload` is `TEXT` (not `jsonb`) on SQLite to avoid affinity issues
 - `Veldrath.Server.Tests.csproj` references Moq and has global usings for `Veldrath.Contracts.Foundry`, `Moq`, `MediatR`
