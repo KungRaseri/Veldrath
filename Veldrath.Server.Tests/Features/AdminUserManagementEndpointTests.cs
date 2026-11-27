@@ -527,6 +527,22 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         (await RolesOfAsync("AdmUsr_RolesOnlyTarget")).Should().Contain("Curator");
     }
 
+    [Fact]
+    public async Task AssignRole_RefusesSelfAssignment()
+    {
+        var (client, accountId) = await PermissionOnlyClientAsync("AdmUsr_AssignSelf", Permissions.ManageRoles);
+        using var ownedClient = client;
+
+        var response = await client.PostAsJsonAsync($"{AdminRoles}/{accountId}/roles",
+            new AssignRoleRequest("Curator"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "admin.roles may hand out authority, but never to its own holder");
+        (await RolesOfAsync("AdmUsr_AssignSelf")).Should().BeEmpty();
+        (await AuditEntriesAsync("assign_role", accountId)).Should().BeEmpty(
+            "a refused self-assignment is not an auditable change");
+    }
+
     // ── GET /api/admin/roles/users/{id} ───────────────────────────────────────
 
     [Fact]
@@ -772,6 +788,36 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         (await PermissionsOfAsync("AdmUsr_SelfEscalation")).Should().NotContain(Permissions.ManageUsers);
         (await AuditEntriesAsync("grant_permission", accountId)).Should().BeEmpty(
             "a refused escalation is not an auditable change");
+    }
+
+    // ── Self-escalation guard policy ──────────────────────────────────────────
+
+    /// <summary>
+    /// Pins the guard's policy, not an endpoint: every declared permission is classified as either
+    /// authority-widening (blocked when self-granted) or non-escalating (safe to self-grant). A permission added to
+    /// <see cref="Permissions.All"/> without being classified fails this test, so the guard cannot silently drift
+    /// back into hand-picking a subset of the permissions that exist.
+    /// </summary>
+    [Fact]
+    public void Permissions_EveryDeclaredPermission_IsClassifiedForSelfGranting()
+    {
+        Permissions.AuthorityWidening.Should().Contain(
+            new[]
+            {
+                Permissions.ManageRoles,
+                Permissions.ManageUsers,
+                Permissions.BanPlayers,
+                Permissions.ViewPlayers,
+            },
+            "these four are the reviewed floor of the guard and may not be dropped");
+
+        Permissions.AuthorityWidening.Intersect(Permissions.NonEscalating, StringComparer.OrdinalIgnoreCase)
+            .Should().BeEmpty("a permission cannot be both blocked and safe to self-grant");
+
+        Permissions.AuthorityWidening
+            .Concat(Permissions.NonEscalating)
+            .Should().BeEquivalentTo(Permissions.All,
+                "the two sets must classify every permission, so that a newly declared one is a deliberate decision");
     }
 
     // ── DELETE /api/admin/roles/users/{id}/permissions/{permission} ───────────

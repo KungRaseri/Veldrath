@@ -69,4 +69,53 @@ public static class Permissions
         ManageContent, ViewContent, ReviewSubmissions,
         ManageRoles, ManageUsers, DebugAccess, SendAnnouncements,
     ];
+
+    /// <summary>
+    /// Permissions that hand out or widen authority, as opposed to exercising it. Granting one of these to your
+    /// own account is a privilege escalation, so <c>GrantPermissionAsync</c> refuses a self-directed grant of any
+    /// of them even for a caller who may hand out authority (<c>admin.roles</c>).
+    /// </summary>
+    /// <remarks>
+    /// This is a policy list, not a derivation from <see cref="All"/>: it names the authorities a role manager may
+    /// not hand to themselves, and it is deliberately narrower than "anything that is not read-only". Widening it
+    /// is a product decision, not a code cleanup. <see cref="NonEscalating"/> classifies the remainder, and
+    /// <c>AdminUserManagementEndpointTests.Permissions_EveryDeclaredPermission_IsClassifiedForSelfGranting</c>
+    /// fails when <see cref="All"/> grows a permission that neither set names — so adding a permission forces the
+    /// author to decide which side of this line it sits on. Compared case-insensitively, matching the endpoints.
+    /// </remarks>
+    public static IReadOnlySet<string> AuthorityWidening { get; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ManageRoles,
+            ManageUsers,
+            BanPlayers,
+            ViewPlayers,
+        };
+
+    /// <summary>
+    /// The permissions classified as safe to grant to one's own account: they let a caller act on players, world
+    /// state or content, but they neither hand out authority nor widen what the account can administer.
+    /// </summary>
+    /// <remarks>
+    /// This set exists so the guard's policy is exhaustive rather than a hand-picked subset of <see cref="All"/>.
+    /// A permission listed here is self-grantable by design; moving one into <see cref="AuthorityWidening"/>
+    /// blocks it. <see cref="All"/> must be exactly the union of the two sets, which the classification test
+    /// enforces.
+    /// </remarks>
+    public static IReadOnlySet<string> NonEscalating { get; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            KickPlayers,
+            WarnPlayers,
+            MutePlayers,
+            SuspendPlayers,
+            TeleportPlayers,
+            GiveItems,
+            RunEvents,
+            ManageContent,
+            ViewContent,
+            ReviewSubmissions,
+            DebugAccess,
+            SendAnnouncements,
+        };
 }
