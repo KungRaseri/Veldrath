@@ -1,3 +1,5 @@
+using Veldrath.Server.Data.Entities;
+
 namespace Veldrath.Server.Features.Zones;
 
 /// <summary>
@@ -47,6 +49,48 @@ public readonly record struct ZoneGroupName
     /// <exception cref="ArgumentException">The zone id or difficulty mode contains a character the format cannot carry.</exception>
     public static ZoneGroupName ForZone(string zoneId, string? difficultyMode = null) =>
         new(string.Concat(ZonePrefix, ComposeZonePart(zoneId, difficultyMode)));
+
+    /// <summary>
+    /// Builds the shared scope for a zone from the zone's catalog type: the form every consumer of a public scope
+    /// composes from.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Wilderness splits its shared scope by difficulty; every other zone type has one shared room for all of them.
+    /// A <see langword="null"/> type means the catalog has no row for the zone, and an unknown type declares no
+    /// split either, so the scope covers the whole zone. This is composition only — it neither defaults nor
+    /// normalises <paramref name="difficultyMode"/>.
+    /// </para>
+    /// <para>
+    /// The same selector is what the roster query filters on
+    /// (<see cref="Veldrath.Server.Data.Repositories.IPlayerSessionRepository.GetOnSharedZoneAsync"/>), so a caller
+    /// composes the group and reads the occupants from one decision. A reader must never derive that filter by
+    /// parsing a composed group name back into its parts.
+    /// </para>
+    /// </remarks>
+    /// <param name="zoneType">Type of the zone, or <see langword="null"/> when the catalog has no row for it.</param>
+    /// <param name="zoneId">Zone slug.</param>
+    /// <param name="difficultyMode">The character's difficulty mode.</param>
+    /// <returns>The public group name for the zone's shared scope.</returns>
+    /// <exception cref="ArgumentException">The zone id or difficulty mode contains a character the format cannot carry.</exception>
+    internal static ZoneGroupName ForSharedZone(ZoneType? zoneType, string zoneId, string difficultyMode) =>
+        ForZone(zoneId, SharedScopeDifficulty(zoneType, difficultyMode));
+
+    /// <summary>
+    /// The difficulty dimension a zone's shared scope carries, or <see langword="null"/> when the scope covers the
+    /// whole zone.
+    /// </summary>
+    /// <remarks>
+    /// This is the one wilderness predicate behind the shared scope: the hub composes the group a connection joins
+    /// with it, reads the roster of that same scope with it, and the travel command keys a destination's roster with
+    /// it. A missing type is zone-wide rather than sharded, because a zone the catalog cannot describe declares no
+    /// difficulty split. It selects a filter, not a name — no caller may recover it by parsing a composed group.
+    /// </remarks>
+    /// <param name="zoneType">Type of the zone whose shared scope is being addressed, or <see langword="null"/> when the catalog has no row.</param>
+    /// <param name="difficultyMode">The character's difficulty mode.</param>
+    /// <returns>The difficulty suffix for the scope, or <see langword="null"/> for a zone-wide scope.</returns>
+    internal static string? SharedScopeDifficulty(ZoneType? zoneType, string difficultyMode) =>
+        zoneType == ZoneType.Wilderness ? difficultyMode : null;
 
     /// <summary>Builds the scope for one instance run.</summary>
     /// <param name="zoneId">Zone slug.</param>

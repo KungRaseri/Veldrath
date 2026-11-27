@@ -546,20 +546,8 @@ public class TravelToNodeHubCommandHandler
         // split across two groups, of which a client renders only the one it joined. Reusing the caller's group when
         // it merely *names* this zone would keep a bare wilderness scope or a run scope left behind, which splits
         // the roster just as surely; the composed scope is the only form EnterZone produces.
-        return (null, SharedZoneGroup(zone, zoneId, difficultyMode));
+        return (null, ZoneGroupName.ForSharedZone(zone?.Type, zoneId, difficultyMode).Value);
     }
-
-    /// <summary>
-    /// Builds the shared (non-instance) scope for a zone: wilderness scopes carry the character's difficulty mode,
-    /// every other zone type does not. A zone row that cannot be read falls back to the scope without a mode rather
-    /// than failing the arrival, because the roster still has to exist for the location.
-    /// </summary>
-    /// <param name="zone">The zone row, or <see langword="null"/> when it is missing from the catalog.</param>
-    /// <param name="zoneId">Zone slug.</param>
-    /// <param name="difficultyMode">Character's difficulty mode.</param>
-    /// <returns>The shared scope name as SignalR sees it.</returns>
-    private static string SharedZoneGroup(ZoneEntity? zone, string zoneId, string difficultyMode) =>
-        ZoneGroupName.ForZone(zoneId, zone?.Type == ZoneType.Wilderness ? difficultyMode : null).Value;
 
     /// <summary>
     /// D8: the level gates are advisory. The location's own minimum wins over the zone's, and nothing

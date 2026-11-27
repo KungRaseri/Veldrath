@@ -305,6 +305,29 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
+    public async Task Targets_OmitsAStrangersDraftFromTheSerialisedBody()
+    {
+        var liveMapId = await EnsureAMapAsync();
+
+        using var author = await AuthedClientAsync("MapTargets_Author");
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "targets-draft-zone", "Targets Draft Zone"),
+            Json);
+        var draft = (await created.Content.ReadFromJsonAsync<MapGraphDto>(Json))!;
+
+        using var stranger = await AuthedClientAsync("MapTargets_Stranger");
+        var body = await stranger.GetStringAsync("/api/content/maps/targets");
+
+        // This one is a response-shape bug: the id, the owner slug and the name of a stranger's draft must all be
+        // absent from the payload, not merely unlinked.
+        body.Should().NotContain(draft.Id);
+        body.Should().NotContain("targets-draft-zone");
+        body.Should().NotContain("Targets Draft Zone");
+        body.Should().Contain(liveMapId, "live maps are still listed for everyone");
+    }
+
+    [Fact]
     public async Task List_ReportsTheVerdictForAMapAwaitingADecision()
     {
         using var author = await AuthedClientAsync("MapQueueVerdict_Author", "ContentEditor");

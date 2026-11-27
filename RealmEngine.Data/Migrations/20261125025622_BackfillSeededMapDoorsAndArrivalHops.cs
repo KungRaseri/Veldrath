@@ -45,6 +45,17 @@ namespace RealmEngine.Data.Migrations
     /// destination must be free (or already hold the moved walk on a replay), and anything else aborts.
     /// </para>
     /// <para>
+    /// Two shapes are older than the walk itself, and they are why this migration must not treat every missing row as
+    /// a conflict. A database seeded before the seeder derived these walks has neither the East nor the North walk:
+    /// the walk is absent rather than misplaced, so it is inserted on the seeded direction instead of being moved.
+    /// A database seeded before #282 has region markers whose <c>TargetMapId</c> was never written, so the Arrival
+    /// hop's destination does not exist yet; an unset marker is filled from its own ref (<c>zone:</c> + <c>RefId</c>,
+    /// the seeder's rule) instead of aborting. Both cases are still decided by evidence, never by preference: the
+    /// insert only happens into an empty slot, and a marker that points somewhere else — or a target map that is not
+    /// live — still aborts. Without this a legacy database could never start, and the failure is a boot loop rather
+    /// than a bad row. <c>scripts/verify-map-graph-upgrade.sh</c> covers both shapes as its <c>legacy</c> case.
+    /// </para>
+    /// <para>
     /// <c>Down</c> deliberately deletes nothing: the rows this migration adds may since have been edited in
     /// Foundry, and there is no way to tell an inserted door from an authored one. Rolling data back means
     /// restoring the pre-migration backup, or shipping a reviewed compensating migration that removes exactly the
@@ -70,6 +81,8 @@ namespace RealmEngine.Data.Migrations
                 v_inserted_edges integer := 0;
                 v_bumped_maps integer := 0;
                 v_moved_edges integer := 0;
+                v_added_walks integer := 0;
+                v_linked_markers integer := 0;
                 v_missing integer;
             BEGIN
                 -- A fresh database is the seeder's job: it returns here and seeds the current graph, doors included.
@@ -85,6 +98,10 @@ namespace RealmEngine.Data.Migrations
                 DROP TABLE IF EXISTS pg_temp._backfill_edges;
                 DROP TABLE IF EXISTS pg_temp._backfill_markers;
                 DROP TABLE IF EXISTS pg_temp._backfill_eligible;
+                DROP TABLE IF EXISTS pg_temp._backfill_rehome_state;
+                DROP TABLE IF EXISTS pg_temp._backfill_moved;
+                DROP TABLE IF EXISTS pg_temp._backfill_walk_added;
+                DROP TABLE IF EXISTS pg_temp._backfill_markers_linked;
                 DROP TABLE IF EXISTS pg_temp._backfill_changed;
 
                 CREATE TEMP TABLE _backfill_maps (
@@ -314,10 +331,9 @@ namespace RealmEngine.Data.Migrations
                 SELECT string_agg(format('%s/%s %s->%s', s."MapId", s."FromNodeId", s."FromDirection", s."ToDirection"), ', ' ORDER BY s."MapId", s."FromNodeId") INTO v_conflicts
                 FROM _backfill_rehome_state s
                 WHERE (s.source_matches AND s.destination_matches)
-                   OR (NOT s.source_matches AND NOT s.destination_matches)
-                   OR (s.source_matches AND s.destination_occupied AND NOT s.destination_matches);
+                   OR (s.destination_occupied AND NOT s.destination_matches);
                 IF v_conflicts IS NOT NULL THEN
-                    RAISE EXCEPTION 'BackfillSeededMapDoorsAndArrivalHops: a seed-time walk cannot be re-homed as declared (duplicate, missing, or destination occupied): %. Refusing to guess which walk the door should replace.', v_conflicts;
+                    RAISE EXCEPTION 'BackfillSeededMapDoorsAndArrivalHops: a seed-time walk cannot be re-homed as declared (duplicate, or the destination direction holds another edge): %. Refusing to guess which walk the door should replace.', v_conflicts;
                 END IF;
 
                 CREATE TEMP TABLE _backfill_moved ("MapId" text PRIMARY KEY) ON COMMIT DROP;
@@ -339,6 +355,24 @@ namespace RealmEngine.Data.Migrations
                     RETURNING x."MapId"
                 )
                 INSERT INTO _backfill_moved ("MapId") SELECT DISTINCT "MapId" FROM moved;
+
+                -- A database seeded before the seeder derived these walks at all has neither slot filled: the market's
+                -- walk to the Grey Cup is not East, it is nowhere. There is nothing to move, and demanding one is what
+                -- kept such a database in a crash loop. The walk is added at the direction a fresh seed uses — the same
+                -- rule the declared re-home encodes — and only because the slot is empty, which the check above has
+                -- already established; a walk found in either slot is left alone.
+                CREATE TEMP TABLE _backfill_walk_added ("MapId" text PRIMARY KEY) ON COMMIT DROP;
+                WITH added AS (
+                    INSERT INTO "MapEdges" (
+                        "Id", "MapId", "FromNodeId", "ToNodeId", "Direction", "EdgeType", "Label", "IsTraversable", "IsHidden")
+                    SELECT gen_random_uuid(), s."MapId", s."FromNodeId", s."ToNodeId", s."ToDirection", s."EdgeType",
+                           NULL, true, false
+                    FROM _backfill_rehome_state s
+                    WHERE NOT s.source_matches AND NOT s.destination_occupied
+                    RETURNING "MapId"
+                )
+                INSERT INTO _backfill_walk_added ("MapId") SELECT DISTINCT "MapId" FROM added;
+                GET DIAGNOSTICS v_added_walks = ROW_COUNT;
 
                 -- An existing node id must describe the same topology. Text, icon, layout, entry flag and sort order
                 -- are the author's; they are not compared and never rewritten.
@@ -400,6 +434,28 @@ namespace RealmEngine.Data.Migrations
                 END IF;
 
                 -- Each region board's marker must still point at the zone map the new Arrival hop is meant to reach.
+                -- A database seeded before #282 has markers with no target at all, so there is no node for the hop to
+                -- land on and no way for the board to reach its zones. The seeder's rule is deterministic — the zone
+                -- map named by the marker's own ref, when that map is live — so an unset marker is filled in. A marker
+                -- that points somewhere else is a deliberate decision (an author's, or another migration's) and still
+                -- aborts rather than being overwritten.
+                CREATE TEMP TABLE _backfill_markers_linked ("MapId" text PRIMARY KEY) ON COMMIT DROP;
+                WITH linked AS (
+                    UPDATE "MapNodes" n
+                       SET "TargetMapId" = mk."ExpectedTargetMapId",
+                           "TargetNodeId" = NULL
+                      FROM _backfill_markers mk
+                      JOIN _backfill_eligible e ON e."MapId" = mk."MapId"
+                     WHERE n."Id" = mk."NodeId"
+                       AND n."MapId" = mk."MapId"
+                       AND n."NodeType" = 'Zone'
+                       AND n."TargetMapId" IS NULL
+                       AND EXISTS (SELECT 1 FROM "Maps" tm WHERE tm."Id" = mk."ExpectedTargetMapId" AND tm."IsActive")
+                    RETURNING n."MapId"
+                )
+                INSERT INTO _backfill_markers_linked ("MapId") SELECT DISTINCT "MapId" FROM linked;
+                GET DIAGNOSTICS v_linked_markers = ROW_COUNT;
+
                 SELECT string_agg(format('%s/%s (TargetMapId=%s)', mk."MapId", mk."NodeId", COALESCE(n."TargetMapId", '<null>')), ', ' ORDER BY mk."MapId") INTO v_conflicts
                 FROM _backfill_markers mk
                 JOIN _backfill_eligible e ON e."MapId" = mk."MapId"
@@ -449,6 +505,10 @@ namespace RealmEngine.Data.Migrations
                 -- Which eligible maps actually need a write, so each is version-bumped once and only once.
                 CREATE TEMP TABLE _backfill_changed ("MapId" text PRIMARY KEY) ON COMMIT DROP;
                 INSERT INTO _backfill_changed ("MapId") SELECT "MapId" FROM _backfill_moved
+                ON CONFLICT ("MapId") DO NOTHING;
+                INSERT INTO _backfill_changed ("MapId") SELECT "MapId" FROM _backfill_walk_added
+                ON CONFLICT ("MapId") DO NOTHING;
+                INSERT INTO _backfill_changed ("MapId") SELECT "MapId" FROM _backfill_markers_linked
                 ON CONFLICT ("MapId") DO NOTHING;
                 INSERT INTO _backfill_changed ("MapId")
                 SELECT DISTINCT s."MapId"
@@ -516,8 +576,19 @@ namespace RealmEngine.Data.Migrations
                     RAISE EXCEPTION 'BackfillSeededMapDoorsAndArrivalHops: % edge slot(s) are still missing after the insert; refusing to record a half-applied patch.', v_missing;
                 END IF;
 
-                RAISE NOTICE 'BackfillSeededMapDoorsAndArrivalHops: inserted % node(s) and % edge(s); re-homed % seed-time walk(s); %/% node(s) and %/% edge slot(s) already satisfied; bumped % map version(s).',
-                    v_inserted_nodes, v_inserted_edges, v_moved_edges,
+                SELECT count(*) INTO v_missing
+                FROM _backfill_rehome_state s
+                WHERE NOT EXISTS (
+                          SELECT 1 FROM "MapEdges" x
+                          WHERE x."MapId" = s."MapId" AND x."FromNodeId" = s."FromNodeId"
+                            AND x."Direction" = s."ToDirection" AND x."ToNodeId" = s."ToNodeId"
+                            AND x."EdgeType" = s."EdgeType");
+                IF v_missing > 0 THEN
+                    RAISE EXCEPTION 'BackfillSeededMapDoorsAndArrivalHops: % seed-time walk(s) are still not on their seeded direction after the patch; refusing to record a half-applied patch.', v_missing;
+                END IF;
+
+                RAISE NOTICE 'BackfillSeededMapDoorsAndArrivalHops: inserted % node(s) and % edge(s); re-homed % seed-time walk(s); added % absent seed-time walk(s); linked % region marker(s); %/% node(s) and %/% edge slot(s) already satisfied; bumped % map version(s).',
+                    v_inserted_nodes, v_inserted_edges, v_moved_edges, v_added_walks, v_linked_markers,
                     v_expected_nodes - v_inserted_nodes, v_expected_nodes,
                     v_expected_edges - v_inserted_edges, v_expected_edges,
                     v_bumped_maps;

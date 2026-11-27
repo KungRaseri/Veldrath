@@ -74,6 +74,9 @@ public class FoundryService(
         query = scope switch
         {
             FoundrySubmissionScope.Own => query.Where(s => s.SubmitterId == callerId),
+            // The same rule as `FoundryVisibility.CanSee`, spelled out because EF cannot translate the static
+            // helper over the queryable. The detail and vote paths call the helper; this one cannot, so the two
+            // must be kept identical by hand.
             FoundrySubmissionScope.OwnPlusApproved =>
                 query.Where(s => s.SubmitterId == callerId || s.Status == FoundrySubmissionStatus.Approved),
             _ => query,
@@ -112,7 +115,7 @@ public class FoundryService(
 
     // Voting
     public async Task<(FoundrySubmissionSummaryDto? Dto, string? Error)> VoteAsync(
-        Guid submissionId, Guid voterId, int value, CancellationToken ct)
+        Guid submissionId, Guid voterId, bool isReviewer, int value, CancellationToken ct)
     {
         if (value is not (1 or -1))
             return (null, "Vote value must be +1 or -1.");
@@ -123,6 +126,11 @@ public class FoundryService(
             .FirstOrDefaultAsync(s => s.Id == submissionId, ct);
 
         if (submission is null)
+            return (null, "Submission not found.");
+
+        // A row the caller cannot read is a row they cannot vote on, and it answers exactly as a missing row
+        // does: the same message, so a vote cannot be used to probe which ids exist.
+        if (!FoundryVisibility.CanSee(voterId, isReviewer, submission))
             return (null, "Submission not found.");
 
         var existing = submission.Votes.FirstOrDefault(v => v.VoterId == voterId);

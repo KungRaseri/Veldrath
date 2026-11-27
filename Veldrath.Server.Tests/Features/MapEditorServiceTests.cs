@@ -238,13 +238,78 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var targets = await editor.GetTargetsAsync();
+        var targets = await editor.GetTargetsAsync(Editor);
 
         targets.Maps.Should().Contain(option => option.Id == HalrowMapId);
         targets.Zones.Should().Contain(option => option.Id == "the-halrow");
         targets.Regions.Should().Contain(option => option.Id == "varenmark");
         targets.Locations.Should().Contain(option => option.Id == "halrow-threshold");
         targets.Nodes.Should().Contain(option => option.Id == "zone:the-halrow:entry" && option.IsEntryPoint);
+    }
+
+    [Fact]
+    public async Task GetTargets_OmitsAStrangersDraftMapAndItsNodes()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var authorId = Guid.NewGuid();
+        var (draft, draftError) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "strangers-draft", "A Stranger's Draft"), authorId);
+        draftError.Should().BeNull();
+        var (published, publishedError) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "strangers-published", "A Stranger's Published Zone"), authorId);
+        publishedError.Should().BeNull();
+
+        // The same author, with one draft still hidden and one map already live: the picker must follow the flag,
+        // not the author.
+        db.Maps.Single(map => map.Id == published!.Id).IsActive = true;
+        await db.SaveChangesAsync();
+
+        var stranger = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: false);
+        var targets = await editor.GetTargetsAsync(stranger);
+
+        targets.Maps.Should().NotContain(option => option.Id == draft!.Id);
+        targets.Zones.Should().NotContain(option => option.Id == "strangers-draft");
+        targets.Nodes.Should().NotContain(option => option.Id == $"{draft!.Id}:entry");
+
+        targets.Maps.Should().Contain(option => option.Id == published!.Id);
+        targets.Zones.Should().Contain(option => option.Id == "strangers-published");
+        targets.Nodes.Should().Contain(option => option.Id == $"{published!.Id}:entry");
+    }
+
+    [Fact]
+    public async Task GetTargets_IncludesTheCallersOwnDraft()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var authorId = Guid.NewGuid();
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "my-own-draft", "My Own Draft"), authorId);
+
+        var author = new MapCaller(authorId, CanManageAny: false, CanReview: false);
+        var targets = await editor.GetTargetsAsync(author);
+
+        targets.Maps.Should().Contain(option => option.Id == draft!.Id);
+        targets.Zones.Should().Contain(option => option.Id == "my-own-draft");
+        targets.Nodes.Should().Contain(option => option.Id == $"{draft!.Id}:entry");
+    }
+
+    [Fact]
+    public async Task GetTargets_IncludesEveryDraft_ForAReviewer()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "someone-elses-draft", "Someone Else's Draft"), Guid.NewGuid());
+
+        var reviewer = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: true);
+        var targets = await editor.GetTargetsAsync(reviewer);
+
+        targets.Maps.Should().Contain(option => option.Id == draft!.Id);
+        targets.Nodes.Should().Contain(option => option.Id == $"{draft!.Id}:entry");
     }
 
     [Fact]
@@ -484,6 +549,23 @@ public class MapEditorServiceTests
 
         var own = await editor.GetAsync(draft.Id, new MapCaller(author, false, false));
         own!.CanEdit.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetAsync_StillHidesAStrangersDraft()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "stranger-hidden-zone", "Stranger Hidden Zone"), Guid.NewGuid());
+
+        // Pins the answer after the check moved into `MapCaller.CanSee`: the same read, the same null.
+        (await editor.GetAsync(draft!.Id, new MapCaller(Guid.NewGuid(), false, false))).Should().BeNull();
+
+        // And the path the predicate adds: reviewing is enough on its own, without managing content.
+        (await editor.GetAsync(draft.Id, new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: true)))
+            .Should().NotBeNull();
     }
 
     [Fact]

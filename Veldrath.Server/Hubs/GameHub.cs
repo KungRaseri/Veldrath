@@ -1034,7 +1034,7 @@ public class GameHub : Hub
         // its scope — the group its other members are in — so re-composing the shared name here would put the
         // character next to their party in the map and nowhere near them in chat, enemies or loot.
         var difficultyMode = CurrentDifficultyMode();
-        var zoneGroup = resumedRun?.ZoneGroup ?? ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
+        var zoneGroup = resumedRun?.ZoneGroup ?? ZoneGroupName.ForSharedZone(zone.Type, zoneId, difficultyMode).Value;
         Context.Items["CurrentZoneGroupName"] = zoneGroup;
         Context.Items["CurrentZoneInstanceId"] = resumedRun?.Id;
 
@@ -3318,6 +3318,12 @@ public class GameHub : Hub
     /// Respawns the active character after death in normal mode.
     /// Restores a portion of HP and full mana; broadcasts <c>CharacterRespawned</c> to the caller.
     /// </summary>
+    /// <remarks>
+    /// The run the connection points at is handed to the command, which reads that one row and decides whether the
+    /// character keeps it and where inside it they wake. This method acts on that single decision — the group is left
+    /// alone when the run was kept, and moved to the shared scope when it was not — so a run that changes state
+    /// mid-respawn cannot leave the character healed in one place and reachable in another.
+    /// </remarks>
     public async Task Respawn()
     {
         if (!TryGetCharacterId(out var characterId))
@@ -3326,9 +3332,14 @@ public class GameHub : Hub
             return;
         }
 
+        var suppliedInstanceId =
+            Context.Items.TryGetValue("CurrentZoneInstanceId", out var rawInstance) && rawInstance is Guid run
+                ? run
+                : (Guid?)null;
+
         try
         {
-            var result = await _mediator.Send(new RespawnHubCommand(characterId));
+            var result = await _mediator.Send(new RespawnHubCommand(characterId, suppliedInstanceId));
 
             if (!result.Success)
             {
@@ -3336,9 +3347,11 @@ public class GameHub : Hub
                 return;
             }
 
-            // A run that was purged while the character was dead cannot receive them: they wake in the shared
-            // zone and are told why, rather than being left in a group nobody else can join.
-            await LeaveExpiredInstanceAsync(characterId);
+            // A run the command did not retain cannot receive the character: they wake in the shared zone and are
+            // told why, rather than being left in a group nobody else can join. The command's read already answered
+            // the run-state question, so this moves the scope without asking it again.
+            if (suppliedInstanceId is not null && result.RetainedZoneInstanceId != suppliedInstanceId)
+                await LeaveRunScopeAsync(characterId);
 
             await Clients.Caller.SendAsync("CharacterRespawned", new
             {
@@ -3607,35 +3620,6 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Builds the SignalR group a connection joins for a zone's shared scope, which wilderness shards by difficulty
-    /// and every other zone type does not.
-    /// </summary>
-    /// <param name="zoneType">
-    /// Type of the zone being entered, or <see langword="null"/> when the catalog has no row for it. A zone whose type
-    /// is unknown declares no difficulty split either, so its scope is the bare zone.
-    /// </param>
-    /// <param name="zoneId">Zone slug.</param>
-    /// <param name="difficultyMode">The character's difficulty mode.</param>
-    /// <returns>The shared scope name as SignalR sees it.</returns>
-    private static string ComputeZoneGroup(ZoneType? zoneType, string zoneId, string difficultyMode) =>
-        ZoneGroupName.ForZone(zoneId, SharedScopeDifficulty(zoneType, difficultyMode)).Value;
-
-    /// <summary>
-    /// The difficulty dimension a zone's shared scope carries, or <see langword="null"/> when the scope covers the
-    /// whole zone. Wilderness shards its shared scope by difficulty; every other zone type has one shared room for
-    /// all of them. The same pair feeds the group name and the occupant read — <see cref="ZoneGroupName.ForZone"/>
-    /// composes the name from it and <see cref="IPlayerSessionRepository.GetOnSharedZoneAsync"/> reads the roster
-    /// from it — so a caller always sees the players standing beside it in its own group.
-    /// </summary>
-    /// <param name="zoneType">
-    /// Type of the zone whose shared scope is being addressed, or <see langword="null"/> when the catalog has no row.
-    /// </param>
-    /// <param name="difficultyMode">The character's difficulty mode.</param>
-    /// <returns>The difficulty suffix for the scope, or <see langword="null"/> for a zone-wide scope.</returns>
-    private static string? SharedScopeDifficulty(ZoneType? zoneType, string difficultyMode) =>
-        zoneType == ZoneType.Wilderness ? difficultyMode : null;
-
-    /// <summary>
     /// The selected character's difficulty mode, defaulting to <c>normal</c> the way the scope name does when the
     /// caller never recorded one.
     /// </summary>
@@ -3695,7 +3679,7 @@ public class GameHub : Hub
 
         return await _playerSessionRepo.GetOnSharedZoneAsync(
             zoneId,
-            SharedScopeDifficulty(zoneType, CurrentDifficultyMode()));
+            ZoneGroupName.SharedScopeDifficulty(zoneType, CurrentDifficultyMode()));
     }
 
     private bool TryGetCurrentZoneGroup([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? groupName)
@@ -3710,8 +3694,8 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Clears the character's run when it no longer exists or is being purged, so a resurrection lands in the
-    /// shared zone instead of a group nothing else will ever join.
+    /// Clears the character's run when it cannot take them — purged, emptied, or no longer theirs — so a resurrection
+    /// lands in the shared zone instead of a group nothing else will ever join.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -3725,24 +3709,18 @@ public class GameHub : Hub
     /// The group joined is the character's own shard, not the bare zone. In a wilderness zone the shared scope is
     /// <c>zone:{zoneId}_{difficulty}</c>, so composing it without the difficulty puts the character in a group nobody
     /// else is in — their <c>PlayerEntered</c> never reaches their shard, and the shard's chat and roster never reach
-    /// them. The pair used here is the pair <see cref="ComputeZoneGroup"/> composes names from and
+    /// them. The pair used here is the pair <see cref="ZoneGroupName.ForSharedZone"/> composes names from and
     /// <see cref="ReadOwnScopeAsync(string, ZoneType?)"/> reads rosters with, so the group and the snapshot agree.
     /// </para>
+    /// <para>
+    /// Whether the run can take the character was already decided: the respawn command read that one row and reported
+    /// whether it retained it, so this method does not ask again. A second read here could only disagree with the read
+    /// the heal was based on.
+    /// </para>
     /// </remarks>
-    /// <param name="characterId">Character being resurrected.</param>
-    private async Task LeaveExpiredInstanceAsync(Guid characterId)
+    /// <param name="characterId">Character whose scope is being moved.</param>
+    private async Task LeaveRunScopeAsync(Guid characterId)
     {
-        if (_zoneInstances is null ||
-            Context.Items.TryGetValue("CurrentZoneInstanceId", out var value) is false ||
-            value is not Guid instanceId)
-        {
-            return;
-        }
-
-        var run = await _zoneInstances.GetAsync(instanceId);
-        if (run is { State: Veldrath.Server.Data.Entities.ZoneInstanceState.Open })
-            return;
-
         var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone)
                      && zone is string id
                      && !string.IsNullOrWhiteSpace(id)
@@ -3751,13 +3729,15 @@ public class GameHub : Hub
         var zoneEntity = zoneId is null ? null : await _zoneRepo.GetByIdAsync(zoneId);
 
         await ApplyArrivalGroupAsync(
-            zoneId is null ? null : ComputeZoneGroup(zoneEntity?.Type, zoneId, CurrentDifficultyMode()),
+            zoneId is null
+                ? null
+                : ZoneGroupName.ForSharedZone(zoneEntity?.Type, zoneId, CurrentDifficultyMode()).Value,
             null,
             zoneId);
 
-        // This method only gets past the run check with a run the connection is pointing at, so the wake always
-        // changes the scope, and the snapshot is owed whenever there is a zone to describe. The character row is
-        // where the respawn handler recorded the node they woke on, so the snapshot describes where they now stand.
+        // The run being left is the one the connection is pointing at, so the wake always changes the scope, and the
+        // snapshot is owed whenever there is a zone to describe. The character row is where the respawn handler
+        // recorded the node they woke on, so the snapshot describes where they now stand.
         if (zoneEntity is not null)
         {
             var character = await _characterRepo.GetByIdAsync(characterId);
@@ -3825,7 +3805,7 @@ public class GameHub : Hub
     /// <remarks>
     /// This is the one <c>ZoneEntered</c> payload, so every path that moves a connection — the <see cref="EnterZone"/>
     /// arrival, a walk that crossed a border or changed scope (<see cref="SyncArrivedZoneAsync"/>), and the respawn
-    /// that woke out of a run which no longer exists (<see cref="LeaveExpiredInstanceAsync"/>) — describes the zone
+    /// that woke out of a run which no longer exists (<see cref="LeaveRunScopeAsync"/>) — describes the zone
     /// the same way. The occupant list is <see cref="ReadOwnScopeAsync(string, ZoneType?)"/>, which names the players
     /// in the scope the connection actually joined: the run's members inside a run, and the caller's own difficulty
     /// shard otherwise. The zone's whole population would name a party mid-delve and the characters in the other
