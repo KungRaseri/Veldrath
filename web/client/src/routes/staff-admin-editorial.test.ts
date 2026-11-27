@@ -86,6 +86,27 @@ const editorialApi = vi.hoisted(() => ({
 vi.mock('#lib/server/admin-api', () => adminApi);
 vi.mock('#lib/server/editorial-api', () => editorialApi);
 
+/**
+ * The profile read behind `requireActionPermission`.
+ *
+ * Form actions run without layout data, so a gated action asks the profile endpoint for the caller's
+ * snapshot before it touches the staff API. `#lib/server/access` is real here; its HTTP call is not.
+ */
+const profileFetch = vi.hoisted(() => vi.fn());
+
+vi.mock('#lib/server/game-request', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/game-request')>()),
+	gameApiFetch: profileFetch
+}));
+
+/** The access snapshot the (admin) layout hands down, and the one every action re-reads. */
+const staffAccess = {
+	accountId: 'acct-1',
+	username: 'kaleth',
+	roles: ['Admin'],
+	permissions: []
+};
+
 const ok = <T>(data: T) => ({ status: 200, data, error: null });
 const failed = (error: string, status = 500) => ({ status, data: null, error });
 
@@ -105,7 +126,7 @@ const paged = <T>(items: T[], total = items.length) => ({
 });
 
 const signedIn = (init: Parameters<typeof makeServerEvent>[0] = {}) =>
-	makeServerEvent({ user: fakeUser(), ...init });
+	makeServerEvent({ user: fakeUser(), parentData: { access: staffAccess }, ...init });
 
 /** Invokes a form action with a fake event carrying the given form fields. */
 function action(
@@ -151,6 +172,7 @@ const player = {
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	profileFetch.mockResolvedValue(ok(staffAccess));
 	adminApi.getServerStatus.mockResolvedValue(ok({ status: 'Healthy' }));
 	adminApi.listUsers.mockResolvedValue(ok(page([player], 42)));
 	adminApi.getUser.mockResolvedValue(ok(player));
@@ -195,12 +217,25 @@ beforeEach(() => {
 describe('admin dashboard and status', () => {
 	it('passes the server status through, error included', async () => {
 		const healthy = await callLoad(adminOverview, signedIn());
-		expect(healthy).toEqual({ status: { status: 'Healthy' }, error: null });
+		expect(healthy).toMatchObject({ status: { status: 'Healthy' }, error: null });
 
 		adminApi.getServerStatus.mockResolvedValue(failed('The server is unreachable.'));
 		const broken = await callLoad(adminStatus, signedIn());
 
 		expect(broken).toEqual({ status: null, error: 'The server is unreachable.' });
+	});
+
+	it('skips the status call for a role manager, who cannot read it', async () => {
+		const rolesOnly = { ...staffAccess, roles: [], permissions: ['admin.roles'] };
+
+		const result = await callLoad(adminOverview, signedIn({ parentData: { access: rolesOnly } }));
+
+		expect(result).toMatchObject({
+			status: null,
+			error: null,
+			can: { manageUsers: false, manageRoles: true }
+		});
+		expect(adminApi.getServerStatus).not.toHaveBeenCalled();
 	});
 });
 
@@ -250,12 +285,14 @@ describe('admin user detail', () => {
 
 	it('returns the player and the role and permission catalogues', async () => {
 		const result = (await callLoad(adminUserDetail, detail())) as {
-			player: unknown;
+			account: unknown;
+			authority: { roles: string[] };
 			allRoles: string[];
 			allPermissions: string[];
 		};
 
-		expect(result.player).toEqual(player);
+		expect(result.account).toEqual(player);
+		expect(result.authority.roles).toEqual(player.roles);
 		expect(result.allRoles).toContain('Admin');
 		expect(result.allPermissions).toContain('content.manage');
 	});

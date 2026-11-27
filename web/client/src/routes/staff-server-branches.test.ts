@@ -86,11 +86,30 @@ const editorialApi = vi.hoisted(() => ({
 vi.mock('#lib/server/admin-api', () => adminApi);
 vi.mock('#lib/server/editorial-api', () => editorialApi);
 
+/**
+ * The profile read behind `requireActionPermission`: a gated form action resolves the caller's
+ * permission before it calls the staff API, and the HTTP call is the only part faked here.
+ */
+const profileFetch = vi.hoisted(() => vi.fn());
+
+vi.mock('#lib/server/game-request', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/game-request')>()),
+	gameApiFetch: profileFetch
+}));
+
+/** The access snapshot the (admin) layout hands down. */
+const staffAccess = {
+	accountId: 'acct-1',
+	username: 'kaleth',
+	roles: ['Admin'],
+	permissions: []
+};
+
 const ok = <T>(data: T) => ({ status: 200, data, error: null });
 const failed = (error: string | null, status = 500) => ({ status, data: null, error });
 
 const signedIn = (init: Parameters<typeof makeServerEvent>[0] = {}) =>
-	makeServerEvent({ user: fakeUser(), ...init });
+	makeServerEvent({ user: fakeUser(), parentData: { access: staffAccess }, ...init });
 
 /** Invokes a form action with a fake event carrying the given form fields. */
 function action(
@@ -130,6 +149,7 @@ const userActions = [
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	profileFetch.mockResolvedValue(ok(staffAccess));
 	adminApi.getUser.mockResolvedValue(ok({ accountId: 'acct-2' }));
 	adminApi.getModUser.mockResolvedValue(ok({ accountId: 'acct-2' }));
 	adminApi.listReports.mockResolvedValue(ok(null));

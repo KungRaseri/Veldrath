@@ -6,6 +6,7 @@ import {
 	hasAnyPermission,
 	hasPermission,
 	loadAccountAccess,
+	requireActionPermission,
 	requirePermission,
 	requireUser,
 	toGameIdentity
@@ -171,5 +172,37 @@ describe('hasAnyPermission', () => {
 	it('is false for an empty snapshot or an empty list', () => {
 		expect(hasAnyPermission(null, [Permissions.ViewPlayers])).toBe(false);
 		expect(hasAnyPermission(access(), [])).toBe(false);
+	});
+});
+
+describe('requireActionPermission', () => {
+	const profile = (permissions: string[]) => ({
+		status: 200,
+		data: { accountId: 'acc-1', username: 'tester', roles: [], permissions },
+		error: null
+	});
+
+	it('refuses before the action reaches the API when the permission is missing', async () => {
+		gameApiFetch.mockResolvedValue(profile([Permissions.ManageUsers]));
+
+		await expect(
+			requireActionPermission({ user: fakeUser() }, Permissions.ManageRoles, 'Role managers only.')
+		).rejects.toMatchObject({ status: 403, body: { message: 'Role managers only.' } });
+	});
+
+	it('returns the snapshot when the permission is held', async () => {
+		gameApiFetch.mockResolvedValue(profile([Permissions.ManageRoles]));
+
+		await expect(
+			requireActionPermission({ user: fakeUser() }, Permissions.ManageRoles, 'Role managers only.')
+		).resolves.toMatchObject({ permissions: [Permissions.ManageRoles] });
+		expect(gameApiFetch.mock.calls[0][1]).toBe('/api/account/profile');
+	});
+
+	it('redirects an anonymous caller without reading the profile', async () => {
+		await expect(
+			requireActionPermission({}, Permissions.ManageRoles, 'Role managers only.')
+		).rejects.toMatchObject({ status: 303, location: '/login' });
+		expect(gameApiFetch).not.toHaveBeenCalled();
 	});
 });

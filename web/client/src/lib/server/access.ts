@@ -111,3 +111,24 @@ export function hasAnyPermission(
 ): boolean {
 	return permissions.some((permission) => hasPermission(access, permission));
 }
+
+/**
+ * Resolves the caller's access snapshot inside a form action and refuses the request when the
+ * permission is missing.
+ *
+ * Form actions run without the layout data a page load receives, so the snapshot the group layout
+ * already resolved is not available here and has to be read again. This does not replace the API's own
+ * authorization — it stops the action from issuing a mutation the server is certain to answer with 403,
+ * which is what an operator without `admin.roles` saw when the role forms were rendered to everyone.
+ *
+ * @param locals Request locals, which carry the Better Auth session.
+ * @param permission The permission the action's API call requires.
+ * @param message Shown when the permission is missing.
+ */
+export async function requireActionPermission(
+	locals: App.Locals,
+	permission: string,
+	message: string
+): Promise<AccountAccess> {
+	return requirePermission(await loadAccountAccess(requireUser(locals)), permission, message);
+}

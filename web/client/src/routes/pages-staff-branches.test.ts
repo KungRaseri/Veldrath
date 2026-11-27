@@ -102,7 +102,16 @@ describe('admin user detail, sparse identity', () => {
 		render(
 			AdminUserDetail,
 			page({
-				player: { ...player, warnCount: null, isBanned: true, isMuted: true },
+				account: { ...player, warnCount: null, isBanned: true, isMuted: true },
+				authority: {
+					id: player.id,
+					username: player.username,
+					roles: player.roles,
+					effectivePermissions: player.effectivePermissions,
+					userPermissions: player.userPermissions
+				},
+				canManageUsers: true,
+				canManageRoles: true,
 				allRoles: ['Admin'],
 				allPermissions: ['players.view']
 			})
@@ -117,7 +126,16 @@ describe('admin user detail, sparse identity', () => {
 		render(
 			AdminUserDetail,
 			page({
-				player: { ...player, username: null },
+				account: { ...player, username: null },
+				authority: {
+					id: player.id,
+					username: null,
+					roles: player.roles,
+					effectivePermissions: player.effectivePermissions,
+					userPermissions: player.userPermissions
+				},
+				canManageUsers: true,
+				canManageRoles: true,
 				allRoles: ['Admin'],
 				allPermissions: ['players.view']
 			})
@@ -131,12 +149,16 @@ describe('admin user detail, sparse identity', () => {
 		render(
 			AdminUserDetail,
 			page({
-				player: {
-					...player,
+				account: { ...player, username: null },
+				authority: {
+					id: player.id,
+					username: null,
 					roles: [null],
 					effectivePermissions: [null],
 					userPermissions: [null]
 				},
+				canManageUsers: true,
+				canManageRoles: true,
 				allRoles: [null],
 				allPermissions: [null]
 			})

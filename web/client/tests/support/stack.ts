@@ -115,8 +115,9 @@ export async function signIn(page: Page, account: TestAccount): Promise<void> {
 /**
  * Grants roles by writing the Identity join table.
  *
- * There is no bootstrap admin: `POST /api/admin/users/{id}/roles` needs an account that already holds
- * `admin.manage_users`, which is a chicken-and-egg problem for a fresh database. The role itself is
+ * There is no bootstrap admin: `POST /api/admin/roles/users/{id}/roles` needs an account that already
+ * holds `admin.roles`, which is a chicken-and-egg problem for a fresh database. (The other half of the
+ * split, `admin.users`, administers accounts and does not grant this call.) The role itself is
  * seeded with its permission claims at startup ([`Roles.DefaultPermissionsFor`]), so mapping the
  * account to the role row is all that is missing — and a reload then sees the new claims, because
  * `JwtClaimsEnrichment` resolves them per request.

@@ -527,6 +527,98 @@ public class AdminUserManagementEndpointTests(WebAppFactory factory)
         (await RolesOfAsync("AdmUsr_RolesOnlyTarget")).Should().Contain("Curator");
     }
 
+    // ── GET /api/admin/roles/users/{id} ───────────────────────────────────────
+
+    [Fact]
+    public async Task GetUserAuthority_IsAllowed_ForAnAccountWithManageRoles()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_AuthorityRead", Permissions.ManageRoles);
+        using var ownedClient = client;
+        var targetId = await RegisterAsync("AdmUsr_AuthorityTarget", "Curator");
+
+        var response = await client.GetAsync($"{AdminRoles}/{targetId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            "a role manager has to see what an account already holds before changing it");
+        var dto = await response.Content.ReadFromJsonAsync<AccountAuthorityDto>();
+        dto.Should().NotBeNull();
+        dto!.Id.Should().Be(targetId);
+        dto.Username.Should().Be("AdmUsr_AuthorityTarget");
+        dto.Roles.Should().Contain("Curator");
+        dto.UserPermissions.Should().BeEmpty();
+        dto.EffectivePermissions.Should().Contain(Permissions.ReviewSubmissions,
+            "the read reports the role's permission claims, not only the account's own");
+    }
+
+    [Fact]
+    public async Task GetUserAuthority_IsForbidden_ForAnAccountWithManageUsersOnly()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_AuthorityUsersOnly", Permissions.ManageUsers);
+        using var ownedClient = client;
+        var targetId = await RegisterAsync("AdmUsr_AuthorityUsersTarget");
+
+        var response = await client.GetAsync($"{AdminRoles}/{targetId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "reading authority is part of the role-management surface, not account administration");
+    }
+
+    [Fact]
+    public async Task GetUserAuthority_UnknownAccount_ReturnsNotFound()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_AuthorityUnknown", Permissions.ManageRoles);
+        using var ownedClient = client;
+
+        var response = await client.GetAsync($"{AdminRoles}/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    // ── GET /api/admin/roles/users/by-username/{username} ─────────────────────
+
+    [Fact]
+    public async Task GetUserAuthorityByUsername_IsAllowed_ForAnAccountWithManageRoles()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_AuthorityByName", Permissions.ManageRoles);
+        using var ownedClient = client;
+        var targetId = await RegisterAsync("AdmUsr_AuthorityByNameTarget", "Curator");
+
+        // Lower case on purpose: a role manager types a name, not a normalised identifier.
+        var response = await client.GetAsync($"{AdminRoles}/by-username/admusr_authoritybynametarget");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            "the role page opens an account by username because the account list is admin.users");
+        var dto = await response.Content.ReadFromJsonAsync<AccountAuthorityDto>();
+        dto.Should().NotBeNull();
+        dto!.Id.Should().Be(targetId);
+        dto.Roles.Should().Contain("Curator");
+        dto.EffectivePermissions.Should().Contain(Permissions.ReviewSubmissions);
+    }
+
+    [Fact]
+    public async Task GetUserAuthorityByUsername_IsForbidden_ForAnAccountWithManageUsersOnly()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_AuthorityByNameUsers", Permissions.ManageUsers);
+        using var ownedClient = client;
+        await RegisterAsync("AdmUsr_AuthorityByNameUsersTarget");
+
+        var response = await client.GetAsync($"{AdminRoles}/by-username/AdmUsr_AuthorityByNameUsersTarget");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "opening an account's authority is role management, not account administration");
+    }
+
+    [Fact]
+    public async Task GetUserAuthorityByUsername_UnknownAccount_ReturnsNotFound()
+    {
+        var (client, _) = await PermissionOnlyClientAsync("AdmUsr_AuthorityByNameUnknown", Permissions.ManageRoles);
+        using var ownedClient = client;
+
+        var response = await client.GetAsync($"{AdminRoles}/by-username/AdmUsr_NoSuchAccount");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     [Fact]
     public async Task RoleMutation_WritesAuditRow()
     {

@@ -7,6 +7,8 @@ import {
 	getModUser,
 	getServerStatus,
 	getUser,
+	getUserAuthority,
+	getUserAuthorityByUsername,
 	grantPermission,
 	kickPlayer,
 	listModReports,
@@ -105,6 +107,18 @@ describe('admin reads', () => {
 
 		listReports(identity, true, 1, 20);
 		expect(lastCall().options?.query).toEqual({ resolved: true, page: 1, pageSize: 20 });
+	});
+
+	it('reads an account authority from the roles group, by id and by username', () => {
+		getUserAuthority(identity, 'acc-1');
+		expect(lastCall()).toEqual({
+			identity,
+			path: '/api/admin/roles/users/acc-1',
+			options: undefined
+		});
+
+		getUserAuthorityByUsername(identity, 'Aria Vale');
+		expect(lastCall().path).toBe('/api/admin/roles/users/by-username/Aria%20Vale');
 	});
 });
 
