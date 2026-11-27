@@ -375,6 +375,103 @@ public class MapEditorServiceTests
         result.Version.Should().Be(graph.Version);
     }
 
+    /// <summary>
+    /// Creates a draft authored by <paramref name="author"/> and then makes it live, which is what approval does.
+    /// </summary>
+    private static async Task<MapGraphDto> LiveMapOwnedByAsync(
+        ContentDbContext db,
+        MapEditorService editor,
+        MapCaller author,
+        string ownerId)
+    {
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", ownerId, "A Live Zone"),
+            author.AccountId);
+
+        var row = await db.Maps.SingleAsync(map => map.Id == draft!.Id);
+        row.IsActive = true;
+        await db.SaveChangesAsync();
+
+        return draft!;
+    }
+
+    [Fact]
+    public async Task SaveAsync_RefusesALiveMapForItsAuthor()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        // The author, not an editor: the account whose edit would reach players unapproved.
+        var author = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: false);
+        var draft = await LiveMapOwnedByAsync(db, editor, author, "authored-live-zone");
+        var renamed = draft with { Name = "Renamed While Live" };
+
+        var result = await editor.SaveAsync(draft.Id, renamed, draft.Version, author);
+
+        result.Success.Should().BeFalse("gameplay reads the active map's stored graph, so a save would ship it");
+        result.Status.Should().Be("conflict");
+        result.Version.Should().Be(draft.Version, "a refused save does not bump the stored version");
+
+        var stored = await db.Maps.SingleAsync(map => map.Id == draft.Id);
+        stored.Name.Should().Be("A Live Zone", "the refused edit must not be persisted");
+        stored.Version.Should().Be(draft.Version);
+    }
+
+    [Fact]
+    public async Task SaveAsync_StillSavesALiveMapForAReviewer()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        // A reviewer who owns the map: `SeesEveryDraft` is the escape hatch, because deactivating is their call.
+        var reviewer = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: true);
+        var draft = await LiveMapOwnedByAsync(db, editor, reviewer, "reviewed-live-zone");
+
+        var result = await editor.SaveAsync(draft.Id, WithAWayOut(draft), draft.Version, reviewer);
+
+        result.Success.Should().BeTrue("a reviewer may take a map out of play, so the refusal is not theirs");
+        result.Status.Should().Be("ok");
+        result.Version.Should().Be(draft.Version + 1);
+    }
+
+    [Fact]
+    public async Task SaveAsync_StillSavesADraft()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var author = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: false);
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "authored-draft-zone", "An Unapproved Zone"),
+            author.AccountId);
+
+        var result = await editor.SaveAsync(draft!.Id, WithAWayOut(draft), draft.Version, author);
+
+        result.Success.Should().BeTrue("a draft is not in the game, so editing it is the point of the portal");
+        result.Status.Should().Be("ok");
+        result.Version.Should().Be(draft.Version + 1);
+    }
+
+    [Fact]
+    public async Task SaveAsync_RefusalNamesTheReason()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var author = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: false);
+        var draft = await LiveMapOwnedByAsync(db, editor, author, "explained-live-zone");
+
+        var result = await editor.SaveAsync(draft.Id, draft with { Name = "Explained" }, draft.Version, author);
+
+        // The client renders this sentence verbatim, so it has to carry the four steps of the loop that gets an
+        // edit into play. "Conflict" tells the author nothing they can act on.
+        result.Message.Should().NotBeNull();
+        result.Message.Should().Contain("deactivates", "a reviewer takes the map out of play first");
+        result.Message.Should().Contain("submit");
+        result.Message.Should().Contain("approves");
+        result.Message.Should().NotContain("conflict");
+    }
+
     [Fact]
     public async Task SaveAsync_RefusesAGraphThatLeavesADungeonRoomWithoutAWayOut()
     {
