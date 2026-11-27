@@ -342,7 +342,7 @@ public static class AdminEndpoints
         [FromServices] ApplicationDbContext db,
         [FromServices] ILoggerFactory loggerFactory)
     {
-        if (IsSelfDirectedMutation(actor, id) && SelfEscalationPermissions.Contains(request.Permission, StringComparer.OrdinalIgnoreCase))
+        if (IsSelfDirectedMutation(actor, id) && Auth.Permissions.AuthorityWidening.Contains(request.Permission))
             return RefuseSelfDirectedMutation(actor, loggerFactory, $"grant permission '{request.Permission}'");
 
         if (!Auth.Permissions.All.Contains(request.Permission, StringComparer.OrdinalIgnoreCase))
@@ -696,18 +696,6 @@ public static class AdminEndpoints
             .Select(row => new ZonePopulationDto(row.ZoneId, row.ZoneName, row.PlayerCount));
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Permissions that hand out or widen authority. Granting one of these to yourself is a privilege
-    /// escalation, so <c>GrantPermissionAsync</c> refuses it regardless of which group admitted the caller.
-    /// </summary>
-    private static readonly string[] SelfEscalationPermissions =
-    [
-        Auth.Permissions.ManageRoles,
-        Auth.Permissions.ManageUsers,
-        Auth.Permissions.BanPlayers,
-        Auth.Permissions.ViewPlayers,
-    ];
 
     /// <summary>
     /// True when the caller is the account being modified. Checked in the handlers rather than in a route
