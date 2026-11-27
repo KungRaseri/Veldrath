@@ -174,25 +174,46 @@ also trusts forwarded headers through `UseForwardedHeaders`.
 This is the answer to "what may be reachable from the internet". Two layers decide it, and only
 the second one is under this repository's control.
 
-**Ports open at the edge.** Public traffic reaches Veldrath on `80/tcp` and `443/tcp` only.
-`kung-lab-hub` (`192.168.50.130`) terminates TLS, and its Traefik routes by host name — over the
-Docker network and on to `kung-lab-2` (`192.168.50.100`) for the Veldrath containers — so no
+**Ports open at the edge.** Only `80/tcp` and `443/tcp` accept connections from the internet, and
+only `443` serves Veldrath — plain HTTP answers `503 Service Unavailable`. `kung-lab-hub`
+(`192.168.50.130`) terminates TLS at its own `coolify-proxy` and routes by host name: a router
+forwards to a container on that host over its Docker network, or — for the Veldrath hosts — over the
+LAN to `https://192.168.50.100:443`, where `kung-lab-2`'s `coolify-proxy` terminates TLS again and
+reaches the Veldrath containers (the server and the web app) over *that* host's Docker network by
+container name. No
 application port is opened to the internet. Measured on 2026-11-27 from
 [check-host.net](https://check-host.net) nodes, which are outside the LAN:
 
 | Port | From the internet | Why |
 |---|---|---|
-| `80/tcp` | open | redirect to HTTPS |
+| `80/tcp` | open | accepts connections but serves nothing for these hosts — answers `503 Service Unavailable`; use `https://` |
 | `443/tcp` | open | Traefik TLS for every Veldrath host |
 | `22/tcp` | timed out | SSH is LAN and tailnet only |
 | `3306`, `5432`, `6379`, `4222`, `25565`, `7777` | timed out | no production service publishes them |
 | `5433`, `8081`, `9000`–`9003` | timed out | the development compose mappings, cleared by the production overlay |
 | `8080` | timed out | `coolify-proxy` publishes it on both Coolify hosts, but the edge forwards only `80`/`443`; it belongs to Coolify, not Veldrath |
 
+`http://veldrath.com/` and `http://api.veldrath.com/` answer `503 Service Unavailable` — Coolify's
+error page, no `Location` header — measured with `curl -I` on 2026-11-27 locally and from two
+check-host.net nodes. There is no HTTP-to-HTTPS redirect for these hosts, and the gap is the edge
+router, not the application. In `kung-lab-hub`'s `/traefik/dynamic/multi-server-routing.yml` the
+`veldrath` router lists both entry points but also declares `tls: certResolver: letsencrypt`, and a
+Traefik router that declares a TLS section is only served on a TLS entry point: the plain-HTTP
+request skips it and falls through to Coolify's `catchall-http` router (priority `-1000`), whose
+`error-pages` middleware serves the 503 page. The hub's access log names `catchall-http@file` for
+the request, and a throwaway Traefik 3.7 container reproduces it — the same router with `tls:`
+answers `503` over plain HTTP, without `tls:` it answers `200`. Veldrath's own stack on
+`kung-lab-2` does redirect (`curl -I -H 'Host: veldrath.com' http://192.168.50.100/` → `302`), so
+reaching it directly over plain HTTP is not the problem; the edge router is. Nothing is served over
+`80`; a redirect for the Veldrath hosts is a separate change.
+
 Both hosts run `ufw` with `Default: deny (incoming)`. `kung-lab-hub` allows `80`/`443` from
 anywhere, Tailscale's `41641/udp`, and all inbound from `192.168.50.0/24`, `100.64.0.0/10` and
 `10.0.0.0/8`, with SSH `22` only from the LAN and the tailnet. `kung-lab-2`, where the Veldrath
-resources run, allows SSH from the LAN and the tailnet and nothing else.
+resources run, allows SSH from the LAN and the tailnet and nothing else on its INPUT chain. Its
+`ufw status` also prints `ALLOW FWD` rules — one `80`/`443` pair per Coolify resource, 12 rules for
+six resources on `kung-lab-2` and 32 on the hub today — for the containers of each host's own
+`coolify-proxy`. Those are Docker's forwarding path, not an additional reachable port.
 
 `ss -lntp` on `kung-lab-2` shows no listener on any of the retired Veldrath ports (`5433`, `8081`,
 `9000`–`9003`) and none on `3306`, `5432`, `6379`, `4222`, `25565` or `7777`. Among the ports in
@@ -275,6 +296,13 @@ From outside the LAN — a VPS, or a laptop on a phone hotspot, never a shell on
 ```bash
 nmap -Pn -p- --max-rate 200 veldrath.com api.veldrath.com
 # expected: 80/tcp and 443/tcp open, everything else filtered
+```
+
+Then confirm the two open ports behave as documented:
+
+```bash
+curl -sS -o /dev/null -w 'https %{http_code}\n' https://veldrath.com/    # 200
+curl -sS -o /dev/null -w 'http  %{http_code}\n' http://veldrath.com/     # 503, no Location — use https://
 ```
 
 `--max-rate 200` finishes a full-range scan in a few minutes without looking like a flood. A port

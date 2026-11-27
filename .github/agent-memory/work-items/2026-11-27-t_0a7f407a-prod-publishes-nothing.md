@@ -59,3 +59,39 @@ unit tests and the check on every PR that touches a compose file.
   `kung-lab-2`. Fixed in that header (the string did not appear in `docs/deployment.md`).
 - Left alone as out of scope: `docker-compose.prod.yml` still pulls `ghcr.io/kungraseri/*` images, which
   no CI job publishes any more (images go to `git.kungraseri.cloud/veldrath/*`).
+
+### Round 3 — port `80` is open but does not redirect (measured 2026-11-27)
+
+The doc's first version said `80/tcp` "redirects to HTTPS". It does not: `curl -I http://veldrath.com/`
+and `http://api.veldrath.com/` both answer `503 Service Unavailable` with no `Location`, from the LAN and
+from two check-host.net nodes.
+
+Mechanism, measured on the hosts and then reproduced in isolation: hub `coolify-proxy`'s
+`/traefik/dynamic/multi-server-routing.yml` attaches the `veldrath` router to `entryPoints: [https, http]`
+**and** gives it `tls: certResolver: letsencrypt`. Traefik (3.7.16 here) only serves a router that carries a
+TLS section on a TLS entry point, so a plain-HTTP request skips it and falls through to Coolify's own
+`catchall-http` router (priority `-1000`), whose `error-pages` middleware serves `/503.html` from
+`coolify-proxy-error-pages`. Proof: the hub access log names `catchall-http@file` and backend
+`http://coolify-proxy-error-pages:80` for the request (the HTTPS one names `veldrath@file` →
+`https://192.168.50.100:443`), and a throwaway Traefik 3.7 container with two otherwise identical routers
+answers `503` for the one with `tls: {}` over plain HTTP and `200` for the one without it.
+`http://familyforge.quest/` and other hosts using the same file shape behave the same; `forgejo-hermes-http`
+(no `tls:` block, redirect middleware attached) `302`s, and `http://media.kungraseri.cloud/` `307`s because it
+is a different Coolify-managed router.
+
+Correction to the review: the earlier guess — "the hub forwards plain HTTP to `https://192.168.50.100:443`
+where lab-2's routers are `websecure`-only, so no route matches" — is wrong. `kung-lab-2`'s live Coolify
+containers do carry `http` routers with a `redirect-to-https` middleware: `curl -I -H 'Host: veldrath.com'
+http://192.168.50.100/` answers `302` and `https://192.168.50.100/` answers `200`. The request never gets
+that far because the hub answers it itself. The `websecure`-only labels in `docker-compose.coolify.yml` are
+not what production runs (Coolify generates its own labels per resource).
+
+`https://veldrath.com/` and `https://api.veldrath.com/health` both answer `200`, so nothing is broken for
+clients that use HTTPS. Making `80` redirect is a separate ops change (card `t_8a4039be`); the doc now
+states the measured behaviour instead.
+
+Also corrected in the same pass: the inter-host hop is the **LAN** (`https://192.168.50.100:443`), not
+"the Docker network" — the Docker hop is each host's proxy → container. And `ufw status` on both hosts
+prints one `ALLOW FWD` `80`/`443` pair per Coolify resource (12 rules on `kung-lab-2` for six resources,
+32 on the hub) — that is Docker's forwarding path, not extra reachable ports, and the doc says so.
+
