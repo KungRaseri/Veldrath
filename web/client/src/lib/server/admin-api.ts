@@ -132,9 +132,13 @@ export function assignRole(identity: GameIdentity, id: string, role: string) {
 
 /** Revokes a role (admin `admin.roles`). */
 export function revokeRole(identity: GameIdentity, id: string, role: string) {
-	return gameApiFetch<null>(identity, `/api/admin/roles/users/${id}/roles/${encodeURIComponent(role)}`, {
-		method: 'DELETE'
-	});
+	return gameApiFetch<null>(
+		identity,
+		`/api/admin/roles/users/${id}/roles/${encodeURIComponent(role)}`,
+		{
+			method: 'DELETE'
+		}
+	);
 }
 
 /** Grants a per-user permission (admin `admin.roles`). */
