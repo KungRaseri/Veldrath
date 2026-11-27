@@ -12,6 +12,8 @@
 #   fresh        an empty database; the migration must return and the seeder must create the doors
 #   equivalent   an existing door node carrying custom text/layout, and the Arrival hop already present with
 #                another uuid and a label; the patch must keep both and add only what is missing
+#   legacy       a seed older than the derived walk and the region-marker link: no marketplace walk to re-home and
+#                no marker targets at all. This is the shape production was in; the patch must converge, not abort
 #   conflict     a stale edge occupying a door's natural slot, and a same-id node with different topology; the
 #                patch must abort with no partial rows and no migration-history row
 #
@@ -413,11 +415,22 @@ assert_single_bump() {
 
 "$DOTNET" tool restore >/dev/null 2>&1 || true
 
-MAIN_SHA="$(git -C "$ROOT" rev-parse origin/main 2>/dev/null)" || fail "origin/main is not available; fetch it first"
+MAIN_TIP="$(git -C "$ROOT" rev-parse origin/main 2>/dev/null)" || fail "origin/main is not available; fetch it first"
 OLD_DOORS_SHA="$(git -C "$ROOT" rev-parse "$OLD_DOORS_SHA")"
 HEAD_SHA="$(git -C "$ROOT" rev-parse HEAD)"
 PATCH_FILE="$(ls "$ROOT"/RealmEngine.Data/Migrations/*_"${MIGRATION_NAME}".cs 2>/dev/null | head -n 1)"
 [ -n "$PATCH_FILE" ] || fail "migration $MIGRATION_NAME not found"
+MIGRATION_PATH="${PATCH_FILE#"$ROOT"/}"
+
+# The predecessor on main is the last commit there before this migration landed. Once main carries the migration the
+# tip is not that commit any more — a server built from the tip has already applied the patch, so its seed contains
+# the twelve doors and every "absent before the upgrade" check is false. Walk main's first-parent chain back to the
+# newest commit without the file; while main still predates the migration the loop exits immediately on the tip.
+MAIN_SHA="$MAIN_TIP"
+while git -C "$ROOT" cat-file -e "$MAIN_SHA:$MIGRATION_PATH" 2>/dev/null; do
+  MAIN_SHA="$(git -C "$ROOT" rev-parse "$MAIN_SHA^1" 2>/dev/null)" \
+    || fail "no commit on main's first-parent chain predates the migration"
+done
 PATCH_SQL="$WORK/patch.sql"
 python3 - "$PATCH_FILE" > "$PATCH_SQL" <<'PY'
 import sys
@@ -439,7 +452,7 @@ PY
 
 log "head $HEAD_SHA"
 log "pre-#270 seed $OLD_DOORS_SHA"
-log "origin/main predecessor $MAIN_SHA"
+log "origin/main ${MAIN_TIP:0:8}; last pre-migration commit on it $MAIN_SHA"
 
 start_postgres
 
@@ -604,7 +617,46 @@ assert_eq "equivalent: all 26 natural slots occupied exactly once" "$(db_query e
 assert_eq "equivalent: 12 door nodes and one history row" "$(db_query equivalent 'SELECT (SELECT count(*) FROM _verify_nodes e JOIN "MapNodes" n ON n."Id" = e."Id") || $q$/$q$ || (SELECT count(*) FROM "__EFMigrationsHistory" WHERE "MigrationId" LIKE $q$%BackfillSeededMapDoorsAndArrivalHops$q$);')" "12/1"
 RESULTS+=("equivalent intervening edge/node: PASS (kept uuid and label)")
 
-# --- 6. conflicts must abort atomically ----------------------------------------------------------------------------
+# --- 6. a legacy seed: the walk was never derived, region markers were never linked --------------------------------
+
+# The plain pre-#270 seed cannot produce the shape production was actually in. Production was seeded several
+# generations earlier: the marketplace's walk to the Grey Cup does not exist at all (so there is nothing to re-home,
+# and demanding one is a boot loop), and the region boards' zone markers have no target (so the Arrival hop would land
+# on nothing). The patch must converge on both — and a marker that points somewhere else must still abort.
+clone_db legacy old_seed
+install_expectations legacy
+db_sql legacy >/dev/null <<'SQL'
+SET client_min_messages = warning;
+DELETE FROM "MapEdges"
+ WHERE "MapId" = 'zone:aldenmere'
+   AND "FromNodeId" = 'zone:aldenmere:location:aldenmere-marketplace'
+   AND "ToNodeId" = 'zone:aldenmere:location:grey-cup';
+UPDATE "MapNodes" SET "TargetMapId" = NULL, "TargetNodeId" = NULL
+ WHERE "NodeType" = 'Zone' AND "MapId" LIKE 'region:%';
+SQL
+assert_eq "legacy: the seed-time walk is absent before the upgrade" "$(db_query legacy 'SELECT count(*) FROM "MapEdges" WHERE "MapId" = $q$zone:aldenmere$q$ AND "FromNodeId" = $q$zone:aldenmere:location:aldenmere-marketplace$q$ AND "ToNodeId" = $q$zone:aldenmere:location:grey-cup$q$;')" "0"
+assert_eq "legacy: no region marker carries a target before the upgrade" "$(db_query legacy 'SELECT count(*) FROM "MapNodes" WHERE "NodeType" = $q$Zone$q$ AND "MapId" LIKE $q$region:%$q$ AND "TargetMapId" IS NOT NULL;')" "0"
+snapshot_versions legacy
+preflight_db legacy legacy
+start_and_wait "$ROOT" legacy "$WORK/legacy.log" 'PR server on a legacy seed'
+install_expectations legacy
+assert_upgrade legacy legacy
+assert_single_bump legacy legacy
+assert_eq "legacy: the absent walk was added on the seeded North direction" "$(db_query legacy 'SELECT "ToNodeId" || $q$|$q$ || "EdgeType" FROM "MapEdges" WHERE "MapId" = $q$zone:aldenmere$q$ AND "FromNodeId" = $q$zone:aldenmere:location:aldenmere-marketplace$q$ AND "Direction" = $q$North$q$;')" "zone:aldenmere:location:grey-cup|Walk"
+assert_eq "legacy: the market holds exactly one walk to the Grey Cup" "$(db_query legacy 'SELECT count(*) FROM "MapEdges" WHERE "MapId" = $q$zone:aldenmere$q$ AND "FromNodeId" = $q$zone:aldenmere:location:aldenmere-marketplace$q$ AND "ToNodeId" = $q$zone:aldenmere:location:grey-cup$q$;')" "1"
+assert_eq "legacy: the East slot holds the moor-road door, not a second walk" "$(db_query legacy 'SELECT count(*) FROM "MapEdges" WHERE "MapId" = $q$zone:aldenmere$q$ AND "FromNodeId" = $q$zone:aldenmere:location:aldenmere-marketplace$q$ AND "Direction" = $q$East$q$ AND "EdgeType" = $q$Walk$q$;')" "0"
+assert_eq "legacy: both region markers now lead to their own zone map" "$(db_query legacy 'SELECT count(*) FROM "MapNodes" WHERE "Id" IN ($q$region:cinderplain:zone:skarhold$q$,$q$region:saltcliff:zone:saltcliff-heights$q$) AND "TargetMapId" = $q$zone:$q$ || "RefId" AND "TargetNodeId" IS NULL;')" "2"
+assert_eq "legacy: the linked markers keep their identity and stay visible on the board" "$(db_query legacy 'SELECT count(*) FROM "MapNodes" WHERE "Id" IN ($q$region:cinderplain:zone:skarhold$q$,$q$region:saltcliff:zone:saltcliff-heights$q$) AND "NodeType" = $q$Zone$q$ AND "MapId" LIKE $q$region:%$q$ AND NOT "IsHidden";')" "2"
+LEGACY_COUNTS="$(graph_counts legacy)"
+LEGACY_CHECKSUM="$(graph_checksum legacy)"
+stop_api "$API_LAST_PID" "$API_LAST_PORT"
+start_and_wait "$ROOT" legacy "$WORK/legacy-restart.log" 'PR server restart on the legacy seed'
+assert_eq "legacy restart: no duplicate rows" "$(graph_counts legacy)" "$LEGACY_COUNTS"
+assert_eq "legacy restart: no second version bump or rewrite" "$(graph_checksum legacy)" "$LEGACY_CHECKSUM"
+assert_eq "legacy restart: still one migration-history row" "$(history_count legacy)" "1"
+RESULTS+=("legacy seed (absent walk, unlinked markers): PASS ($LEGACY_COUNTS)")
+
+# --- 7. conflicts must abort atomically ----------------------------------------------------------------------------
 
 conflict_case() {
   local db=$1 label=$2 setup_sql=$3 expected_message=$4 expected_doors=${5:-0}
@@ -648,4 +700,4 @@ conflict_case conflict_node "incompatible node" \
 printf '\n[verify-map-graph] all checks passed\n'
 for line in "${RESULTS[@]}"; do printf '  PASS %s\n' "$line"; done
 printf '\n  pre-#270 seed (%s): %s\n' "${OLD_DOORS_SHA:0:8}" "$OLD_COUNTS"
-printf '  head (%s), migration %s: verified on old, main, fresh, equivalent and two conflict databases\n' "${HEAD_SHA:0:8}" "$MIGRATION_NAME"
+printf '  head (%s), migration %s: verified on old, main, fresh, equivalent, legacy and two conflict databases\n' "${HEAD_SHA:0:8}" "$MIGRATION_NAME"
