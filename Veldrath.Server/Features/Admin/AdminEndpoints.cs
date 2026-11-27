@@ -17,14 +17,16 @@ namespace Veldrath.Server.Features.Admin;
 
 /// <summary>
 /// Minimal API endpoints for server administration.
-/// All endpoints in this group require the <c>manage_users</c> permission claim.
+/// Account and audit endpoints under <c>/api/admin</c> require the <c>admin.users</c> permission claim;
+/// role and permission mutation lives on its own <c>/api/admin/roles</c> group, which requires
+/// <c>admin.roles</c> instead, so "may administer accounts" and "may hand out authority" stay separable.
 ///
 /// GET    /api/admin/users                            — list accounts (paginated, filterable)
 /// GET    /api/admin/users/{id}                       — account detail with roles + effective permissions
-/// POST   /api/admin/users/{id}/roles                 — assign a role to an account
-/// DELETE /api/admin/users/{id}/roles/{role}          — revoke a role from an account
-/// POST   /api/admin/users/{id}/permissions           — grant a per-user permission claim
-/// DELETE /api/admin/users/{id}/permissions/{perm}    — revoke a per-user permission claim
+/// POST   /api/admin/roles/users/{id}/roles           — assign a role to an account (admin.roles)
+/// DELETE /api/admin/roles/users/{id}/roles/{role}    — revoke a role from an account (admin.roles)
+/// POST   /api/admin/roles/users/{id}/permissions     — grant a per-user permission claim (admin.roles)
+/// DELETE /api/admin/roles/users/{id}/permissions/{perm} — revoke a per-user permission claim (admin.roles)
 /// POST   /api/admin/players/kick                     — forcibly disconnect an active session
 /// POST   /api/admin/players/ban                      — ban an account and kick active sessions
 /// POST   /api/admin/players/unban                    — lift an existing ban
@@ -46,23 +48,31 @@ public static class AdminEndpoints
     /// <summary>Registers all admin and moderation endpoints on the provided route builder.</summary>
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
-        // ── Group 1: admin-only operations (manage_users required) ────────────────
-        // Keeps user/role/permission management and the audit log out of reach for Moderators.
+        // ── Group 1: admin-only account operations (admin.users required) ─────────
+        // Keeps account administration and the audit log out of reach for Moderators.
         var adminGroup = app.MapGroup("/api/admin")
             .WithTags("Admin")
             .RequireAuthorization(Auth.Permissions.ManageUsers);
 
         adminGroup.MapGet("/users", ListUsersAsync);
         adminGroup.MapGet("/users/{id:guid}", GetUserAsync);
-        adminGroup.MapPost("/users/{id:guid}/roles", AssignRoleAsync);
-        adminGroup.MapDelete("/users/{id:guid}/roles/{role}", RevokeRoleAsync);
-        adminGroup.MapPost("/users/{id:guid}/permissions", GrantPermissionAsync);
-        adminGroup.MapDelete("/users/{id:guid}/permissions/{permission}", RevokePermissionAsync);
         adminGroup.MapGet("/audit", GetAuditLogAsync);
         adminGroup.MapGet("/sessions", GetSessionsAsync);
         adminGroup.MapGet("/status", GetServerStatusAsync);
         adminGroup.MapGet("/instances", ListInstancesAsync);
         adminGroup.MapDelete("/instances/{id:guid}", PurgeInstanceAsync);
+
+        // ── Group 1b: role and permission mutation (admin.roles required) ─────────
+        // Separate from account administration on purpose: admin.users administers accounts, admin.roles
+        // hands out authority. Both handlers also refuse any mutation aimed at the caller's own account.
+        var roleGroup = app.MapGroup("/api/admin/roles")
+            .WithTags("Roles")
+            .RequireAuthorization(Auth.Permissions.ManageRoles);
+
+        roleGroup.MapPost("/users/{id:guid}/roles", AssignRoleAsync);
+        roleGroup.MapDelete("/users/{id:guid}/roles/{role}", RevokeRoleAsync);
+        roleGroup.MapPost("/users/{id:guid}/permissions", GrantPermissionAsync);
+        roleGroup.MapDelete("/users/{id:guid}/permissions/{permission}", RevokePermissionAsync);
 
         // ── Group 2: per-permission moderation actions ────────────────────────────
         // No group-level permission requirement — each endpoint enforces its own claim.
@@ -213,8 +223,12 @@ public static class AdminEndpoints
         [FromBody] AssignRoleRequest request,
         ClaimsPrincipal actor,
         [FromServices] UserManager<PlayerAccount> userManager,
-        [FromServices] ApplicationDbContext db)
+        [FromServices] ApplicationDbContext db,
+        [FromServices] ILoggerFactory loggerFactory)
     {
+        if (IsSelfDirectedMutation(actor, id))
+            return RefuseSelfDirectedMutation(actor, loggerFactory, $"assign role '{request.Role}'");
+
         if (!Auth.Roles.All.Contains(request.Role, StringComparer.OrdinalIgnoreCase))
             return Results.BadRequest(new AdminActionResponse(false, $"Unknown role '{request.Role}'."));
 
@@ -262,8 +276,12 @@ public static class AdminEndpoints
         [FromBody] GrantPermissionRequest request,
         ClaimsPrincipal actor,
         [FromServices] UserManager<PlayerAccount> userManager,
-        [FromServices] ApplicationDbContext db)
+        [FromServices] ApplicationDbContext db,
+        [FromServices] ILoggerFactory loggerFactory)
     {
+        if (IsSelfDirectedMutation(actor, id) && SelfEscalationPermissions.Contains(request.Permission, StringComparer.OrdinalIgnoreCase))
+            return RefuseSelfDirectedMutation(actor, loggerFactory, $"grant permission '{request.Permission}'");
+
         if (!Auth.Permissions.All.Contains(request.Permission, StringComparer.OrdinalIgnoreCase))
             return Results.BadRequest(new AdminActionResponse(false, $"Unknown permission '{request.Permission}'."));
 
@@ -601,6 +619,44 @@ public static class AdminEndpoints
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Permissions that hand out or widen authority. Granting one of these to yourself is a privilege
+    /// escalation, so <c>GrantPermissionAsync</c> refuses it regardless of which group admitted the caller.
+    /// </summary>
+    private static readonly string[] SelfEscalationPermissions =
+    [
+        Auth.Permissions.ManageRoles,
+        Auth.Permissions.ManageUsers,
+        Auth.Permissions.BanPlayers,
+        Auth.Permissions.ViewPlayers,
+    ];
+
+    /// <summary>
+    /// True when the caller is the account being modified. Checked in the handlers rather than in a route
+    /// group so the refusal survives any future regrouping of these endpoints.
+    /// </summary>
+    private static bool IsSelfDirectedMutation(ClaimsPrincipal actor, Guid targetAccountId)
+    {
+        var (actorId, _) = GetActor(actor);
+        return actorId != Guid.Empty && actorId == targetAccountId;
+    }
+
+    /// <summary>
+    /// Logs and refuses a mutation aimed at the caller's own account. Deliberately writes no
+    /// <c>denied</c> audit row: only completed mutations reach the audit trail, and a self-directed
+    /// attempt is refused before it touches anything.
+    /// </summary>
+    private static IResult RefuseSelfDirectedMutation(ClaimsPrincipal actor, ILoggerFactory loggerFactory, string attempted)
+    {
+        var (actorId, actorUsername) = GetActor(actor);
+        loggerFactory.CreateLogger(typeof(AdminEndpoints)).LogWarning(
+            "Refused a self-directed admin mutation: {ActorUsername} ({ActorId}) attempted to {Attempted} on their own account.",
+            actorUsername,
+            actorId,
+            attempted);
+        return Results.Forbid();
+    }
 
     private static (Guid Id, string Username) GetActor(ClaimsPrincipal user)
     {
