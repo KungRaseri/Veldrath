@@ -17,6 +17,13 @@ namespace Veldrath.Server.Features.Dev;
 /// All endpoints in this group require authentication and return <c>403 Forbidden</c>
 /// when the server is not running in the <c>Development</c> or <c>Test</c> environment,
 /// making them safe to deploy: they exist in production but are unreachable.
+/// <para>
+/// The environment check is the whole gate. The group requires authentication but no permission,
+/// because the journey specs call these endpoints as ordinary player accounts; in
+/// <c>Production</c> every endpoint answers 403 regardless of the caller's roles, and an
+/// unauthenticated caller gets 401 before the handler runs. Do not add a permission without
+/// changing those specs — and do not relax the environment check.
+/// </para>
 /// </remarks>
 public static class DevEndpoints
 {

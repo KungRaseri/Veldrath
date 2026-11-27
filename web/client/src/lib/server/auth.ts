@@ -1,4 +1,4 @@
-import { betterAuth } from 'better-auth';
+import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import { username } from 'better-auth/plugins';
@@ -62,24 +62,40 @@ function buildWebLink(path: string, token: string, betterAuthUrl: string): strin
 	return link.toString();
 }
 
-function createAuth() {
+/**
+ * The Better Auth configuration, shared by the running server and the test suite.
+ *
+ * `database` is a parameter so a test can run this exact option set against an in-memory adapter.
+ * The sign-up behaviour under test (see `autoSignIn` below) is a property of these options, and a
+ * copy of them inside the test would prove nothing about the server that ships.
+ *
+ * @param database The adapter Better Auth stores users, sessions and tokens in.
+ * @returns The options passed to `betterAuth`.
+ */
+export function buildAuthOptions(database: BetterAuthOptions['database']) {
 	if (!env.BETTER_AUTH_SECRET) {
 		throw new Error('BETTER_AUTH_SECRET is not configured.');
 	}
 
-	return betterAuth({
+	return {
 		appName: 'Veldrath',
 		baseURL: env.BETTER_AUTH_URL || env.ORIGIN || undefined,
 		secret: env.BETTER_AUTH_SECRET,
-		database: drizzleAdapter(getAuthDb(), {
-			provider: 'pg',
-			schema: { user, session, account, verification }
-		}),
+		database,
 		emailAndPassword: {
 			enabled: true,
 			// Verification emails are sent on sign-up, but sign-in is not blocked so
 			// accounts migrated from Identity are not locked out before they confirm.
 			requireEmailVerification: false,
+			// Sign-up must not reveal whether an address already has an account. Better Auth ties
+			// its enumeration protection to these two flags: with `requireEmailVerification: false`
+			// and `autoSignIn: false`, a duplicate address gets the same 200 and the same synthetic
+			// `user` as a new one, and the submitted password is hashed anyway so the timing matches,
+			// instead of the stock 422 `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL`. That is why this is
+			// off: a session issued only to a new address is exactly the signal enumeration wants.
+			// The cost is that sign-up no longer signs the player in; the register page sends them
+			// to the sign-in form, where a returning player's own password still works.
+			autoSignIn: false,
 			sendResetPassword: async ({ user, url, token }) => {
 				await sendTransactionalEmail('password-reset', {
 					to: user.email,
@@ -147,7 +163,24 @@ function createAuth() {
 		trustedOrigins: [env.ORIGIN, env.BETTER_AUTH_URL].filter((value): value is string =>
 			Boolean(value)
 		)
-	});
+	} satisfies BetterAuthOptions;
+}
+
+function createAuth() {
+	// Checked before the adapter is constructed so a missing secret is the error the operator sees,
+	// not a missing DATABASE_URL (the adapter reads it first because arguments evaluate first).
+	if (!env.BETTER_AUTH_SECRET) {
+		throw new Error('BETTER_AUTH_SECRET is not configured.');
+	}
+
+	return betterAuth(
+		buildAuthOptions(
+			drizzleAdapter(getAuthDb(), {
+				provider: 'pg',
+				schema: { user, session, account, verification }
+			})
+		)
+	);
 }
 
 type Auth = ReturnType<typeof createAuth>;

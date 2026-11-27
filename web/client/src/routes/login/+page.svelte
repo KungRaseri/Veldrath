@@ -11,6 +11,11 @@
 	let identifier = $state('');
 	let password = $state('');
 	let errorMessage = $state(oauthErrorMessage(page.url.searchParams.get('error')));
+	// Set when the register form sends the player here. Sign-up never signs in, on purpose: a session
+	// minted only for a new address would tell an attacker which addresses already have an account.
+	let noticeMessage = $state(
+		page.url.searchParams.get('registered') ? 'Account ready. Sign in to continue.' : ''
+	);
 	let submitting = $state(false);
 
 	function oauthErrorMessage(code: string | null): string {
@@ -68,6 +73,12 @@
 		{#if errorMessage}
 			<p class="mt-4 border border-error-500/40 bg-error-950/40 p-3 text-sm text-error-500">
 				{errorMessage}
+			</p>
+		{/if}
+
+		{#if noticeMessage}
+			<p class="mt-4 border border-success-500/40 bg-success-950/40 p-3 text-sm text-success-500">
+				{noticeMessage}
 			</p>
 		{/if}
 

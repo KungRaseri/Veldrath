@@ -359,4 +359,48 @@ public class AdminReportingAndStatusEndpointTests(WebAppFactory factory)
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    // ─── Health endpoints ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Health_StaysAnonymous_SoMonitorsKeepPolling()
+    {
+        var response = await factory.CreateClient().GetAsync("/health");
+
+        // The container healthcheck, the e2e stack and external monitors all poll this anonymously and
+        // treat a non-2xx as "down". The default writer returns the status word and nothing else.
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync()).Should().Be("Healthy");
+    }
+
+    [Fact]
+    public async Task HealthDetail_WithoutToken_ReturnsUnauthorized()
+    {
+        var response = await factory.CreateClient().GetAsync("/health/detail");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task HealthDetail_WithoutThePermission_ReturnsForbidden()
+    {
+        using var client = await AuthedClientAsync("HealthDetail_Plain");
+
+        var response = await client.GetAsync("/health/detail");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task HealthDetail_WithManageUsers_ReturnsTheDetailedReport()
+    {
+        using var client = await AuthedClientAsync("HealthDetail_Admin", "Admin");
+
+        var response = await client.GetAsync("/health/detail");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("\"status\": \"Healthy\"");
+        body.Should().Contain("\"checks\"");
+    }
 }
