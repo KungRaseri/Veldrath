@@ -463,12 +463,11 @@ public class MapEditorServiceTests
 
         var result = await editor.SaveAsync(draft.Id, draft with { Name = "Explained" }, draft.Version, author);
 
-        // The client renders this sentence verbatim, so it has to carry the four steps of the loop that gets an
-        // edit into play. "Conflict" tells the author nothing they can act on.
-        result.Message.Should().NotBeNull();
-        result.Message.Should().Contain("deactivates", "a reviewer takes the map out of play first");
-        result.Message.Should().Contain("submit");
-        result.Message.Should().Contain("approves");
+        // The client renders this sentence verbatim, so it has to name the reason. Retirement is not one:
+        // most live maps are referenced by other maps' nodes and cannot be deactivated, so recommending it
+        // would send the author down a path that cannot work until map revisions exist.
+        result.Message.Should().Be(
+            $"Map '{draft.Id}' is live. Authors cannot save changes to live maps until map revisions are supported.");
         result.Message.Should().NotContain("conflict");
     }
 

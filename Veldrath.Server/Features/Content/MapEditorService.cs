@@ -242,9 +242,10 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
         }
 
         // Gameplay reads the stored graph of every active map, so a save over a live map would put a graph no
-        // reviewer has seen in front of players the moment it commits. Taking a map out of play is a reviewer's
-        // call, so an author is refused here — and told the loop that gets an edit live, because the client shows
-        // this sentence verbatim and the author's next move depends on knowing it.
+        // reviewer has seen in front of players the moment it commits. Author saves stay refused until map
+        // revisions can publish an approved copy — retirement is not a way out, because most live maps are
+        // referenced by other maps' nodes and DeactivateAsync refuses them. The client shows this sentence
+        // verbatim, so it names the freeze rather than sending the author down a path that cannot work yet.
         if (map.IsActive && !caller.SeesEveryDraft)
         {
             logger.LogInformation(
@@ -1004,16 +1005,15 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     /// The refusal an author sees when they try to save over a live map.
     /// </summary>
     /// <remarks>
-    /// The client renders this sentence verbatim, so it names the four steps that get an edit into play rather
-    /// than reporting a "conflict": deactivate, edit, submit, approve. An author who is not told the loop would
-    /// reasonably retry the save.
+    /// The client renders this sentence verbatim, so it names the freeze rather than a workaround. Retirement
+    /// is not an authoring workflow: most live maps are referenced by other maps' nodes, and
+    /// <see cref="DeactivateAsync"/> refuses those, so the old "deactivate, edit, submit, approve" instructions
+    /// sent the author down a path that cannot work until map revisions exist.
     /// </remarks>
     /// <param name="mapId">Map identifier being saved.</param>
     /// <returns>The refusal message.</returns>
     private static string LiveMapSaveRefusal(string mapId) =>
-        $"Map '{mapId}' is live, so a save would give players a graph no reviewer has approved. " +
-        "To change it: a reviewer deactivates the map, you edit and save, you submit it for review, " +
-        "and a reviewer approves it.";
+        $"Map '{mapId}' is live. Authors cannot save changes to live maps until map revisions are supported.";
 
     private async Task<IReadOnlyList<string>> ReferringNodesAsync(
         string mapId,

@@ -284,8 +284,9 @@ public class MapEditorEndpointTests(WebAppFactory factory)
         refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await refused.Content.ReadFromJsonAsync<MapGraphSaveResponse>(Json);
         body!.Success.Should().BeFalse();
-        body.Message.Should().Contain("deactivates", "the client shows this sentence to the author verbatim");
-        body.Message.Should().Contain("approves");
+        body.Message.Should().Be(
+            $"Map '{draft.Id}' is live. Authors cannot save changes to live maps until map revisions are supported.",
+            "the client shows this sentence to the author verbatim");
 
         // The refused write left the graph players walk alone.
         (await ReadMapAsync(author, draft.Id))!.Name.Should().Be("Live Author Zone");
