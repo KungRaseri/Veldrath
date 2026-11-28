@@ -93,6 +93,10 @@ try
         options.AddFilter<RateLimitObservationFilter>();
         // A connection established before a ban keeps working otherwise; this refuses the next invocation.
         options.AddFilter<BanGuardFilter>();
+        // Invocations travel inside the upgraded WebSocket frame, where `hub-commands` cannot see them; this
+        // charges each one to its channel's per-account budget and refuses with a HubException (the
+        // connection stays open). Runs after the ban guard so a banned caller is refused for that reason.
+        options.AddFilter<HubInvocationRateLimitFilter>();
     });
 
     // CORS — browser clients (SvelteKit dev server, Docker web, production domain).
@@ -143,6 +147,10 @@ try
         builder.Configuration,
         provider.GetRequiredService<ILogger<RateLimitObservation>>()));
 
+    // Per-account budgets for hub invocations, which the HTTP policies cannot meter. Channels and their
+    // permits are documented on HubInvocationRateLimiter; config keys override the measured defaults.
+    builder.Services.AddSingleton(provider => new HubInvocationRateLimiter(builder.Configuration));
+
     builder.Services.AddRateLimiter(opts =>
     {
         // One bucket per caller per policy: the authenticated account subject, or the client address when a
@@ -151,7 +159,8 @@ try
         opts.AddPolicy("foundry-writes", PolicyPartition(foundryWriteLimit));
         opts.AddPolicy("admin-actions", PolicyPartition(adminActionsLimit));
         // Meters SignalR connection establishment (negotiate plus transport upgrade). Command invocations travel
-        // inside the upgraded WebSocket frame and are counted, never limited, by RateLimitObservationFilter.
+        // inside the upgraded WebSocket frame and are metered separately, per account and channel, by
+        // HubInvocationRateLimitFilter.
         opts.AddPolicy("hub-commands", PolicyPartition(hubCommandsLimit));
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         // Records which policy and route template rejected a request. A no-op unless RateLimit:Observe is on.

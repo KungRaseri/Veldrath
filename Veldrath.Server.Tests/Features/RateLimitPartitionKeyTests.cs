@@ -99,6 +99,27 @@ public class RateLimitPartitionKeyTests
         RateLimitPartitionKey.For(context).Should().Be("address:unknown");
     }
 
+    [Fact]
+    public void ForPrincipal_UsesTheSameAccountRuleWithoutARequest()
+    {
+        var accountId = Guid.Parse("dddddddd-dddd-4ddd-8ddd-dddddddddddd");
+        var user = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim("sub", accountId.ToString())], "Bearer"));
+
+        RateLimitPartitionKey.For(user).Should().Be($"account:{accountId:D}",
+            "a hub invocation has no request, and its budget must belong to the same account the HTTP policies meter");
+    }
+
+    [Fact]
+    public void ForPrincipal_WithoutAGuidSubjectFallsBackToTheSharedAnonymousKey()
+    {
+        // A per-connection bucket would let a caller refresh its allowance by reconnecting, so the fallback is
+        // deliberately shared: the hub's authorize gate and the ban guard refuse such a caller first.
+        RateLimitPartitionKey.For(new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim("sub", "not-a-guid")], "Bearer")))
+            .Should().Be("address:unknown");
+    }
+
     private static DefaultHttpContext Context(
         ClaimsPrincipal user,
         string? forwardedFor = null,

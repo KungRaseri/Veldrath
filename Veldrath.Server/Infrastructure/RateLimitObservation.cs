@@ -354,12 +354,37 @@ public static class RateLimitPartitionKey
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (RateLimitObservation.ResolveAccountId(context.User) is { } accountId)
-            return string.Concat(AccountPrefix, accountId.ToString("D"));
+        if (AccountKey(context.User) is { } account)
+            return account;
 
         var address = ForwardedAddress(context) ?? Normalize(context.Connection.RemoteIpAddress);
         return string.Concat(AddressPrefix, address?.ToString() ?? "unknown");
     }
+
+    /// <summary>Gets the partition key for a principal when no HTTP request of its own is being handled.</summary>
+    /// <remarks>
+    /// <para>
+    /// A hub invocation has no request: the frame carrying it was read from the connection's upgraded
+    /// transport, and only the connection's principal is available at that point. That principal carries the
+    /// same GUID subject (<c>sub</c> or the mapped <see cref="ClaimTypes.NameIdentifier"/>) the HTTP path
+    /// uses, so this overload applies the account rule once instead of restating it in the hub.
+    /// </para>
+    /// <para>
+    /// A principal without a GUID subject falls back to the shared <c>address:unknown</c> key rather than a
+    /// per-connection identity: a per-connection bucket would let a caller refresh its allowance by
+    /// reconnecting, which is the opposite of what a per-account budget is for. The hub's authorize gate and
+    /// the ban guard both refuse such a caller before it can act.
+    /// </para>
+    /// </remarks>
+    /// <param name="user">Principal of the connection, or <see langword="null"/>.</param>
+    /// <returns>The account key when the principal carries a GUID subject, otherwise the shared anonymous key.</returns>
+    public static string For(ClaimsPrincipal? user) =>
+        AccountKey(user) ?? string.Concat(AddressPrefix, "unknown");
+
+    private static string? AccountKey(ClaimsPrincipal? user) =>
+        RateLimitObservation.ResolveAccountId(user) is { } accountId
+            ? string.Concat(AccountPrefix, accountId.ToString("D"))
+            : null;
 
     private static IPAddress? ForwardedAddress(HttpContext context)
     {

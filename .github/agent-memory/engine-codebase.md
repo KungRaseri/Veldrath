@@ -439,7 +439,10 @@ The desktop client and its test project were retired, so the old `[AvaloniaFact]
 - ASP.NET Core rate limiting, fixed window, **partitioned per caller**: the authenticated account subject, or the client address (`X-Forwarded-For`, then the connection address) for a request with no usable subject — see `Infrastructure/RateLimitPartitionKey`
 - Each policy is one bucket *per caller per policy*, so one account cannot spend another's permits; the policy name is only the reporting unit in `RateLimitObservation`
 - Defaults per account per minute: `foundry-writes` 20, `admin-actions` 40, `hub-commands` 30 (capacity assumptions, not measured rates — no production traffic to size against on 2026-11-27)
-- `hub-commands` meters SignalR connection establishment (negotiate + transport upgrade), not hub invocations; invocations are counted by `RateLimitObservationFilter` and are not limited
+- `hub-commands` meters SignalR connection establishment (negotiate + transport upgrade), not hub invocations
+- Hub invocations get their own per-account budgets, one bucket per **channel** (`Hubs/HubInvocationRateLimiter`, enforced by `Hubs/HubInvocationRateLimitFilter`): chat = `Send*` (30/min), query = `Get*` + `Ping` (300/min), action = everything else (120/min). Config keys `RateLimit:HubChatInvocationsPerMinute`, `RateLimit:HubQueryInvocationsPerMinute`, `RateLimit:HubActionInvocationsPerMinute`; a value <= 0 disables that channel
+- The invocation limits were measured on 2026-11-27 with a local harness (never live traffic): the web client's own connect/reconnect sequence spends **11 invocations in one burst** — 9 reads and 2 gameplay (`SelectCharacter`, `EnterZone`) — and automatic reconnect replays it through `restoreSession`. Chat is never sent automatically. Refusal throws `HubException` and leaves the connection open
+- `RateLimitObservationFilter` still counts invocations when `RateLimit:Observe` is on and stays a pass-through when it is off
 
 #### Migration Repair Strategy
 - `RepairStaleMigrationsAsync` in `Program.cs` handles squashed migrations gracefully: drops dev DB, throws in production
